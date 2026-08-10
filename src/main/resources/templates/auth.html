@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${register} ? 'Create account | Nagorik Seba' : 'Sign in | Nagorik Seba'">Nagorik Seba</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="auth-page">
+<main class="auth-layout">
+    <a class="brand auth-brand" href="/"><span>ন</span> নাগরিক সেবা</a>
+    <section class="auth-panel">
+        <p class="eyebrow" th:text="${register} ? 'Join your community' : 'Welcome back'">Welcome</p>
+        <h1 th:text="${register} ? 'Create your account' : 'Sign in to Nagorik Seba'">Sign in</h1>
+        <p class="auth-intro" th:text="${register} ? 'Use one account to report, follow, and rate local issues.' : 'Use your email or mobile number to continue.'">Use your account to continue.</p>
+
+        <form id="auth-form" th:attr="data-register=${register}" novalidate>
+            <label th:if="${register}">Full name
+                <input name="fullName" autocomplete="name" maxlength="100" required placeholder="e.g. Amina Rahman">
+            </label>
+            <label>Email address
+                <input name="email" type="email" autocomplete="email" maxlength="100" th:required="${register}" placeholder="you@example.com">
+            </label>
+            <label th:if="${register}">Mobile number <small>(optional)</small>
+                <input name="phone" type="tel" autocomplete="tel" placeholder="01712345678">
+            </label>
+            <label th:unless="${register}">Email or mobile number
+                <input name="identifier" autocomplete="username" required placeholder="you@example.com or 01712345678">
+            </label>
+            <label>Password
+                <input name="password" type="password" autocomplete="current-password" minlength="8" maxlength="72" required placeholder="At least 8 characters">
+            </label>
+            <button class="button button-primary auth-submit" type="submit">
+                <span th:text="${register} ? 'Create account' : 'Sign in'">Sign in</span><b>→</b>
+            </button>
+            <p id="auth-feedback" class="auth-feedback" role="status" aria-live="polite"></p>
+        </form>
+
+        <p class="auth-switch" th:if="${register}">Already have an account? <a href="/login">Sign in</a></p>
+        <p class="auth-switch" th:unless="${register}">New to Nagorik Seba? <a href="/register">Create an account</a></p>
+    </section>
+    <aside class="auth-aside" aria-hidden="true">
+        <p class="eyebrow">Your city, in view</p>
+        <blockquote>“Every report is a step toward a more responsive neighbourhood.”</blockquote>
+        <div class="aside-shape shape-one"></div><div class="aside-shape shape-two"></div><div class="aside-shape shape-three"></div>
+    </aside>
+</main>
+<script th:src="@{/js/auth.js}"></script>
+</body>
+</html>

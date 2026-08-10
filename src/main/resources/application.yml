@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: nagorik-seba
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:nagorikseba;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Dhaka
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 25MB
+
+server:
+  error:
+    include-message: never
+
+security:
+  jwt:
+    # Set JWT_SECRET to a unique Base64-encoded key before deploying.
+    secret: ${JWT_SECRET:bWFrZS1zdXJlLXRvLXJlcGxhY2UtdGhpcy1kZXZlbG9wbWVudC1qd3Qtc2VjcmV0LWJlZm9yZS1kZXBsb3ltZW50LTIwMjY=}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
+    issuer: ${JWT_ISSUER:nagorik-seba}
+
+app:
+  storage:
+    upload-dir: ${UPLOAD_DIR:uploads}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
