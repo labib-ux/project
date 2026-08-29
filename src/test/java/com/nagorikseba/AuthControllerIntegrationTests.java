@@ -28,6 +28,13 @@ class AuthControllerIntegrationTests {
     }
 
     @Test
+    void publicComplaintFormIsAvailable() throws Exception {
+        mockMvc.perform(get("/citizen/complaint/new"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Report a local issue")));
+    }
+
+    @Test
     void citizenCanRegisterAndLogin() throws Exception {
         String registration = """
                 {

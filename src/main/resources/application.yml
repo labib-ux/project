@@ -36,6 +36,7 @@ security:
 app:
   storage:
     upload-dir: ${UPLOAD_DIR:uploads}
+    max-photos-per-complaint: ${MAX_PHOTOS_PER_COMPLAINT:5}
 
 management:
   endpoints:

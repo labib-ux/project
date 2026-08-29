@@ -6,7 +6,7 @@ Nagorik Seba is a ward-level civic complaint platform for Bangladesh. Residents 
 
 - Spring Boot 3.5 / Java 21 / Maven Wrapper
 - Spring Security with JWT-based authentication
-- Citizen registration and login APIs
+- Citizen registration/login plus authenticated complaint submission with local image uploads
 - JPA entities and repositories for users, wards, departments, complaints, status updates, attachments, SLA rules, notifications, and ward performance
 - H2 for a no-setup local start; PostgreSQL profile for deployment
 - Thymeleaf public landing page
@@ -47,6 +47,23 @@ curl -X POST http://localhost:8080/api/auth/login \
 ```
 
 Both endpoints return a Bearer access token. Send it as `Authorization: Bearer <token>` to protected APIs as they are added.
+
+## Complaint submission API
+
+Submit one to five JPEG, PNG, or WebP photos with the complaint. The file type is verified from the file contents, files receive random server-side names, and completed photos are available under `/uploads/**` in local development.
+
+```bash
+curl -X POST http://localhost:8080/api/complaints \
+  -H 'Authorization: Bearer <token>' \
+  -F 'title=Large pothole on Lake Road' \
+  -F 'description=The pothole is dangerous for motorcycles, especially after rain.' \
+  -F 'category=ROADS' \
+  -F 'latitude=23.7465' \
+  -F 'longitude=90.3742' \
+  -F 'photos=@/absolute/path/to/pothole.jpg'
+```
+
+The response includes the complaint, uploaded image URLs, and its first `SUBMITTED` timeline event. Citizens can also retrieve their data with `GET /api/complaints/my` or `GET /api/complaints/{id}`.
 
 ## PostgreSQL
 

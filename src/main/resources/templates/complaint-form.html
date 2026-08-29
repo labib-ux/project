@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report an issue | Nagorik Seba</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="complaint-page">
+<header class="complaint-header">
+    <div class="container complaint-nav">
+        <a class="brand" href="/"><span>ন</span> নাগরিক সেবা</a>
+        <a class="back-link" href="/">← Back to home</a>
+    </div>
+</header>
+
+<main class="complaint-shell">
+    <section class="complaint-intro">
+        <p class="eyebrow">Make your neighbourhood visible</p>
+        <h1>Report a local issue</h1>
+        <p>Clear details and a photo help the right team respond faster. You will be able to follow every update after submitting.</p>
+    </section>
+
+    <form id="complaint-form" class="complaint-form" novalidate>
+        <div class="form-section">
+            <span class="form-section-number">01</span>
+            <div><h2>What happened?</h2><p>Use a short title and tell us what needs attention.</p></div>
+        </div>
+        <div class="form-grid">
+            <label class="full-field">Issue title
+                <input name="title" maxlength="200" required placeholder="e.g. Large pothole on Lake Road">
+            </label>
+            <label>Category
+                <select name="category" required>
+                    <option value="" selected disabled>Select a category</option>
+                    <option th:each="category : ${categories}" th:value="${category}" th:text="${#strings.replace(category.name(), '_', ' ')}">ROADS</option>
+                </select>
+            </label>
+            <label class="full-field">Description
+                <textarea name="description" maxlength="5000" required placeholder="Describe the problem, its exact location, and any danger it causes."></textarea>
+            </label>
+        </div>
+
+        <div class="form-section">
+            <span class="form-section-number">02</span>
+            <div><h2>Where is it?</h2><p>Share your location or enter the map coordinates manually.</p></div>
+        </div>
+        <div class="location-controls">
+            <button id="locate-button" class="button location-button" type="button">Use my current location <span>⌖</span></button>
+            <span id="location-feedback" class="location-feedback" aria-live="polite"></span>
+        </div>
+        <div class="form-grid coordinate-grid">
+            <label>Latitude
+                <input name="latitude" inputmode="decimal" required placeholder="e.g. 23.7465">
+            </label>
+            <label>Longitude
+                <input name="longitude" inputmode="decimal" required placeholder="e.g. 90.3742">
+            </label>
+        </div>
+
+        <div class="form-section">
+            <span class="form-section-number">03</span>
+            <div><h2>Add photos</h2><p>Upload 1–5 clear JPEG, PNG, or WebP photos. Up to 10 MB each.</p></div>
+        </div>
+        <label class="drop-zone" for="photos">
+            <input id="photos" name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple required>
+            <span class="upload-mark">↑</span>
+            <strong>Choose photos or drag them here</strong>
+            <small>JPEG, PNG, or WebP · maximum 5 images</small>
+        </label>
+        <ul id="photo-list" class="photo-list" aria-live="polite"></ul>
+
+        <div class="submit-row">
+            <p>By submitting, you confirm that this report accurately describes a local public issue.</p>
+            <button class="button button-primary submit-complaint" type="submit"><span>Submit report</span><b>→</b></button>
+        </div>
+        <p id="complaint-feedback" class="complaint-feedback" role="status" aria-live="polite"></p>
+    </form>
+</main>
+<script th:src="@{/js/complaint-form.js}"></script>
+</body>
+</html>

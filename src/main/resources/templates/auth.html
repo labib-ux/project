@@ -39,8 +39,8 @@
             <p id="auth-feedback" class="auth-feedback" role="status" aria-live="polite"></p>
         </form>
 
-        <p class="auth-switch" th:if="${register}">Already have an account? <a href="/login">Sign in</a></p>
-        <p class="auth-switch" th:unless="${register}">New to Nagorik Seba? <a href="/register">Create an account</a></p>
+        <p class="auth-switch" th:if="${register}">Already have an account? <a href="/login?next=/citizen/complaint/new">Sign in</a></p>
+        <p class="auth-switch" th:unless="${register}">New to Nagorik Seba? <a href="/register?next=/citizen/complaint/new">Create an account</a></p>
     </section>
     <aside class="auth-aside" aria-hidden="true">
         <p class="eyebrow">Your city, in view</p>

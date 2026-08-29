@@ -30,8 +30,10 @@ if (form) {
             }
             localStorage.setItem('nagorikSebaToken', result.accessToken);
             localStorage.setItem('nagorikSebaUser', JSON.stringify(result.user));
-            feedback.textContent = `Welcome, ${result.user.fullName}. Your account is ready.`;
+            feedback.textContent = `Welcome, ${result.user.fullName}. Taking you to the complaint form…`;
             feedback.classList.add('success');
+            const next = new URLSearchParams(window.location.search).get('next') || '/citizen/complaint/new';
+            window.setTimeout(() => { window.location.assign(next); }, 550);
         } catch (error) {
             feedback.textContent = error.message;
             feedback.classList.add('error');
