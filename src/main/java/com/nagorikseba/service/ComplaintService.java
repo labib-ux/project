@@ -36,8 +36,10 @@ public class ComplaintService {
     private final AttachmentRepository attachmentRepository;
     private final StatusUpdateRepository statusUpdateRepository;
     private final UserRepository userRepository;
+    private final com.nagorikseba.repository.WardRepository wardRepository;
     private final FileStorageService fileStorageService;
     private final StorageProperties storageProperties;
+    private final com.nagorikseba.template.StandardComplaintSubmission standardComplaintSubmission;
 
     @Transactional
     public ComplaintResponse submit(ComplaintSubmissionRequest request, String citizenEmail) {
@@ -46,51 +48,10 @@ public class ComplaintService {
         if (citizen.getRole() != UserRole.CITIZEN) {
             throw new IllegalArgumentException("Only citizens can submit complaints");
         }
-        if (request.getPhotos().size() > storageProperties.getMaxPhotosPerComplaint()) {
-            throw new IllegalArgumentException("You can upload up to %d photos".formatted(storageProperties.getMaxPhotosPerComplaint()));
-        }
 
-        List<FileStorageService.StoredFile> storedFiles = new ArrayList<>();
-        try {
-            Complaint complaint = complaintRepository.saveAndFlush(Complaint.builder()
-                    .title(request.getTitle().trim())
-                    .description(request.getDescription().trim())
-                    .category(request.getCategory())
-                    .status(ComplaintStatus.SUBMITTED)
-                    .priority(Priority.NORMAL)
-                    .latitude(request.getLatitude())
-                    .longitude(request.getLongitude())
-                    .citizen(citizen)
-                    .build());
+        Complaint complaint = standardComplaintSubmission.processSubmission(request, citizen);
 
-            for (var photo : request.getPhotos()) {
-                storedFiles.add(fileStorageService.storeIssuePhoto(photo));
-            }
-            cleanUpFilesIfTransactionRollsBack(storedFiles);
-
-            List<Attachment> attachments = storedFiles.stream()
-                    .map(file -> Attachment.builder()
-                            .complaint(complaint)
-                            .fileUrl(file.publicUrl())
-                            .fileType(AttachmentType.IMAGE)
-                            .uploadedBy(citizen)
-                            .workProof(false)
-                            .build())
-                    .toList();
-            attachmentRepository.saveAllAndFlush(attachments);
-
-            StatusUpdate submission = statusUpdateRepository.saveAndFlush(StatusUpdate.builder()
-                    .complaint(complaint)
-                    .updatedBy(citizen)
-                    .toStatus(ComplaintStatus.SUBMITTED)
-                    .note("Complaint submitted by citizen")
-                    .build());
-
-            return toResponse(complaint, attachments, List.of(submission));
-        } catch (RuntimeException exception) {
-            fileStorageService.deleteAll(storedFiles);
-            throw exception;
-        }
+        return toResponse(complaint);
     }
 
     @Transactional(readOnly = true)
@@ -119,7 +80,8 @@ public class ComplaintService {
                 statusUpdateRepository.findByComplaintIdOrderByCreatedAtAsc(complaint.getId()));
     }
 
-    private ComplaintResponse toResponse(Complaint complaint, List<Attachment> attachments, List<StatusUpdate> timeline) {
+    private ComplaintResponse toResponse(Complaint complaint, List<Attachment> attachments,
+            List<StatusUpdate> timeline) {
         return new ComplaintResponse(
                 complaint.getId(),
                 complaint.getTitle(),
@@ -135,7 +97,8 @@ public class ComplaintService {
                 complaint.getDeadlineAt(),
                 attachments.stream().map(this::toAttachmentResponse).toList(),
                 timeline.stream()
-                        .sorted(Comparator.comparing(StatusUpdate::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                        .sorted(Comparator.comparing(StatusUpdate::getCreatedAt,
+                                Comparator.nullsLast(Comparator.naturalOrder())))
                         .map(this::toStatusUpdateResponse)
                         .toList());
     }

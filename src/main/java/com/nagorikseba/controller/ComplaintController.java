@@ -25,6 +25,9 @@ import java.util.List;
 public class ComplaintController {
 
     private final ComplaintService complaintService;
+    private final com.nagorikseba.repository.UserRepository userRepository;
+    private final com.nagorikseba.repository.ComplaintRepository complaintRepository;
+    private final com.nagorikseba.state.ComplaintStateMachine stateMachine;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ComplaintResponse> submit(
@@ -43,5 +46,27 @@ public class ComplaintController {
             @PathVariable Long complaintId,
             @AuthenticationPrincipal UserDetails citizen) {
         return complaintService.findMyComplaint(complaintId, citizen.getUsername());
+    }
+
+    @PostMapping("/{id}/rate")
+    public ResponseEntity<?> rateComplaint(@PathVariable Long id, @RequestParam int rating,
+            @RequestParam(required = false) String feedback, @AuthenticationPrincipal UserDetails citizenDetails) {
+        com.nagorikseba.entity.User citizen = userRepository.findByEmailIgnoreCase(citizenDetails.getUsername())
+                .orElseThrow(() -> new com.nagorikseba.exception.ResourceNotFoundException("Citizen not found"));
+        com.nagorikseba.entity.Complaint complaint = complaintRepository.findById(id).orElseThrow();
+
+        stateMachine.process(complaint, com.nagorikseba.state.ComplaintAction.CLOSE, citizen, feedback, null, rating);
+        return ResponseEntity.ok(java.util.Map.of("message", "Complaint rated and closed"));
+    }
+
+    @PostMapping("/{id}/reopen")
+    public ResponseEntity<?> reopenComplaint(@PathVariable Long id, @RequestParam String reason,
+            @AuthenticationPrincipal UserDetails citizenDetails) {
+        com.nagorikseba.entity.User citizen = userRepository.findByEmailIgnoreCase(citizenDetails.getUsername())
+                .orElseThrow(() -> new com.nagorikseba.exception.ResourceNotFoundException("Citizen not found"));
+        com.nagorikseba.entity.Complaint complaint = complaintRepository.findById(id).orElseThrow();
+
+        stateMachine.process(complaint, com.nagorikseba.state.ComplaintAction.REOPEN, citizen, reason, null, null);
+        return ResponseEntity.ok(java.util.Map.of("message", "Complaint reopened successfully"));
     }
 }
