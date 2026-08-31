@@ -2,21 +2,20 @@ spring:
   application:
     name: nagorik-seba
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:nagorikseba;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
-    username: ${SPRING_DATASOURCE_USERNAME:sa}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    # Local PostgreSQL + PostGIS (docker run postgis/postgis:16-3.4 -p 5432:5432)
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/nagorik_seba}
+    username: ${SPRING_DATASOURCE_USERNAME:nagorik}
+    password: ${SPRING_DATASOURCE_PASSWORD:nagorik}
+  flyway:
+    locations: classpath:db/migration
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
         jdbc:
           time_zone: Asia/Dhaka
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
   servlet:
     multipart:
       max-file-size: 10MB
