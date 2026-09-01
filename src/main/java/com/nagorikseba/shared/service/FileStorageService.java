@@ -1,7 +1,7 @@
-package com.nagorikseba.service;
+package com.nagorikseba.shared.service;
 
-import com.nagorikseba.config.StorageProperties;
-import com.nagorikseba.exception.FileStorageException;
+import com.nagorikseba.shared.config.StorageProperties;
+import com.nagorikseba.shared.exception.FileStorageException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

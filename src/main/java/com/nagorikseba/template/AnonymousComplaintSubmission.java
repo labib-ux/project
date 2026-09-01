@@ -1,16 +1,16 @@
 package com.nagorikseba.template;
 
-import com.nagorikseba.config.StorageProperties;
 import com.nagorikseba.dto.complaint.ComplaintSubmissionRequest;
 import com.nagorikseba.entity.Attachment;
 import com.nagorikseba.entity.Complaint;
 import com.nagorikseba.entity.User;
 import com.nagorikseba.enums.AttachmentType;
 import com.nagorikseba.enums.Priority;
+import com.nagorikseba.municipality.repository.WardRepository;
 import com.nagorikseba.repository.AttachmentRepository;
 import com.nagorikseba.repository.ComplaintRepository;
-import com.nagorikseba.repository.WardRepository;
-import com.nagorikseba.service.FileStorageService;
+import com.nagorikseba.shared.config.StorageProperties;
+import com.nagorikseba.shared.service.FileStorageService;
 import com.nagorikseba.service.SlaService;
 import com.nagorikseba.state.ComplaintStateMachine;
 import org.springframework.context.ApplicationEventPublisher;

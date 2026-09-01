@@ -1,4 +1,4 @@
-package com.nagorikseba.exception;
+package com.nagorikseba.shared.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

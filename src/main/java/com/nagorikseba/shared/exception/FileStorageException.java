@@ -1,4 +1,4 @@
-package com.nagorikseba.exception;
+package com.nagorikseba.shared.exception;
 
 public class FileStorageException extends RuntimeException {
 

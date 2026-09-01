@@ -3,12 +3,12 @@ package com.nagorikseba.template;
 import com.nagorikseba.dto.complaint.ComplaintSubmissionRequest;
 import com.nagorikseba.entity.Complaint;
 import com.nagorikseba.entity.User;
-import com.nagorikseba.entity.Ward;
 import com.nagorikseba.enums.ComplaintStatus;
 import com.nagorikseba.enums.Priority;
+import com.nagorikseba.municipality.repository.WardRepository;
 import com.nagorikseba.repository.ComplaintRepository;
-import com.nagorikseba.repository.WardRepository;
 import lombok.RequiredArgsConstructor;
+import org.locationtech.jts.geom.Point;
 
 import java.math.BigDecimal;
 
@@ -32,9 +32,12 @@ public abstract class ComplaintSubmissionTemplate {
     protected abstract void saveAttachments(Complaint complaint, ComplaintSubmissionRequest request);
 
     private Complaint createComplaint(ComplaintSubmissionRequest request, User citizen) {
-        Ward detectedWard = null;
+        com.nagorikseba.municipality.entity.Ward detectedWard = null;
         if (request.getLatitude() != null && request.getLongitude() != null) {
-            detectedWard = wardRepository.findWardByCoordinates(request.getLatitude(), request.getLongitude()).orElse(null);
+            Point point = new org.locationtech.jts.geom.GeometryFactory().createPoint(
+                    new org.locationtech.jts.geom.Coordinate(request.getLongitude().doubleValue(), request.getLatitude().doubleValue()));
+            point.setSRID(4326);
+            detectedWard = wardRepository.findByPointWithinBoundary(null, point).orElse(null);
         }
 
         return Complaint.builder()

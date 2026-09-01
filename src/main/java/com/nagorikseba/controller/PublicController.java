@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,13 +26,15 @@ public class PublicController {
         // Only return lightweight data necessary for rendering pins on the map
         List<Map<String, Object>> mapData = complaintRepository.findAll().stream()
                 .filter(c -> c.getLatitude() != null && c.getLongitude() != null)
-                .map(c -> Map.of(
-                        "id", c.getId(),
-                        "latitude", c.getLatitude(),
-                        "longitude", c.getLongitude(),
-                        "category", c.getCategory().name(),
-                        "status", c.getStatus().name()
-                ))
+                .map(c -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", c.getId());
+                    m.put("latitude", c.getLatitude());
+                    m.put("longitude", c.getLongitude());
+                    m.put("category", c.getCategory().name());
+                    m.put("status", c.getStatus().name());
+                    return m;
+                })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(mapData);
     }
@@ -53,12 +56,12 @@ public class PublicController {
                 .average()
                 .orElse(0.0);
 
-        return ResponseEntity.ok(Map.of(
-                "wardId", id,
-                "totalComplaints", total,
-                "resolvedComplaints", resolved,
-                "resolutionRate", resolutionRate,
-                "avgRating", avgRating
-        ));
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("wardId", id);
+        result.put("totalComplaints", total);
+        result.put("resolvedComplaints", resolved);
+        result.put("resolutionRate", resolutionRate);
+        result.put("avgRating", avgRating);
+        return ResponseEntity.ok(result);
     }
 }

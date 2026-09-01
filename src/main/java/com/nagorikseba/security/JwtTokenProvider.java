@@ -1,7 +1,7 @@
 package com.nagorikseba.security;
 
-import com.nagorikseba.config.JwtProperties;
 import com.nagorikseba.entity.User;
+import com.nagorikseba.shared.config.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;

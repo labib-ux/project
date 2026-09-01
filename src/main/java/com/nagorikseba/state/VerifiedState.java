@@ -1,8 +1,8 @@
 package com.nagorikseba.state;
 
 import com.nagorikseba.entity.Complaint;
-import com.nagorikseba.entity.Department;
 import com.nagorikseba.entity.User;
+import com.nagorikseba.municipality.entity.Department;
 import com.nagorikseba.enums.ComplaintStatus;
 import org.springframework.stereotype.Component;
 

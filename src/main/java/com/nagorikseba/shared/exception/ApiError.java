@@ -1,4 +1,4 @@
-package com.nagorikseba.exception;
+package com.nagorikseba.shared.exception;
 
 import java.time.Instant;
 import java.util.Map;

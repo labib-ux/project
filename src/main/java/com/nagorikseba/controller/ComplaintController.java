@@ -3,6 +3,7 @@ package com.nagorikseba.controller;
 import com.nagorikseba.dto.complaint.ComplaintResponse;
 import com.nagorikseba.dto.complaint.ComplaintSubmissionRequest;
 import com.nagorikseba.service.ComplaintService;
+import com.nagorikseba.shared.exception.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -52,7 +54,7 @@ public class ComplaintController {
     public ResponseEntity<?> rateComplaint(@PathVariable Long id, @RequestParam int rating,
             @RequestParam(required = false) String feedback, @AuthenticationPrincipal UserDetails citizenDetails) {
         com.nagorikseba.entity.User citizen = userRepository.findByEmailIgnoreCase(citizenDetails.getUsername())
-                .orElseThrow(() -> new com.nagorikseba.exception.ResourceNotFoundException("Citizen not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Citizen not found"));
         com.nagorikseba.entity.Complaint complaint = complaintRepository.findById(id).orElseThrow();
 
         stateMachine.process(complaint, com.nagorikseba.state.ComplaintAction.CLOSE, citizen, feedback, null, rating);
@@ -63,7 +65,7 @@ public class ComplaintController {
     public ResponseEntity<?> reopenComplaint(@PathVariable Long id, @RequestParam String reason,
             @AuthenticationPrincipal UserDetails citizenDetails) {
         com.nagorikseba.entity.User citizen = userRepository.findByEmailIgnoreCase(citizenDetails.getUsername())
-                .orElseThrow(() -> new com.nagorikseba.exception.ResourceNotFoundException("Citizen not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Citizen not found"));
         com.nagorikseba.entity.Complaint complaint = complaintRepository.findById(id).orElseThrow();
 
         stateMachine.process(complaint, com.nagorikseba.state.ComplaintAction.REOPEN, citizen, reason, null, null);

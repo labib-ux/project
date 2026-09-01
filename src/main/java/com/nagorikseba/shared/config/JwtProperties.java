@@ -1,4 +1,4 @@
-package com.nagorikseba.config;
+package com.nagorikseba.shared.config;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

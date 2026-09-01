@@ -1,12 +1,12 @@
 package com.nagorikseba.controller;
 
 import com.nagorikseba.entity.Complaint;
-import com.nagorikseba.entity.Department;
 import com.nagorikseba.entity.User;
-import com.nagorikseba.exception.ResourceNotFoundException;
+import com.nagorikseba.municipality.entity.Department;
+import com.nagorikseba.municipality.repository.DepartmentRepository;
 import com.nagorikseba.repository.ComplaintRepository;
-import com.nagorikseba.repository.DepartmentRepository;
 import com.nagorikseba.repository.UserRepository;
+import com.nagorikseba.shared.exception.ResourceNotFoundException;
 import com.nagorikseba.state.ComplaintAction;
 import com.nagorikseba.state.ComplaintStateMachine;
 import com.nagorikseba.strategy.ComplaintRoutingStrategy;

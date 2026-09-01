@@ -3,6 +3,8 @@ package com.nagorikseba.entity;
 import com.nagorikseba.enums.ComplaintCategory;
 import com.nagorikseba.enums.ComplaintStatus;
 import com.nagorikseba.enums.Priority;
+import com.nagorikseba.municipality.entity.Department;
+import com.nagorikseba.municipality.entity.Ward;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

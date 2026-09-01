@@ -1,15 +1,15 @@
 package com.nagorikseba.service;
 
-import com.nagorikseba.config.JwtProperties;
 import com.nagorikseba.dto.auth.AuthResponse;
 import com.nagorikseba.dto.auth.LoginRequest;
 import com.nagorikseba.dto.auth.RegistrationRequest;
 import com.nagorikseba.dto.auth.UserResponse;
 import com.nagorikseba.entity.User;
 import com.nagorikseba.enums.UserRole;
-import com.nagorikseba.exception.ConflictException;
+import com.nagorikseba.shared.exception.ConflictException;
 import com.nagorikseba.repository.UserRepository;
 import com.nagorikseba.security.JwtTokenProvider;
+import com.nagorikseba.shared.config.JwtProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;

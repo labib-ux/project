@@ -1,6 +1,5 @@
 package com.nagorikseba.service;
 
-import com.nagorikseba.config.StorageProperties;
 import com.nagorikseba.dto.complaint.AttachmentResponse;
 import com.nagorikseba.dto.complaint.ComplaintResponse;
 import com.nagorikseba.dto.complaint.ComplaintSubmissionRequest;
@@ -13,11 +12,14 @@ import com.nagorikseba.enums.AttachmentType;
 import com.nagorikseba.enums.ComplaintStatus;
 import com.nagorikseba.enums.Priority;
 import com.nagorikseba.enums.UserRole;
-import com.nagorikseba.exception.ResourceNotFoundException;
+import com.nagorikseba.municipality.repository.WardRepository;
 import com.nagorikseba.repository.AttachmentRepository;
 import com.nagorikseba.repository.ComplaintRepository;
 import com.nagorikseba.repository.StatusUpdateRepository;
 import com.nagorikseba.repository.UserRepository;
+import com.nagorikseba.shared.config.StorageProperties;
+import com.nagorikseba.shared.exception.ResourceNotFoundException;
+import com.nagorikseba.shared.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +38,7 @@ public class ComplaintService {
     private final AttachmentRepository attachmentRepository;
     private final StatusUpdateRepository statusUpdateRepository;
     private final UserRepository userRepository;
-    private final com.nagorikseba.repository.WardRepository wardRepository;
+    private final WardRepository wardRepository;
     private final FileStorageService fileStorageService;
     private final StorageProperties storageProperties;
     private final com.nagorikseba.template.StandardComplaintSubmission standardComplaintSubmission;

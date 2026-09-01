@@ -1,9 +1,9 @@
 package com.nagorikseba.state;
 
 import com.nagorikseba.entity.Complaint;
-import com.nagorikseba.entity.Department;
 import com.nagorikseba.entity.User;
-import com.nagorikseba.exception.ConflictException;
+import com.nagorikseba.municipality.entity.Department;
+import com.nagorikseba.shared.exception.ConflictException;
 
 public abstract class AbstractComplaintState implements ComplaintState {
     @Override
