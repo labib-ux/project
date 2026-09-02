@@ -1,7 +1,6 @@
 package com.nagorikseba.complaint.domain;
 
 import com.nagorikseba.complaint.domain.enums.Category;
-import com.nagorikseba.complaint.domain.enums.ComplaintAction;
 import com.nagorikseba.complaint.domain.enums.ComplaintStatus;
 import com.nagorikseba.complaint.domain.enums.LocationSource;
 import com.nagorikseba.complaint.domain.enums.ModerationStatus;
@@ -22,26 +21,43 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Point;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+/**
+ * The complaint aggregate root (§4.1).
+ *
+ * <h2>Status invariant</h2>
+ * <p>There is deliberately no public {@code setStatus}. Every status change — and
+ * every timestamp, moderation flag and assignment that accompanies one — is
+ * package-private and reachable only through {@link ComplaintMutator}, the
+ * capability base class that {@code TransitionHandler} implementations extend.
+ * That keeps §7.1's rule ("the only code that may change status is a transition
+ * handler") enforced by the compiler rather than by convention, so a controller
+ * or seeder cannot flip a complaint into VERIFIED without going through the
+ * lifecycle service's locking, version check and audit write.
+ *
+ * <p>Fields a citizen legitimately owns after submission ({@code title},
+ * {@code description}) keep ordinary setters. Everything else is set once at
+ * construction through the builder.
+ */
 @Entity
 @Table(name = "complaints")
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -89,7 +105,8 @@ public class Complaint {
     @Builder.Default
     private Priority priority = Priority.NORMAL;
 
-    @Column(name = "location", nullable = false, columnDefinition = "geography(Point, 4326)")
+    @JdbcTypeCode(SqlTypes.GEOGRAPHY)
+    @Column(name = "location", nullable = false, columnDefinition = "geography(Point,4326)")
     private Point location;
 
     @Enumerated(EnumType.STRING)
@@ -108,8 +125,12 @@ public class Complaint {
     @JoinColumn(name = "assigned_officer_id")
     private User assignedOfficer;
 
+    /**
+     * Set explicitly by the submission template and the seeder — deliberately not
+     * {@code @CreationTimestamp}, because a generated value would silently
+     * overwrite the historical dates demo and test fixtures depend on.
+     */
     @Column(name = "submitted_at", nullable = false, updatable = false)
-    @CreationTimestamp
     private Instant submittedAt;
 
     @Column(name = "first_verified_at")
@@ -146,6 +167,10 @@ public class Complaint {
     @Builder.Default
     private ModerationStatus moderationStatus = ModerationStatus.APPROVED;
 
+    /** R3 — the key that made this complaint, so a replayed submission returns it. */
+    @Column(name = "submission_idempotency_key", length = 64)
+    private String submissionIdempotencyKey;
+
     @Version
     @Column(name = "version", nullable = false)
     private int version;
@@ -166,27 +191,110 @@ public class Complaint {
     @Builder.Default
     private List<Attachment> attachments = new ArrayList<>();
 
-    public void setStatus(ComplaintStatus newStatus) {
-        this.status = newStatus;
+    // ------------------------------------------------------------------ citizen-owned
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public void setLastTransitionAt(Instant instant) {
-        this.lastTransitionAt = instant;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public void incrementVersion() {
-        this.version++;
+    /**
+     * Ward is resolved by a spatial lookup just after insert (§7.5), and may be
+     * re-derived later if ward boundaries are redrawn. It is deliberately not behind
+     * {@link ComplaintMutator}: which ward contains a point is geography, not a state
+     * transition, so it needs none of the lifecycle guarantees.
+     */
+    public void assignWard(Ward ward) {
+        this.ward = ward;
     }
+
+    // ------------------------------------------------------------------ collections
 
     public void addTransition(ComplaintTransition transition) {
         transitions.add(transition);
+        transition.setComplaint(this);
     }
 
     public void addAttachment(Attachment attachment) {
         attachments.add(attachment);
+        attachment.setComplaint(this);
+    }
+
+    /** Defensive copies — callers must not mutate the audit log through the getter. */
+    public List<ComplaintTransition> getTransitions() {
+        return Collections.unmodifiableList(transitions);
+    }
+
+    public List<Attachment> getAttachments() {
+        return Collections.unmodifiableList(attachments);
+    }
+
+    public boolean isAnonymous() {
+        return citizen == null;
     }
 
     public boolean canTransitionFrom(ComplaintStatus from) {
         return this.status == from;
+    }
+
+    // ------------------------------------------------ lifecycle-only (see ComplaintMutator)
+
+    void setStatus(ComplaintStatus status) {
+        this.status = status;
+    }
+
+    void setPriority(Priority priority) {
+        this.priority = priority;
+    }
+
+    void setFirstVerifiedAt(Instant firstVerifiedAt) {
+        this.firstVerifiedAt = firstVerifiedAt;
+    }
+
+    void setFirstAssignedAt(Instant firstAssignedAt) {
+        this.firstAssignedAt = firstAssignedAt;
+    }
+
+    void setResolvedAt(Instant resolvedAt) {
+        this.resolvedAt = resolvedAt;
+    }
+
+    void setClosedAt(Instant closedAt) {
+        this.closedAt = closedAt;
+    }
+
+    void setLastTransitionAt(Instant lastTransitionAt) {
+        this.lastTransitionAt = lastTransitionAt;
+    }
+
+    void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+
+    void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
+    }
+
+    void setPublicVisible(boolean publicVisible) {
+        this.publicVisible = publicVisible;
+    }
+
+    void setModerationStatus(ModerationStatus moderationStatus) {
+        this.moderationStatus = moderationStatus;
+    }
+
+    void setAssignedDepartment(Department assignedDepartment) {
+        this.assignedDepartment = assignedDepartment;
+    }
+
+    void setAssignedOfficer(User assignedOfficer) {
+        this.assignedOfficer = assignedOfficer;
+    }
+
+    void incrementReopenCount() {
+        this.reopenCount++;
     }
 }

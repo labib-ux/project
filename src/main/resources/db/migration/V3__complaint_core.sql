@@ -161,3 +161,42 @@ END $$;
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_attachment_complaint ON attachments (complaint_id) WHERE deleted_at IS NULL;
+
+-- ============================================================================
+-- outbox_messages — transactional outbox (§3.5, §7.3)
+-- ============================================================================
+-- Rows accumulate from Phase 3 onward; the relay worker lands in Phase 5.
+-- The PENDING/FAILED partial index is the claim query's access path.
+CREATE TABLE IF NOT EXISTS outbox_messages (
+    id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    aggregate_type  VARCHAR(30) NOT NULL,
+    aggregate_id    BIGINT NOT NULL,
+    event_type      VARCHAR(50) NOT NULL,
+    payload         JSONB NOT NULL,
+    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    retry_count     INT NOT NULL DEFAULT 0,
+    next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_error      TEXT,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    processed_at    TIMESTAMPTZ,
+    CONSTRAINT ck_outbox_status CHECK (status IN ('PENDING', 'PUBLISHED', 'FAILED', 'DEAD'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_outbox_unpublished ON outbox_messages (next_attempt_at, id)
+    WHERE status IN ('PENDING', 'FAILED');
+
+CREATE INDEX IF NOT EXISTS idx_outbox_aggregate ON outbox_messages (aggregate_type, aggregate_id);
+
+-- ============================================================================
+-- Submission idempotency (R3)
+-- ============================================================================
+-- A replayed Idempotency-Key must return the original complaint, not create a
+-- second one. The partial unique index is the race guard: two concurrent
+-- submissions with the same key mean one INSERT wins and the loser retries the
+-- lookup. Lifecycle-action idempotency is separate — see uq_transition_idempotency.
+ALTER TABLE IF EXISTS complaints
+    ADD COLUMN IF NOT EXISTS submission_idempotency_key VARCHAR(64);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_complaint_submission_idempotency
+    ON complaints (submission_idempotency_key)
+    WHERE submission_idempotency_key IS NOT NULL;
