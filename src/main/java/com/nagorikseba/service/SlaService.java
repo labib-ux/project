@@ -1,49 +1,30 @@
 package com.nagorikseba.service;
 
-import com.nagorikseba.entity.Complaint;
+import com.nagorikseba.complaint.domain.enums.Category;
+import com.nagorikseba.complaint.domain.enums.Priority;
 import com.nagorikseba.entity.SlaRule;
-import com.nagorikseba.enums.ComplaintCategory;
-import com.nagorikseba.enums.ComplaintStatus;
-import com.nagorikseba.enums.Priority;
-import com.nagorikseba.repository.ComplaintRepository;
 import com.nagorikseba.repository.SlaRuleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class SlaService {
     private final SlaRuleRepository slaRuleRepository;
-    private final ComplaintRepository complaintRepository;
 
-    public LocalDateTime calculateDeadline(ComplaintCategory category, Priority priority) {
+    public Instant calculateDeadline(Category category, Priority priority) {
         SlaRule rule = slaRuleRepository.findByCategoryAndPriority(category, priority)
                 .orElseThrow(() -> new IllegalArgumentException("No SLA rule found for " + category + " / " + priority));
-        return LocalDateTime.now().plusHours(rule.getMaxHours());
+        return Instant.now().plusSeconds(rule.getMaxHours() * 3600L);
     }
 
-    @Scheduled(fixedRate = 3600000) // Runs every hour
-    @Transactional
+    // SLA breach checking is deferred to Phase 5 (SlaBreachScanner)
+    // This method is kept for compatibility but does nothing in Phase 3
     public void checkSlaBreaches() {
-        log.info("Checking for SLA breaches...");
-        List<Complaint> breached = complaintRepository.findByStatusNotInAndDeadlineAtBefore(
-                List.of(ComplaintStatus.CLOSED, ComplaintStatus.RESOLVED),
-                LocalDateTime.now()
-        );
-        
-        for (Complaint complaint : breached) {
-            log.warn("SLA breached for complaint ID: {}. Escalating...", complaint.getId());
-            if (complaint.getPriority() != Priority.CRITICAL) {
-                complaint.setPriority(Priority.CRITICAL);
-                complaintRepository.save(complaint);
-            }
-        }
+        log.debug("SLA breach checking deferred to Phase 5");
     }
 }
