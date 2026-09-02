@@ -2,6 +2,7 @@ package com.nagorikseba;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nagorikseba.shared.config.JwtProperties;
 import com.nagorikseba.shared.security.JwtTokenProvider;
 import io.jsonwebtoken.Jwts;
@@ -204,10 +205,25 @@ class AuthSecurityIntegrationTests {
     }
 
     @Test
-    void anUnknownRefreshTokenIsRejectedWithoutRevealingWhy() throws Exception {
-        refresh("BJ2sVQ4tX9nQwYbP0Zc1L8kR7mF3hT6uD5gA1eS4oN0")
+    void everyRefreshFailureLooksIdenticalToTheClient() throws Exception {
+        String rotatedAway = json(register("Sec Opaque", "sec-opaque@example.com", "01799001301")
+                .andExpect(status().isCreated()).andReturn())
+                .path("refreshToken").asText();
+        refresh(rotatedAway).andExpect(status().isOk());
+
+        // Two different reasons to refuse: a token that was never issued, and one that
+        // was issued and then rotated away. The client must not be able to tell them apart.
+        String unknown = body(refresh("BJ2sVQ4tX9nQwYbP0Zc1L8kR7mF3hT6uD5gA1eS4oN0")
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.type").value("urn:nagorik-seba:problem:unauthorized"));
+                .andExpect(jsonPath("$.type").value("urn:nagorik-seba:problem:invalid-refresh-token"))
+                .andReturn());
+        String revoked = body(refresh(rotatedAway)
+                .andExpect(status().isUnauthorized())
+                .andReturn());
+
+        assertThat(withoutTimestamp(revoked))
+                .as("a replayed token must be indistinguishable from one that never existed")
+                .isEqualTo(withoutTimestamp(unknown));
     }
 
     // ------------------------------------------------------------- access tokens
@@ -342,6 +358,11 @@ class AuthSecurityIntegrationTests {
 
     private String body(MvcResult result) throws Exception {
         return result.getResponse().getContentAsString();
+    }
+
+    /** Drops the one field that legitimately differs between two error responses. */
+    private String withoutTimestamp(String problemJson) throws Exception {
+        return ((ObjectNode) objectMapper.readTree(problemJson)).without("timestamp").toString();
     }
 
     /**

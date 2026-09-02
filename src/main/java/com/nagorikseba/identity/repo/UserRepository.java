@@ -1,6 +1,7 @@
 package com.nagorikseba.identity.repo;
 
 import com.nagorikseba.identity.domain.User;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +20,17 @@ import java.util.Optional;
  */
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    /**
+     * Fetches {@code ward} and {@code department} alongside the user.
+     *
+     * <p>Both associations are LAZY so that the login path stays a single-table read.
+     * The pre-existing controllers that use this finder ({@code AuthorityController},
+     * {@code ComplaintController}) hold no transaction of their own and dereference
+     * those associations after the persistence context has closed, so this finder
+     * declares the graph they need and resolves it in one outer-joined query rather
+     * than making every caller in the application pay for eager mappings.
+     */
+    @EntityGraph(attributePaths = {"ward", "department"})
     Optional<User> findByEmailIgnoreCase(String email);
 
     Optional<User> findByPhone(String phone);
