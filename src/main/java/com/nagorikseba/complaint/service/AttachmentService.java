@@ -6,7 +6,7 @@ import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.shared.config.StorageProperties;
 import com.nagorikseba.shared.exception.FileStorageException;
 import com.nagorikseba.shared.service.FileStorageService;
-import com.nagorikseba.shared.time.Clock;
+import com.nagorikseba.shared.time.TimeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
@@ -38,7 +38,7 @@ public class AttachmentService {
 
     private final StorageProperties storageProperties;
     private final FileStorageService fileStorageService;
-    private final Clock clock;
+    private final TimeProvider timeProvider;
     private final Tika tika = new Tika();
 
     private static final long MAX_FILE_SIZE = 10_485_760; // 10MB
@@ -152,7 +152,7 @@ public class AttachmentService {
     }
 
     private String generateStorageKey(String referenceCode, String extension) {
-        LocalDate now = LocalDate.now(clock.instant().atZone(java.time.ZoneOffset.UTC));
+        LocalDate now = LocalDate.now(timeProvider.instant().atZone(java.time.ZoneOffset.UTC));
         String datePath = now.format(DateTimeFormatter.ofPattern("yyyy/MM"));
         return String.format("complaints/%s/%s/%s.%s", datePath, referenceCode.toLowerCase(), UUID.randomUUID(), extension);
     }
@@ -192,7 +192,7 @@ public class AttachmentService {
     @Transactional
     public void cleanupOrphanTempFiles() {
         try {
-            Instant cutoff = clock.instant().minusSeconds(24 * 60 * 60); // 24 hours old
+            Instant cutoff = timeProvider.instant().minusSeconds(24 * 60 * 60); // 24 hours old
             List<Path> orphanFiles = fileStorageService.listTempFilesOlderThan(cutoff);
             for (Path file : orphanFiles) {
                 Files.deleteIfExists(file);

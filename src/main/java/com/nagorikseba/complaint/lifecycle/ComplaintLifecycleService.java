@@ -12,7 +12,7 @@ import com.nagorikseba.shared.exception.ConflictException;
 import com.nagorikseba.shared.exception.InvalidStateTransitionException;
 import com.nagorikseba.shared.exception.ResourceNotFoundException;
 import com.nagorikseba.shared.outbox.OutboxPublisher;
-import com.nagorikseba.shared.time.Clock;
+import com.nagorikseba.shared.time.TimeProvider;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,7 +31,7 @@ public class ComplaintLifecycleService {
     private final ComplaintTransitionRepository transitionRepository;
     private final UserRepository userRepository;
     private final OutboxPublisher outboxPublisher;
-    private final Clock clock;
+    private final TimeProvider timeProvider;
     private final Map<ComplaintAction, TransitionHandler> handlers;
 
     public ComplaintLifecycleService(
@@ -39,13 +39,13 @@ public class ComplaintLifecycleService {
             ComplaintTransitionRepository transitionRepository,
             UserRepository userRepository,
             OutboxPublisher outboxPublisher,
-            Clock clock,
+            TimeProvider timeProvider,
             List<TransitionHandler> handlerList) {
         this.complaintRepository = complaintRepository;
         this.transitionRepository = transitionRepository;
         this.userRepository = userRepository;
         this.outboxPublisher = outboxPublisher;
-        this.clock = clock;
+        this.timeProvider = timeProvider;
         this.handlers = handlerList.stream()
                 .collect(Collectors.toMap(TransitionHandler::supportedAction, h -> h));
     }
@@ -75,7 +75,7 @@ public class ComplaintLifecycleService {
         }
 
         ComplaintStatus fromStatus = complaint.getStatus();
-        Instant now = clock.instant();
+        Instant now = timeProvider.instant();
 
         handler.execute(complaint, command);
 

@@ -54,7 +54,7 @@ public class ComplaintResponse {
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-class AttachmentResponse {
+public class AttachmentResponse {
     private Long id;
     private String storageKey;
     private String originalFilename;
@@ -70,7 +70,7 @@ class AttachmentResponse {
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-class TransitionResponse {
+public class TransitionResponse {
     private Long id;
     private ComplaintStatus fromStatus;
     private ComplaintStatus toStatus;

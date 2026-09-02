@@ -13,5 +13,7 @@ public interface MunicipalityRepository extends JpaRepository<Municipality, Long
 
     Optional<Municipality> findBySlugAndIsActiveTrue(String slug);
 
+    Optional<Municipality> findFirstByIsActiveTrue();
+
     boolean existsBySlug(String slug);
 }

@@ -18,7 +18,7 @@ import com.nagorikseba.municipality.repository.WardRepository;
 import com.nagorikseba.shared.exception.FileStorageException;
 import com.nagorikseba.shared.security.PrincipalContext;
 import com.nagorikseba.shared.service.FileStorageService;
-import com.nagorikseba.shared.time.Clock;
+import com.nagorikseba.shared.time.TimeProvider;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
@@ -44,7 +44,7 @@ public class ComplaintSubmissionTemplate {
     private final AttachmentService attachmentService;
     private final FileStorageService fileStorageService;
     private final PrincipalContext principalContext;
-    private final Clock clock;
+    private final TimeProvider timeProvider;
     private final ApplicationEventPublisher eventPublisher;
 
     @PersistenceContext
@@ -90,7 +90,7 @@ public class ComplaintSubmissionTemplate {
                 .locationSource(LocationSource.DEVICE)
                 .addressText(request.getAddressText())
                 .moderationStatus(ModerationStatus.APPROVED)
-                .submittedAt(clock.instant())
+                .submittedAt(timeProvider.instant())
                 .build();
     }
 
