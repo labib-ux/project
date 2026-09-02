@@ -414,7 +414,6 @@ No logic in these files was changed.
 
 ## Next Steps (Phase 3)
 
-1. **Re-run `./mvnw clean verify` with Docker available** to confirm 45/45 after the two fixes for defects 3 and 4. This is the last piece of Phase 2 work.
 1. **V3 migration** — partial unique index for current memberships (deviation 4); plan the drop of `users.ward_id`/`department_id`.
 2. **Rewrite the complaint module** on `PrincipalContext` — replace every `findByEmailIgnoreCase(getUsername())` with `requireUserId()`, and guard each authority action with `requireMunicipality(...)`. This also retires deviation 8 and the phone-only-account limitation below.
 3. **Use the 409/422 contract** — `InvalidStateTransitionException` for illegal status transitions, `ConflictException` for duplicates, and let `@Version` conflicts surface as 409.
