@@ -1,7 +1,8 @@
 package com.nagorikseba.controller;
 
-import com.nagorikseba.entity.Complaint;
-import com.nagorikseba.repository.ComplaintRepository;
+import com.nagorikseba.complaint.domain.Complaint;
+import com.nagorikseba.complaint.domain.enums.ComplaintStatus;
+import com.nagorikseba.complaint.repo.ComplaintRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,14 +24,16 @@ public class PublicController {
 
     @GetMapping("/complaints/map")
     public ResponseEntity<?> getPublicMap() {
-        // Only return lightweight data necessary for rendering pins on the map
         List<Map<String, Object>> mapData = complaintRepository.findAll().stream()
-                .filter(c -> c.getLatitude() != null && c.getLongitude() != null)
+                .filter(c -> c.getLocation() != null)
+                .filter(c -> c.isPublicVisible() && c.getModerationStatus() == com.nagorikseba.complaint.domain.enums.ModerationStatus.APPROVED)
+                .filter(c -> c.getStatus() != ComplaintStatus.REJECTED && c.getStatus() != ComplaintStatus.CANCELLED)
                 .map(c -> {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("id", c.getId());
-                    m.put("latitude", c.getLatitude());
-                    m.put("longitude", c.getLongitude());
+                    m.put("referenceCode", c.getReferenceCode());
+                    m.put("latitude", c.getLocation().getY());
+                    m.put("longitude", c.getLocation().getX());
                     m.put("category", c.getCategory().name());
                     m.put("status", c.getStatus().name());
                     return m;
@@ -41,20 +44,16 @@ public class PublicController {
 
     @GetMapping("/wards/{id}/performance")
     public ResponseEntity<?> getWardPerformance(@PathVariable Long id) {
-        List<Complaint> complaints = complaintRepository.findByWardIdOrderBySubmittedAtDesc(id);
+        List<Complaint> complaints = complaintRepository.findByWardIdAndStatusNotIn(id, List.of(ComplaintStatus.CLOSED, ComplaintStatus.REJECTED, ComplaintStatus.CANCELLED));
         
         long total = complaints.size();
         long resolved = complaints.stream()
-                .filter(c -> "RESOLVED".equals(c.getStatus().name()) || "CLOSED".equals(c.getStatus().name()))
+                .filter(c -> c.getStatus() == ComplaintStatus.RESOLVED || c.getStatus() == ComplaintStatus.CLOSED)
                 .count();
         
         double resolutionRate = total == 0 ? 0 : (double) resolved / total * 100;
         
-        double avgRating = complaints.stream()
-                .filter(c -> c.getRating() != null)
-                .mapToInt(Complaint::getRating)
-                .average()
-                .orElse(0.0);
+        double avgRating = 0.0; // Rating is now in resolution_attempts (Phase 5)
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("wardId", id);

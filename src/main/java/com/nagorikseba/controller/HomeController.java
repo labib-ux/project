@@ -1,6 +1,6 @@
 package com.nagorikseba.controller;
 
-import com.nagorikseba.enums.ComplaintCategory;
+import com.nagorikseba.complaint.domain.enums.Category;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.ui.Model;
@@ -27,7 +27,7 @@ public class HomeController {
 
     @GetMapping("/citizen/complaint/new")
     public String newComplaint(Model model) {
-        model.addAttribute("categories", ComplaintCategory.values());
-        return "complaint-form";
+        model.addAttribute("categories", Category.values());
+        return "citizen/complaint-form";
     }
 }
