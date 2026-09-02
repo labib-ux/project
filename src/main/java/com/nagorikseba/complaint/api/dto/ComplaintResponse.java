@@ -48,35 +48,3 @@ public class ComplaintResponse {
     private List<AttachmentResponse> attachments;
     private List<TransitionResponse> timeline;
 }
-
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class AttachmentResponse {
-    private Long id;
-    private String storageKey;
-    private String originalFilename;
-    private String contentType;
-    private long byteSize;
-    private boolean workProof;
-    private String scanStatus;
-    private Instant createdAt;
-}
-
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class TransitionResponse {
-    private Long id;
-    private ComplaintStatus fromStatus;
-    private ComplaintStatus toStatus;
-    private String action;
-    private String actorName;
-    private String actorRole;
-    private String note;
-    private Instant createdAt;
-}

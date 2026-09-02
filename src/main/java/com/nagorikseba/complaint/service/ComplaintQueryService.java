@@ -1,7 +1,6 @@
 package com.nagorikseba.complaint.service;
 
 import com.nagorikseba.complaint.api.dto.ComplaintResponse;
-import com.nagorikseba.complaint.api.dto.ComplaintMapper;
 import com.nagorikseba.complaint.domain.Complaint;
 import com.nagorikseba.complaint.domain.enums.ComplaintStatus;
 import com.nagorikseba.complaint.repo.ComplaintRepository;
@@ -28,7 +27,7 @@ public class ComplaintQueryService {
     private final ComplaintRepository complaintRepository;
     private final ComplaintTransitionRepository transitionRepository;
     private final AttachmentRepository attachmentRepository;
-    private final ComplaintMapper mapper;
+    private final com.nagorikseba.complaint.service.ComplaintMapper mapper;
     private final PrincipalContext principalContext;
 
     public ComplaintResponse findByReferenceCode(String referenceCode) {

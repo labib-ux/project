@@ -166,27 +166,27 @@ public class Complaint {
     @Builder.Default
     private List<Attachment> attachments = new ArrayList<>();
 
-    void setStatus(ComplaintStatus newStatus) {
+    public void setStatus(ComplaintStatus newStatus) {
         this.status = newStatus;
     }
 
-    void setLastTransitionAt(Instant instant) {
+    public void setLastTransitionAt(Instant instant) {
         this.lastTransitionAt = instant;
     }
 
-    void incrementVersion() {
+    public void incrementVersion() {
         this.version++;
     }
 
-    void addTransition(ComplaintTransition transition) {
+    public void addTransition(ComplaintTransition transition) {
         transitions.add(transition);
     }
 
-    void addAttachment(Attachment attachment) {
+    public void addAttachment(Attachment attachment) {
         attachments.add(attachment);
     }
 
-    boolean canTransitionFrom(ComplaintStatus from) {
+    public boolean canTransitionFrom(ComplaintStatus from) {
         return this.status == from;
     }
 }

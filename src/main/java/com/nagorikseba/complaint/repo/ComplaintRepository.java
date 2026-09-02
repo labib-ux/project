@@ -26,6 +26,8 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
 
     List<Complaint> findByMunicipalityIdAndStatusIn(Long municipalityId, List<ComplaintStatus> statuses);
 
+    Page<Complaint> findByMunicipalityIdAndStatusIn(Long municipalityId, List<ComplaintStatus> statuses, Pageable pageable);
+
     List<Complaint> findByWardIdAndStatusNotIn(Long wardId, List<ComplaintStatus> statuses);
 
     List<Complaint> findByAssignedOfficerIdAndStatusIn(Long officerId, List<ComplaintStatus> statuses);
