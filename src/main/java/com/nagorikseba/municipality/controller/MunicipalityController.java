@@ -50,4 +50,13 @@ public class MunicipalityController {
         }
         return ResponseEntity.ok(municipalityService.findDepartmentsByMunicipalitySlug(slug));
     }
+
+    @GetMapping("/public/wards/lookup")
+    public ResponseEntity<WardResponse> lookupWardByPoint(
+            @RequestParam double lat,
+            @RequestParam double lng) {
+        return municipalityService.findWardContainingPoint(lat, lng)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

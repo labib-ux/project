@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -22,14 +23,17 @@ public class FileStorageService {
 
     private final StorageProperties storageProperties;
     private Path uploadRoot;
+    private Path tempRoot;
 
     @PostConstruct
     void initializeStorage() {
         uploadRoot = Path.of(storageProperties.getUploadDir()).toAbsolutePath().normalize();
+        tempRoot = Path.of(storageProperties.getUploadDir(), "temp").toAbsolutePath().normalize();
         try {
             Files.createDirectories(uploadRoot);
+            Files.createDirectories(tempRoot);
         } catch (IOException exception) {
-            throw new FileStorageException("Could not create the upload directory", exception);
+            throw new FileStorageException("Could not create the upload directories", exception);
         }
     }
 
@@ -53,6 +57,51 @@ public class FileStorageService {
         } catch (IOException exception) {
             throw new FileStorageException("Could not save the uploaded image", exception);
         }
+    }
+
+    public void storeTemp(String storageKey, Path tempPath) throws IOException {
+        Path tempDestination = tempRoot.resolve(storageKey).normalize();
+        if (!tempDestination.startsWith(tempRoot)) {
+            throw new FileStorageException("Invalid temp file location");
+        }
+        Files.createDirectories(tempDestination.getParent());
+        Files.move(tempPath, tempDestination, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    public void moveFromTemp(String storageKey) throws IOException {
+        Path tempSource = tempRoot.resolve(storageKey).normalize();
+        if (!tempSource.startsWith(tempRoot)) {
+            throw new FileStorageException("Invalid temp file location");
+        }
+        if (!Files.exists(tempSource)) {
+            return;
+        }
+        Path finalDestination = uploadRoot.resolve(storageKey).normalize();
+        if (!finalDestination.startsWith(uploadRoot)) {
+            throw new FileStorageException("Invalid final file location");
+        }
+        Files.createDirectories(finalDestination.getParent());
+        Files.move(tempSource, finalDestination, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    public List<Path> listTempFilesOlderThan(Instant cutoff) throws IOException {
+        List<Path> result = new java.util.ArrayList<>();
+        if (!Files.exists(tempRoot)) {
+            return result;
+        }
+        try (var stream = Files.walk(tempRoot)) {
+            stream.filter(Files::isRegularFile)
+                    .filter(path -> {
+                        try {
+                            Instant lastModified = Files.getLastModifiedTime(path).toInstant();
+                            return lastModified.isBefore(cutoff);
+                        } catch (IOException e) {
+                            return false;
+                        }
+                    })
+                    .forEach(result::add);
+        }
+        return result;
     }
 
     public void deleteAll(List<StoredFile> storedFiles) {

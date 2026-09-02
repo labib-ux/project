@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:fragment="csp-nonce">
+        <script th:inline="javascript">
+            window.csrfToken = [[${_csrf.token}]];
+            window.csrfHeader = [[${_csrf.headerName}]];
+        </script>
+    </th:block>
+</head>
+</html>

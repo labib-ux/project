@@ -77,4 +77,13 @@ public class MunicipalityService {
                 .map(DepartmentResponse::from)
                 .toList();
     }
+
+    @Transactional(readOnly = true)
+    public Optional<WardResponse> findWardContainingPoint(double lat, double lng) {
+        var point = new org.locationtech.jts.geom.GeometryFactory()
+                .createPoint(new org.locationtech.jts.geom.Coordinate(lng, lat));
+        point.setSRID(4326);
+        return wardRepository.findByPointWithinBoundary(point)
+                .map(WardResponse::from);
+    }
 }
