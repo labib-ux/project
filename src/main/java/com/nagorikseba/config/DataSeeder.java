@@ -1,7 +1,7 @@
 package com.nagorikseba.config;
 
 import com.nagorikseba.entity.SlaRule;
-import com.nagorikseba.entity.User;
+import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.enums.ComplaintCategory;
 import com.nagorikseba.enums.Priority;
 import com.nagorikseba.enums.UserRole;
@@ -12,7 +12,7 @@ import com.nagorikseba.municipality.repository.DepartmentRepository;
 import com.nagorikseba.municipality.repository.MunicipalityRepository;
 import com.nagorikseba.municipality.repository.WardRepository;
 import com.nagorikseba.repository.SlaRuleRepository;
-import com.nagorikseba.repository.UserRepository;
+import com.nagorikseba.identity.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
@@ -71,7 +71,7 @@ public class DataSeeder implements CommandLineRunner {
                 .fullName("System Admin")
                 .email("admin@example.com")
                 .phone("01700000001")
-                .password(passwordEncoder.encode("admin123"))
+                .passwordHash(passwordEncoder.encode("admin123"))
                 .role(UserRole.ADMIN)
                 .active(true)
                 .build());
@@ -112,7 +112,7 @@ public class DataSeeder implements CommandLineRunner {
                 .fullName("Councilor Ward 17")
                 .email("councilor17@example.com")
                 .phone("01700000017")
-                .password(passwordEncoder.encode("councilor123"))
+                .passwordHash(passwordEncoder.encode("councilor123"))
                 .role(UserRole.WARD_COUNCILOR)
                 .ward(ward17)
                 .active(true)
@@ -134,7 +134,7 @@ public class DataSeeder implements CommandLineRunner {
                         .fullName("Roads Officer 17")
                         .email("roads17@example.com")
                         .phone("01700100017")
-                        .password(passwordEncoder.encode("officer123"))
+                        .passwordHash(passwordEncoder.encode("officer123"))
                         .role(UserRole.DEPT_OFFICER)
                         .ward(ward17)
                         .department(dept)

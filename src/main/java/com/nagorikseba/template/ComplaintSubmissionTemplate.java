@@ -2,7 +2,7 @@ package com.nagorikseba.template;
 
 import com.nagorikseba.dto.complaint.ComplaintSubmissionRequest;
 import com.nagorikseba.entity.Complaint;
-import com.nagorikseba.entity.User;
+import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.enums.ComplaintStatus;
 import com.nagorikseba.enums.Priority;
 import com.nagorikseba.municipality.repository.WardRepository;

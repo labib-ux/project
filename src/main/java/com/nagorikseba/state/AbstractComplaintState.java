@@ -1,7 +1,7 @@
 package com.nagorikseba.state;
 
 import com.nagorikseba.entity.Complaint;
-import com.nagorikseba.entity.User;
+import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.municipality.entity.Department;
 import com.nagorikseba.shared.exception.ConflictException;
 

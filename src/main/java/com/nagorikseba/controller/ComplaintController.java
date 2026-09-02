@@ -27,7 +27,7 @@ import java.util.List;
 public class ComplaintController {
 
     private final ComplaintService complaintService;
-    private final com.nagorikseba.repository.UserRepository userRepository;
+    private final com.nagorikseba.identity.repo.UserRepository userRepository;
     private final com.nagorikseba.repository.ComplaintRepository complaintRepository;
     private final com.nagorikseba.state.ComplaintStateMachine stateMachine;
 
@@ -53,7 +53,7 @@ public class ComplaintController {
     @PostMapping("/{id}/rate")
     public ResponseEntity<?> rateComplaint(@PathVariable Long id, @RequestParam int rating,
             @RequestParam(required = false) String feedback, @AuthenticationPrincipal UserDetails citizenDetails) {
-        com.nagorikseba.entity.User citizen = userRepository.findByEmailIgnoreCase(citizenDetails.getUsername())
+        com.nagorikseba.identity.domain.User citizen = userRepository.findByEmailIgnoreCase(citizenDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("Citizen not found"));
         com.nagorikseba.entity.Complaint complaint = complaintRepository.findById(id).orElseThrow();
 
@@ -64,7 +64,7 @@ public class ComplaintController {
     @PostMapping("/{id}/reopen")
     public ResponseEntity<?> reopenComplaint(@PathVariable Long id, @RequestParam String reason,
             @AuthenticationPrincipal UserDetails citizenDetails) {
-        com.nagorikseba.entity.User citizen = userRepository.findByEmailIgnoreCase(citizenDetails.getUsername())
+        com.nagorikseba.identity.domain.User citizen = userRepository.findByEmailIgnoreCase(citizenDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("Citizen not found"));
         com.nagorikseba.entity.Complaint complaint = complaintRepository.findById(id).orElseThrow();
 

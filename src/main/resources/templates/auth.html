@@ -18,6 +18,9 @@
         <p class="auth-intro" th:text="${register} ? 'Use one account to report, follow, and rate local issues.' : 'Use your email or mobile number to continue.'">Use your account to continue.</p>
 
         <form id="auth-form" th:attr="data-register=${register}" novalidate>
+            <!-- CSRF token for a non-JS form post; auth.js submits to /api/auth/** which is
+                 stateless and CSRF-exempt, so it simply ignores this field. -->
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <label th:if="${register}">Full name
                 <input name="fullName" autocomplete="name" maxlength="100" required placeholder="e.g. Amina Rahman">
             </label>

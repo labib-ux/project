@@ -1,7 +1,7 @@
 package com.nagorikseba.factory;
 
 import com.nagorikseba.entity.Notification;
-import com.nagorikseba.entity.User;
+import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.enums.NotificationChannel;
 import org.springframework.stereotype.Component;
 

@@ -1,5 +1,6 @@
 package com.nagorikseba.entity;
 
+import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.enums.AttachmentType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

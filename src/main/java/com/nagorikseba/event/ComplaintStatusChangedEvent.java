@@ -1,7 +1,7 @@
 package com.nagorikseba.event;
 
 import com.nagorikseba.entity.Complaint;
-import com.nagorikseba.entity.User;
+import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.enums.ComplaintStatus;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;

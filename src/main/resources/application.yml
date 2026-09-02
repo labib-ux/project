@@ -28,14 +28,24 @@ server:
 security:
   jwt:
     # Set JWT_SECRET to a unique Base64-encoded key before deploying.
+    # application-prod.yml (Phase 6) drops the default so startup fails without it.
     secret: ${JWT_SECRET:bWFrZS1zdXJlLXRvLXJlcGxhY2UtdGhpcy1kZXZlbG9wbWVudC1qd3Qtc2VjcmV0LWJlZm9yZS1kZXBsb3ltZW50LTIwMjY=}
-    expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
+    # Short-lived access token; the refresh token carries the long-lived session (§8.1).
+    access-token-seconds: ${JWT_ACCESS_TOKEN_SECONDS:900}
+    refresh-token-days: ${JWT_REFRESH_TOKEN_DAYS:30}
     issuer: ${JWT_ISSUER:nagorik-seba}
 
 app:
   storage:
     upload-dir: ${UPLOAD_DIR:uploads}
     max-photos-per-complaint: ${MAX_PHOTOS_PER_COMPLAINT:5}
+  security:
+    cors:
+      # Allowlist only — never "*" (§8.3). Comma-separated when overridden.
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:8080}
+    lockout:
+      max-failed-attempts: ${LOCKOUT_MAX_FAILED_ATTEMPTS:5}
+      duration: ${LOCKOUT_DURATION:15m}
 
 management:
   endpoints:
