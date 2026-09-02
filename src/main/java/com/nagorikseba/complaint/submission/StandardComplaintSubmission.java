@@ -6,7 +6,7 @@ import com.nagorikseba.complaint.domain.enums.ModerationStatus;
 import com.nagorikseba.complaint.domain.enums.Priority;
 import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.municipality.entity.Municipality;
-import com.nagorikseba.municipality.repo.MunicipalityRepository;
+import com.nagorikseba.municipality.repository.MunicipalityRepository;
 import com.nagorikseba.shared.security.PrincipalContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

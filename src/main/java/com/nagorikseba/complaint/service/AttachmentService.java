@@ -5,7 +5,7 @@ import com.nagorikseba.complaint.domain.Complaint;
 import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.shared.config.StorageProperties;
 import com.nagorikseba.shared.exception.FileStorageException;
-import com.nagorikseba.shared.storage.StorageService;
+import com.nagorikseba.shared.service.FileStorageService;
 import com.nagorikseba.shared.time.Clock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +37,7 @@ import java.util.UUID;
 public class AttachmentService {
 
     private final StorageProperties storageProperties;
-    private final StorageService storageService;
+    private final FileStorageService fileStorageService;
     private final Clock clock;
     private final Tika tika = new Tika();
 
@@ -172,7 +172,7 @@ public class AttachmentService {
 
     private void storeTempPath(Attachment attachment, Path tempPath) {
         try {
-            storageService.storeTemp(attachment.getStorageKey(), tempPath);
+            fileStorageService.storeTemp(attachment.getStorageKey(), tempPath);
         } catch (IOException e) {
             throw new FileStorageException("Could not store temp file reference", e);
         }
@@ -181,7 +181,7 @@ public class AttachmentService {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void moveTempToFinal(Attachment attachment) {
         try {
-            storageService.moveFromTemp(attachment.getStorageKey());
+            fileStorageService.moveFromTemp(attachment.getStorageKey());
             log.info("Moved attachment {} from temp to final storage", attachment.getStorageKey());
         } catch (IOException e) {
             log.error("Failed to move attachment {} from temp to final storage", attachment.getStorageKey(), e);
@@ -193,7 +193,7 @@ public class AttachmentService {
     public void cleanupOrphanTempFiles() {
         try {
             Instant cutoff = clock.instant().minusSeconds(24 * 60 * 60); // 24 hours old
-            List<Path> orphanFiles = storageService.listTempFilesOlderThan(cutoff);
+            List<Path> orphanFiles = fileStorageService.listTempFilesOlderThan(cutoff);
             for (Path file : orphanFiles) {
                 Files.deleteIfExists(file);
                 log.info("Deleted orphan temp file: {}", file);
