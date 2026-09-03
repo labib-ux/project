@@ -1,6 +1,7 @@
 package com.nagorikseba.complaint.api.dto;
 
 import com.nagorikseba.complaint.domain.enums.Category;
+import com.nagorikseba.complaint.domain.enums.LocationSource;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -39,11 +40,19 @@ public class ComplaintSubmissionRequest {
     @DecimalMax(value = "93.0", message = "Enter a valid Bangladesh longitude")
     private BigDecimal longitude;
 
+    /** Optional prose address the citizen typed; kept alongside the pin, never replaces it. */
+    @Size(max = 300, message = "Address must be 300 characters or fewer")
+    private String addressText;
+
+    private LocationSource locationSource;
+
     @NotEmpty(message = "Attach at least one photo of the issue")
     @Size(max = 5, message = "You can upload up to 5 photos")
     private List<MultipartFile> photos;
 
+    /** Set by the controller from the Idempotency-Key header. */
     private String idempotencyKey;
 
+    /** Required for anonymous submissions; optional for citizens. */
     private String phone;
 }

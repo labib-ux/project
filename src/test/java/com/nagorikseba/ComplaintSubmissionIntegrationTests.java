@@ -50,21 +50,26 @@ class ComplaintSubmissionIntegrationTests {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
+                .andExpect(jsonPath("$.referenceCode").value(org.hamcrest.Matchers.matchesPattern("NS-\\d{4}-\\d{6}")))
                 .andExpect(jsonPath("$.status").value("SUBMITTED"))
-                .andExpect(jsonPath("$.attachments[0].fileType").value("IMAGE"))
-                .andExpect(jsonPath("$.attachments[0].fileUrl").value(org.hamcrest.Matchers.startsWith("/uploads/")))
+                .andExpect(jsonPath("$.attachments[0].contentType").value("image/png"))
+                .andExpect(jsonPath("$.attachments[0].originalFilename").value("broken-road.png"))
+                .andExpect(jsonPath("$.attachments[0].storageKey")
+                        .value(org.hamcrest.Matchers.matchesPattern("complaints/\\d{4}/\\d{2}/ns-\\d{4}-\\d{6}/[0-9a-f-]+\\.png")))
                 .andExpect(jsonPath("$.timeline[0].toStatus").value("SUBMITTED"))
                 .andReturn();
 
         JsonNode response = objectMapper.readTree(submission.getResponse().getContentAsString());
-        String fileUrl = response.at("/attachments/0/fileUrl").asText();
-        long complaintId = response.path("id").asLong();
+        String storageKey = response.at("/attachments/0/storageKey").asText();
+        String referenceCode = response.path("referenceCode").asText();
 
-        mockMvc.perform(get(fileUrl))
+        // The file only reaches its final key on AFTER_COMMIT (R6); by the time the
+        // response is written the request's transaction has committed, so it is there.
+        mockMvc.perform(get("/uploads/" + storageKey))
                 .andExpect(status().isOk())
                 .andExpect(content().bytes(PNG_BYTES));
 
-        mockMvc.perform(get("/api/complaints/{complaintId}", complaintId)
+        mockMvc.perform(get("/api/complaints/{referenceCode}", referenceCode)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Large pothole on Lake Road"));

@@ -1,7 +1,7 @@
 package com.nagorikseba.entity;
 
-import com.nagorikseba.enums.ComplaintCategory;
-import com.nagorikseba.enums.Priority;
+import com.nagorikseba.complaint.domain.enums.Category;
+import com.nagorikseba.complaint.domain.enums.Priority;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -31,7 +31,7 @@ public class SlaRule {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    private ComplaintCategory category;
+    private Category category;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

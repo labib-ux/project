@@ -1,6 +1,5 @@
 package com.nagorikseba.config;
 
-import com.nagorikseba.complaint.domain.Attachment;
 import com.nagorikseba.complaint.domain.Complaint;
 import com.nagorikseba.complaint.domain.ComplaintTransition;
 import com.nagorikseba.complaint.domain.enums.Category;
@@ -11,10 +10,12 @@ import com.nagorikseba.complaint.domain.enums.ModerationStatus;
 import com.nagorikseba.complaint.domain.enums.Priority;
 import com.nagorikseba.complaint.repo.ComplaintRepository;
 import com.nagorikseba.complaint.repo.ComplaintTransitionRepository;
-import com.nagorikseba.complaint.repo.AttachmentRepository;
 import com.nagorikseba.entity.SlaRule;
-import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.enums.UserRole;
+import com.nagorikseba.identity.domain.User;
+import com.nagorikseba.identity.domain.UserMunicipalityMembership;
+import com.nagorikseba.identity.repo.MembershipRepository;
+import com.nagorikseba.identity.repo.UserRepository;
 import com.nagorikseba.municipality.entity.Department;
 import com.nagorikseba.municipality.entity.Municipality;
 import com.nagorikseba.municipality.entity.Ward;
@@ -22,7 +23,8 @@ import com.nagorikseba.municipality.repository.DepartmentRepository;
 import com.nagorikseba.municipality.repository.MunicipalityRepository;
 import com.nagorikseba.municipality.repository.WardRepository;
 import com.nagorikseba.repository.SlaRuleRepository;
-import com.nagorikseba.identity.repo.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
@@ -36,10 +38,23 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.Year;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+/**
+ * Demo data for local development and the integration suite.
+ *
+ * <h2>Why the complaints are built, never mutated</h2>
+ * <p>Every seeded complaint reaches its status through {@code Complaint.builder()}.
+ * It has to: {@code setStatus} is package-private and reachable only through
+ * {@code ComplaintMutator}, which only transition handlers extend. A seeder that
+ * could flip a complaint to VERIFIED directly would be the exact hole §7.1 exists
+ * to close, so this class not compiling if it tried is the invariant working.
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -48,12 +63,16 @@ public class DataSeeder implements CommandLineRunner {
     private final WardRepository wardRepository;
     private final MunicipalityRepository municipalityRepository;
     private final UserRepository userRepository;
+    private final MembershipRepository membershipRepository;
     private final DepartmentRepository departmentRepository;
     private final SlaRuleRepository slaRuleRepository;
     private final ComplaintRepository complaintRepository;
     private final ComplaintTransitionRepository transitionRepository;
-    private final AttachmentRepository attachmentRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Clock clock;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -67,7 +86,6 @@ public class DataSeeder implements CommandLineRunner {
 
         log.info("Seeding initial data...");
 
-        // Seed Municipality
         Municipality dhakaNorth = municipalityRepository.save(Municipality.builder()
                 .slug("dhaka-north")
                 .name("Dhaka North City Corporation")
@@ -82,7 +100,6 @@ public class DataSeeder implements CommandLineRunner {
                 .isActive(true)
                 .build());
 
-        // Seed Users - Admin
         User admin = userRepository.save(User.builder()
                 .fullName("System Admin")
                 .email("admin@example.com")
@@ -92,35 +109,10 @@ public class DataSeeder implements CommandLineRunner {
                 .active(true)
                 .build());
 
-        // Seed Demo Citizens (Phase 3 requirement)
-        User citizen1 = userRepository.save(User.builder()
-                .fullName("Rahim Ahmed")
-                .email("citizen1@demo")
-                .phone("01710000001")
-                .passwordHash(passwordEncoder.encode("demo1234"))
-                .role(UserRole.CITIZEN)
-                .active(true)
-                .build());
+        User citizen1 = seedCitizen("Rahim Ahmed", "citizen1@demo", "01710000001");
+        User citizen2 = seedCitizen("Karim Hassan", "citizen2@demo", "01710000002");
+        User citizen3 = seedCitizen("Salma Begum", "citizen3@demo", "01710000003");
 
-        User citizen2 = userRepository.save(User.builder()
-                .fullName("Karim Hassan")
-                .email("citizen2@demo")
-                .phone("01710000002")
-                .passwordHash(passwordEncoder.encode("demo1234"))
-                .role(UserRole.CITIZEN)
-                .active(true)
-                .build());
-
-        User citizen3 = userRepository.save(User.builder()
-                .fullName("Salma Begum")
-                .email("citizen3@demo")
-                .phone("01710000003")
-                .passwordHash(passwordEncoder.encode("demo1234"))
-                .role(UserRole.CITIZEN)
-                .active(true)
-                .build());
-
-        // Seed Wards with PostGIS boundaries
         Ward ward1 = wardRepository.save(Ward.builder()
                 .municipality(dhakaNorth)
                 .wardNumber(1)
@@ -148,66 +140,37 @@ public class DataSeeder implements CommandLineRunner {
                 .isActive(true)
                 .build());
 
-        // Seed Councilors
-        User councilor1 = userRepository.save(User.builder()
-                .fullName("Councilor Ward 1")
-                .email("councilor1@example.com")
+        // Ward 17 is the councillor the security suite logs in as; the account name and
+        // the ward number are expected to agree, so the ward exists even though no demo
+        // complaint falls inside it.
+        Ward ward17 = wardRepository.save(Ward.builder()
+                .municipality(dhakaNorth)
+                .wardNumber(17)
+                .areaName("Uttara Sector 7")
+                .areaNameBn("উত্তরা সেক্টর ৭")
+                .boundary(createPolygon(23.8600, 90.3900, 23.8750, 90.4050))
+                .isActive(true)
+                .build());
+
+        User councilor = userRepository.save(User.builder()
+                .fullName("Councilor Ward 17")
+                .email("councilor17@example.com")
                 .phone("01700000002")
                 .passwordHash(passwordEncoder.encode("councilor123"))
                 .role(UserRole.WARD_COUNCILOR)
-                .ward(ward1)
+                .ward(ward17)
                 .active(true)
                 .build());
 
-        // Seed Departments & Officers for Dhaka North
-        for (Category category : Category.values()) {
-            Department dept = departmentRepository.save(Department.builder()
-                    .municipality(dhakaNorth)
-                    .code(category.name())
-                    .name(category.name())
-                    .handlesCategories(new String[]{category.name()})
-                    .isActive(true)
-                    .build());
+        // Memberships are what populate the JWT `mids` claim, which is what every
+        // tenancy check reads. Without them an authority account authenticates but
+        // serves no municipality, and every authority action answers 403.
+        seedMembership(councilor, dhakaNorth, ward17, null);
+        seedMembership(admin, dhakaNorth, null, null);
 
-            if (category == Category.ROADS) {
-                userRepository.save(User.builder()
-                        .fullName("Roads Officer North")
-                        .email("roads.north@example.com")
-                        .phone("01700100001")
-                        .passwordHash(passwordEncoder.encode("officer123"))
-                        .role(UserRole.DEPT_OFFICER)
-                        .ward(ward1)
-                        .department(dept)
-                        .active(true)
-                        .build());
-            }
-        }
+        seedDepartmentsAndOfficers(dhakaNorth, ward1, "north", "01700100001");
+        seedDepartmentsAndOfficers(dhakaSouth, ward3, "south", "01700100002");
 
-        // Seed Departments & Officers for Dhaka South
-        for (Category category : Category.values()) {
-            Department dept = departmentRepository.save(Department.builder()
-                    .municipality(dhakaSouth)
-                    .code(category.name())
-                    .name(category.name())
-                    .handlesCategories(new String[]{category.name()})
-                    .isActive(true)
-                    .build());
-
-            if (category == Category.ROADS) {
-                userRepository.save(User.builder()
-                        .fullName("Roads Officer South")
-                        .email("roads.south@example.com")
-                        .phone("01700100002")
-                        .passwordHash(passwordEncoder.encode("officer123"))
-                        .role(UserRole.DEPT_OFFICER)
-                        .ward(ward3)
-                        .department(dept)
-                        .active(true)
-                        .build());
-            }
-        }
-
-        // Seed SLA Rules
         for (Category category : Category.values()) {
             slaRuleRepository.saveAll(List.of(
                     SlaRule.builder().category(category).priority(Priority.LOW).maxHours(72)
@@ -220,60 +183,122 @@ public class DataSeeder implements CommandLineRunner {
                             .escalationLevel(2).build()));
         }
 
-        // Seed Demo Complaints in various statuses
-        seedDemoComplaints(citizen1, citizen2, citizen3, ward1, ward2, ward3, dhakaNorth, dhakaSouth);
+        seedDemoComplaints(citizen1, citizen2, citizen3, councilor,
+                ward1, ward2, ward3, dhakaNorth, dhakaSouth);
 
         log.info("Initial data successfully seeded!");
     }
 
-    private void seedDemoComplaints(User citizen1, User citizen2, User citizen3,
-                                     Ward ward1, Ward ward2, Ward ward3,
-                                     Municipality dhakaNorth, Municipality dhakaSouth) {
-        Instant now = Instant.now();
+    private User seedCitizen(String fullName, String email, String phone) {
+        return userRepository.save(User.builder()
+                .fullName(fullName)
+                .email(email)
+                .phone(phone)
+                .passwordHash(passwordEncoder.encode("demo1234"))
+                .role(UserRole.CITIZEN)
+                .active(true)
+                .build());
+    }
 
-        // Complaint 1: SUBMITTED
-        Complaint c1 = createComplaint(citizen1, ward1, dhakaNorth,
+    private void seedMembership(User user, Municipality municipality, Ward ward, Department department) {
+        membershipRepository.save(UserMunicipalityMembership.builder()
+                .user(user)
+                .municipality(municipality)
+                .ward(ward)
+                .department(department)
+                .validFrom(clock.instant())
+                .build());
+    }
+
+    private void seedDepartmentsAndOfficers(Municipality municipality, Ward officerWard,
+                                            String suffix, String officerPhone) {
+        for (Category category : Category.values()) {
+            Department department = departmentRepository.save(Department.builder()
+                    .municipality(municipality)
+                    .code(category.name())
+                    .name(category.name())
+                    .handlesCategories(new String[]{category.name()})
+                    .isActive(true)
+                    .build());
+
+            if (category == Category.ROADS) {
+                User officer = userRepository.save(User.builder()
+                        .fullName("Roads Officer " + Character.toUpperCase(suffix.charAt(0)) + suffix.substring(1))
+                        .email("roads." + suffix + "@example.com")
+                        .phone(officerPhone)
+                        .passwordHash(passwordEncoder.encode("officer123"))
+                        .role(UserRole.DEPT_OFFICER)
+                        .ward(officerWard)
+                        .department(department)
+                        .active(true)
+                        .build());
+                seedMembership(officer, municipality, officerWard, department);
+            }
+        }
+    }
+
+    private void seedDemoComplaints(User citizen1, User citizen2, User citizen3, User councilor,
+                                    Ward ward1, Ward ward2, Ward ward3,
+                                    Municipality dhakaNorth, Municipality dhakaSouth) {
+        Instant now = clock.instant();
+
+        // 1 — SUBMITTED
+        Complaint c1 = save(base(citizen1, ward1, dhakaNorth,
                 "Large pothole on Gulshan Avenue", "Dangerous pothole near Gulshan 1 circle causing accidents",
-                Category.ROADS, Priority.NORMAL, 23.7925, 90.4120, now.minus(2, ChronoUnit.DAYS));
-        c1.setStatus(ComplaintStatus.SUBMITTED);
-        c1 = complaintRepository.saveAndFlush(c1);
-        addTransition(c1, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen1, "Complaint submitted", now.minus(2, ChronoUnit.DAYS));
+                Category.ROADS, Priority.NORMAL, 23.7925, 90.4120, now.minus(2, ChronoUnit.DAYS))
+                .status(ComplaintStatus.SUBMITTED)
+                .build());
+        addTransition(c1, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen1,
+                "Complaint submitted", now.minus(2, ChronoUnit.DAYS));
 
-        // Complaint 2: VERIFIED
-        Complaint c2 = createComplaint(citizen1, ward1, dhakaNorth,
+        // 2 — VERIFIED
+        Instant c2Verified = now.minus(3, ChronoUnit.DAYS);
+        Complaint c2 = save(base(citizen1, ward1, dhakaNorth,
                 "Broken streetlight in Banani", "Streetlight not working for 3 days in Banani Block C",
-                Category.ELECTRICITY, Priority.NORMAL, 23.7890, 90.4000, now.minus(5, ChronoUnit.DAYS));
-        c2.setStatus(ComplaintStatus.VERIFIED);
-        c2.setFirstVerifiedAt(now.minus(3, ChronoUnit.DAYS));
-        c2 = complaintRepository.saveAndFlush(c2);
-        addTransition(c2, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen1, "Complaint submitted", now.minus(5, ChronoUnit.DAYS));
-        addTransition(c2, ComplaintStatus.SUBMITTED, ComplaintStatus.VERIFIED, ComplaintAction.VERIFY, councilor1, "Verified by ward councilor", now.minus(3, ChronoUnit.DAYS));
+                Category.ELECTRICITY, Priority.NORMAL, 23.7890, 90.4000, now.minus(5, ChronoUnit.DAYS))
+                .status(ComplaintStatus.VERIFIED)
+                .firstVerifiedAt(c2Verified)
+                .lastTransitionAt(c2Verified)
+                .build());
+        addTransition(c2, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen1,
+                "Complaint submitted", now.minus(5, ChronoUnit.DAYS));
+        addTransition(c2, ComplaintStatus.SUBMITTED, ComplaintStatus.VERIFIED, ComplaintAction.VERIFY, councilor,
+                "Verified by ward councilor", c2Verified);
 
-        // Complaint 3: REJECTED
-        Complaint c3 = createComplaint(citizen2, ward2, dhakaNorth,
+        // 3 — REJECTED
+        Instant c3Rejected = now.minus(8, ChronoUnit.DAYS);
+        Complaint c3 = save(base(citizen2, ward2, dhakaNorth,
                 "Fake complaint test", "This is a test complaint that will be rejected",
-                Category.OTHER, Priority.LOW, 23.7870, 90.4020, now.minus(10, ChronoUnit.DAYS));
-        c3.setStatus(ComplaintStatus.REJECTED);
-        c3.setRejectionReason("Duplicate complaint - already reported");
-        c3.setPublicVisible(false);
-        c3.setModerationStatus(ModerationStatus.REJECTED);
-        c3 = complaintRepository.saveAndFlush(c3);
-        addTransition(c3, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen2, "Complaint submitted", now.minus(10, ChronoUnit.DAYS));
-        addTransition(c3, ComplaintStatus.SUBMITTED, ComplaintStatus.REJECTED, ComplaintAction.REJECT, councilor1, "Duplicate complaint - already reported", now.minus(8, ChronoUnit.DAYS));
+                Category.OTHER, Priority.LOW, 23.7870, 90.4020, now.minus(10, ChronoUnit.DAYS))
+                .status(ComplaintStatus.REJECTED)
+                .rejectionReason("Duplicate complaint - already reported")
+                .publicVisible(false)
+                .moderationStatus(ModerationStatus.REJECTED)
+                .lastTransitionAt(c3Rejected)
+                .build());
+        addTransition(c3, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen2,
+                "Complaint submitted", now.minus(10, ChronoUnit.DAYS));
+        addTransition(c3, ComplaintStatus.SUBMITTED, ComplaintStatus.REJECTED, ComplaintAction.REJECT, councilor,
+                "Duplicate complaint - already reported", c3Rejected);
 
-        // Complaint 4: CANCELLED
-        Complaint c4 = createComplaint(citizen2, ward3, dhakaSouth,
+        // 4 — CANCELLED
+        Instant c4Cancelled = now.minus(5, ChronoUnit.DAYS);
+        Complaint c4 = save(base(citizen2, ward3, dhakaSouth,
                 "Waterlogging in Dhanmondi", "Road flooded after rain in Dhanmondi 27",
-                Category.WATERLOGGING, Priority.HIGH, 23.7450, 90.3750, now.minus(7, ChronoUnit.DAYS));
-        c4.setStatus(ComplaintStatus.CANCELLED);
-        c4.setCancellationReason("Issue resolved by self");
-        c4.setPublicVisible(false);
-        c4 = complaintRepository.saveAndFlush(c4);
-        addTransition(c4, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen2, "Complaint submitted", now.minus(7, ChronoUnit.DAYS));
-        addTransition(c4, ComplaintStatus.SUBMITTED, ComplaintStatus.CANCELLED, ComplaintAction.CANCEL, citizen2, "Issue resolved by self", now.minus(5, ChronoUnit.DAYS));
+                Category.WATERLOGGING, Priority.HIGH, 23.7450, 90.3750, now.minus(7, ChronoUnit.DAYS))
+                .status(ComplaintStatus.CANCELLED)
+                .cancellationReason("Issue resolved by self")
+                .publicVisible(false)
+                .lastTransitionAt(c4Cancelled)
+                .build());
+        addTransition(c4, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen2,
+                "Complaint submitted", now.minus(7, ChronoUnit.DAYS));
+        addTransition(c4, ComplaintStatus.SUBMITTED, ComplaintStatus.CANCELLED, ComplaintAction.CANCEL, citizen2,
+                "Issue resolved by self", c4Cancelled);
 
-        // Complaint 5: SUBMITTED (anonymous)
-        Complaint c5 = Complaint.builder()
+        // 5 — SUBMITTED, anonymous: no citizen, contact phone instead, pending moderation
+        Complaint c5 = save(Complaint.builder()
+                .referenceCode(nextReferenceCode())
                 .municipality(dhakaNorth)
                 .ward(ward1)
                 .citizen(null)
@@ -282,65 +307,79 @@ public class DataSeeder implements CommandLineRunner {
                 .description("Garbage has not been collected for 4 days in Banani residential area")
                 .category(Category.WASTE_MANAGEMENT)
                 .status(ComplaintStatus.SUBMITTED)
-                .priority(Priority.NORMAL)
+                .priority(Priority.LOW)
                 .location(createPoint(23.7880, 90.4010))
                 .locationSource(LocationSource.MAP_PIN)
                 .addressText("Banani Block D")
+                .publicVisible(true)
                 .moderationStatus(ModerationStatus.PENDING)
                 .submittedAt(now.minus(1, ChronoUnit.DAYS))
-                .build();
-        c5 = complaintRepository.saveAndFlush(c5);
-        addTransition(c5, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, null, "Anonymous complaint submitted", now.minus(1, ChronoUnit.DAYS));
+                .build());
+        addTransition(c5, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, null,
+                "Anonymous complaint submitted", now.minus(1, ChronoUnit.DAYS));
 
-        // Complaint 6: VERIFIED (another citizen)
-        Complaint c6 = createComplaint(citizen3, ward3, dhakaSouth,
+        // 6 — VERIFIED
+        Instant c6Verified = now.minus(2, ChronoUnit.DAYS);
+        Complaint c6 = save(base(citizen3, ward3, dhakaSouth,
                 "Mosquito breeding in Dhanmondi Lake", "Standing water in lake area causing mosquito infestation",
-                Category.MOSQUITO_BREEDING, Priority.HIGH, 23.7420, 90.3730, now.minus(4, ChronoUnit.DAYS));
-        c6.setStatus(ComplaintStatus.VERIFIED);
-        c6.setFirstVerifiedAt(now.minus(2, ChronoUnit.DAYS));
-        c6 = complaintRepository.saveAndFlush(c6);
-        addTransition(c6, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen3, "Complaint submitted", now.minus(4, ChronoUnit.DAYS));
-        addTransition(c6, ComplaintStatus.SUBMITTED, ComplaintStatus.VERIFIED, ComplaintAction.VERIFY, councilor1, "Verified - health hazard confirmed", now.minus(2, ChronoUnit.DAYS));
+                Category.MOSQUITO_BREEDING, Priority.HIGH, 23.7420, 90.3730, now.minus(4, ChronoUnit.DAYS))
+                .status(ComplaintStatus.VERIFIED)
+                .firstVerifiedAt(c6Verified)
+                .lastTransitionAt(c6Verified)
+                .build());
+        addTransition(c6, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen3,
+                "Complaint submitted", now.minus(4, ChronoUnit.DAYS));
+        addTransition(c6, ComplaintStatus.SUBMITTED, ComplaintStatus.VERIFIED, ComplaintAction.VERIFY, councilor,
+                "Verified - health hazard confirmed", c6Verified);
 
-        // Complaint 7: SUBMITTED (recent)
-        Complaint c7 = createComplaint(citizen1, ward2, dhakaNorth,
+        // 7 — SUBMITTED
+        Complaint c7 = save(base(citizen1, ward2, dhakaNorth,
                 "Broken footpath in Banani", "Footpath tiles broken and dangerous for pedestrians",
-                Category.ROADS, Priority.NORMAL, 23.7860, 90.4030, now.minus(12, ChronoUnit.HOURS));
-        c7.setStatus(ComplaintStatus.SUBMITTED);
-        c7 = complaintRepository.saveAndFlush(c7);
-        addTransition(c7, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen1, "Complaint submitted", now.minus(12, ChronoUnit.HOURS));
+                Category.ROADS, Priority.NORMAL, 23.7860, 90.4030, now.minus(12, ChronoUnit.HOURS))
+                .status(ComplaintStatus.SUBMITTED)
+                .build());
+        addTransition(c7, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen1,
+                "Complaint submitted", now.minus(12, ChronoUnit.HOURS));
 
-        // Complaint 8: SUBMITTED (water supply)
-        Complaint c8 = createComplaint(citizen3, ward1, dhakaNorth,
+        // 8 — SUBMITTED
+        Complaint c8 = save(base(citizen3, ward1, dhakaNorth,
                 "No water supply in Gulshan 2", "Water supply interrupted for 6 hours",
-                Category.WATER_SUPPLY, Priority.CRITICAL, 23.7910, 90.4100, now.minus(6, ChronoUnit.HOURS));
-        c8.setStatus(ComplaintStatus.SUBMITTED);
-        c8 = complaintRepository.saveAndFlush(c8);
-        addTransition(c8, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen3, "Complaint submitted", now.minus(6, ChronoUnit.HOURS));
+                Category.WATER_SUPPLY, Priority.CRITICAL, 23.7910, 90.4100, now.minus(6, ChronoUnit.HOURS))
+                .status(ComplaintStatus.SUBMITTED)
+                .build());
+        addTransition(c8, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen3,
+                "Complaint submitted", now.minus(6, ChronoUnit.HOURS));
 
-        // Complaint 9: VERIFIED (sanitation)
-        Complaint c9 = createComplaint(citizen2, ward2, dhakaNorth,
+        // 9 — VERIFIED
+        Instant c9Verified = now.minus(1, ChronoUnit.DAYS);
+        Complaint c9 = save(base(citizen2, ward2, dhakaNorth,
                 "Open drain in Banani", "Open drain causing foul smell and health hazard",
-                Category.SANITATION, Priority.HIGH, 23.7885, 90.3990, now.minus(3, ChronoUnit.DAYS));
-        c9.setStatus(ComplaintStatus.VERIFIED);
-        c9.setFirstVerifiedAt(now.minus(1, ChronoUnit.DAYS));
-        c9 = complaintRepository.saveAndFlush(c9);
-        addTransition(c9, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen2, "Complaint submitted", now.minus(3, ChronoUnit.DAYS));
-        addTransition(c9, ComplaintStatus.SUBMITTED, ComplaintStatus.VERIFIED, ComplaintAction.VERIFY, councilor1, "Verified - sanitation issue", now.minus(1, ChronoUnit.DAYS));
+                Category.SANITATION, Priority.HIGH, 23.7885, 90.3990, now.minus(3, ChronoUnit.DAYS))
+                .status(ComplaintStatus.VERIFIED)
+                .firstVerifiedAt(c9Verified)
+                .lastTransitionAt(c9Verified)
+                .build());
+        addTransition(c9, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen2,
+                "Complaint submitted", now.minus(3, ChronoUnit.DAYS));
+        addTransition(c9, ComplaintStatus.SUBMITTED, ComplaintStatus.VERIFIED, ComplaintAction.VERIFY, councilor,
+                "Verified - sanitation issue", c9Verified);
 
-        // Complaint 10: SUBMITTED
-        Complaint c10 = createComplaint(citizen1, ward3, dhakaSouth,
+        // 10 — SUBMITTED
+        Complaint c10 = save(base(citizen1, ward3, dhakaSouth,
                 "Streetlight flickering in Dhanmondi", "Streetlight near Dhanmondi 27 flickering dangerously",
-                Category.ELECTRICITY, Priority.NORMAL, 23.7460, 90.3740, now.minus(1, ChronoUnit.DAYS));
-        c10.setStatus(ComplaintStatus.SUBMITTED);
-        c10 = complaintRepository.saveAndFlush(c10);
-        addTransition(c10, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen1, "Complaint submitted", now.minus(1, ChronoUnit.DAYS));
+                Category.ELECTRICITY, Priority.NORMAL, 23.7460, 90.3740, now.minus(1, ChronoUnit.DAYS))
+                .status(ComplaintStatus.SUBMITTED)
+                .build());
+        addTransition(c10, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen1,
+                "Complaint submitted", now.minus(1, ChronoUnit.DAYS));
     }
 
-    private Complaint createComplaint(User citizen, Ward ward, Municipality municipality,
-                                      String title, String description, Category category, Priority priority,
-                                      double lat, double lng, Instant submittedAt) {
+    /** The fields every demo complaint shares; callers add status and its timestamps. */
+    private Complaint.ComplaintBuilder base(User citizen, Ward ward, Municipality municipality,
+                                            String title, String description, Category category,
+                                            Priority priority, double lat, double lng, Instant submittedAt) {
         return Complaint.builder()
+                .referenceCode(nextReferenceCode())
                 .municipality(municipality)
                 .ward(ward)
                 .citizen(citizen)
@@ -351,9 +390,22 @@ public class DataSeeder implements CommandLineRunner {
                 .location(createPoint(lat, lng))
                 .locationSource(LocationSource.DEVICE)
                 .addressText(ward.getAreaName())
+                .publicVisible(true)
                 .moderationStatus(ModerationStatus.APPROVED)
-                .submittedAt(submittedAt)
-                .build();
+                .submittedAt(submittedAt);
+    }
+
+    private Complaint save(Complaint complaint) {
+        return complaintRepository.saveAndFlush(complaint);
+    }
+
+    /** Same sequence the submission template draws from, so demo and live codes never collide. */
+    private String nextReferenceCode() {
+        Number sequence = (Number) entityManager
+                .createNativeQuery("SELECT nextval('complaint_ref_seq')")
+                .getSingleResult();
+        int year = Year.from(clock.instant().atZone(ZoneOffset.UTC)).getValue();
+        return "NS-%d-%06d".formatted(year, sequence.longValue());
     }
 
     private Point createPoint(double lat, double lng) {
@@ -363,8 +415,8 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void addTransition(Complaint complaint, ComplaintStatus from, ComplaintStatus to,
-                                ComplaintAction action, User actor, String note, Instant at) {
-        ComplaintTransition transition = ComplaintTransition.builder()
+                               ComplaintAction action, User actor, String note, Instant at) {
+        transitionRepository.save(ComplaintTransition.builder()
                 .complaint(complaint)
                 .fromStatus(from)
                 .toStatus(to)
@@ -373,8 +425,7 @@ public class DataSeeder implements CommandLineRunner {
                 .actorRole(actor != null ? actor.getRole().name() : "SYSTEM")
                 .note(note)
                 .createdAt(at)
-                .build();
-        transitionRepository.save(transition);
+                .build());
     }
 
     private MultiPolygon createPolygon(double minLat, double minLon, double maxLat, double maxLon) {

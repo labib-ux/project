@@ -41,6 +41,19 @@ public class ComplaintQueryService {
         return toResponse(complaint);
     }
 
+    /**
+     * Render a complaint the caller has already been granted — the one they just
+     * submitted, or the one a lifecycle action just returned.
+     *
+     * <p>Skips {@link #canAccess} on purpose: an anonymous submitter has no
+     * principal to match against, so the ownership check would answer 404 for the
+     * complaint they created one millisecond earlier. Callers must only pass a
+     * complaint whose access they have already established.
+     */
+    public ComplaintResponse describe(Complaint complaint) {
+        return toResponse(complaint);
+    }
+
     public List<ComplaintResponse> findMyComplaints() {
         Long citizenId = principalContext.requireUserId();
         List<Complaint> complaints = complaintRepository.findByCitizenIdOrderBySubmittedAtDesc(citizenId);

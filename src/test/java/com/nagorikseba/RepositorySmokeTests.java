@@ -18,7 +18,6 @@ import com.nagorikseba.municipality.entity.Municipality;
 import com.nagorikseba.municipality.entity.Ward;
 import com.nagorikseba.municipality.repository.MunicipalityRepository;
 import com.nagorikseba.municipality.repository.WardRepository;
-import com.nagorikseba.shared.time.Clock;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
@@ -30,6 +29,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 
@@ -188,6 +188,7 @@ class RepositorySmokeTests {
                 .actorRole("CITIZEN")
                 .note("Complaint submitted")
                 .idempotencyKey("test-key-1")
+                .createdAt(clock.instant())
                 .build();
         transition = transitionRepository.saveAndFlush(transition);
 
@@ -258,7 +259,7 @@ class RepositorySmokeTests {
         assertThat(attachments).hasSize(1);
 
         // Soft delete
-        attachment.softDelete();
+        attachment.softDelete(clock.instant());
         attachmentRepository.saveAndFlush(attachment);
 
         // Should not appear in non-deleted query
