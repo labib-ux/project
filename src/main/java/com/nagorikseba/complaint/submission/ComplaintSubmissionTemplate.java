@@ -87,8 +87,12 @@ public abstract class ComplaintSubmissionTemplate {
     /** WGS84 — the SRID the {@code geography(Point,4326)} column and Leaflet both speak. */
     private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory(new PrecisionModel(), 4326);
 
+    // NOT final: Spring's CGLIB proxy cannot override a final method, so a final
+    // @Transactional submit() would execute on the proxy instance itself (whose
+    // constructor never ran) with null repositories — every idempotent replay
+    // then NPEs. The sequence is still fixed by convention + code review (§7.5).
     @Transactional
-    public final Complaint submit(ComplaintSubmissionRequest request, User citizen) {
+    public Complaint submit(ComplaintSubmissionRequest request, User citizen) {
         // R3: a replayed Idempotency-Key returns the original complaint. Checked before
         // anything is written, so a retry after a dropped response costs one SELECT
         // instead of creating a duplicate report the citizen then has to cancel.

@@ -63,7 +63,9 @@ class SubmissionIdempotencyTests {
 
     @BeforeEach
     void setUp() throws Exception {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity())
+                .build();
 
         int n = SEQ.incrementAndGet();
         String email = "idempotency" + n + "@test.com";

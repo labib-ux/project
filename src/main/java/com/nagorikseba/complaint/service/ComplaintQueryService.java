@@ -51,7 +51,13 @@ public class ComplaintQueryService {
      * complaint whose access they have already established.
      */
     public ComplaintResponse describe(Complaint complaint) {
-        return toResponse(complaint);
+        // The complaint passed in is detached (its submitting transaction already
+        // committed), so lazy associations (municipality/ward/citizen) cannot load
+        // through it. Re-fetch inside this read-only transaction to attach it.
+        Complaint attached = complaint.getId() != null
+                ? complaintRepository.findById(complaint.getId()).orElse(complaint)
+                : complaint;
+        return toResponse(attached);
     }
 
     public List<ComplaintResponse> findMyComplaints() {

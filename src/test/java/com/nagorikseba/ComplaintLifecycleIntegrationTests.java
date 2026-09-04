@@ -101,7 +101,9 @@ class ComplaintLifecycleIntegrationTests {
 
     @BeforeEach
     void setup() throws Exception {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity())
+                .build();
 
         officer = findOrCreate("officer@test.com", "01700000100",
                 "Test Officer", com.nagorikseba.enums.UserRole.DEPT_OFFICER);
