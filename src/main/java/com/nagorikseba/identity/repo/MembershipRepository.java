@@ -1,6 +1,7 @@
 package com.nagorikseba.identity.repo;
 
 import com.nagorikseba.identity.domain.UserMunicipalityMembership;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,6 +17,7 @@ import java.util.List;
 public interface MembershipRepository extends JpaRepository<UserMunicipalityMembership, Long> {
 
     /** Current postings of a user, with municipality/ward/department associations. */
+    @EntityGraph(attributePaths = {"municipality", "ward", "department"})
     List<UserMunicipalityMembership> findByUserIdAndValidUntilIsNull(Long userId);
 
     /** Municipality ids for the JWT {@code mids} claim — projection, no entity load. */

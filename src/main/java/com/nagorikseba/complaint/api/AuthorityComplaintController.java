@@ -13,6 +13,7 @@ import com.nagorikseba.shared.exception.ResourceNotFoundException;
 import com.nagorikseba.shared.security.AuthenticatedUser;
 import com.nagorikseba.shared.security.PrincipalContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -57,6 +58,7 @@ public class AuthorityComplaintController {
      * {@code LazyInitializationException} here from doing exactly that.
      */
     @GetMapping("/dashboard")
+    @Transactional(readOnly = true)
     public Map<String, Object> dashboard() {
         AuthenticatedUser principal = principalContext.requireUser();
         List<UserMunicipalityMembership> memberships =
