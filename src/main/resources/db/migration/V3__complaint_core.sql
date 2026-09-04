@@ -54,6 +54,11 @@ ALTER TABLE IF EXISTS complaints
     ADD COLUMN IF NOT EXISTS created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
     ADD COLUMN IF NOT EXISTS updated_at              TIMESTAMPTZ NOT NULL DEFAULT now();
 
+-- Blueprint §3.3: citizen_id is nullable (NULL = anonymous).
+-- V1 created it NOT NULL; ADD COLUMN IF NOT EXISTS above is a no-op when the
+-- column already exists, so drop the legacy NOT NULL explicitly.
+ALTER TABLE IF EXISTS complaints ALTER COLUMN citizen_id DROP NOT NULL;
+
 -- Convert existing timestamp columns to timestamptz if they exist
 DO $$
 BEGIN
