@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/head :: head('Authority Dashboard')}">
+</head>
+<body>
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<div class="container py-4">
+    <h2>Authority Dashboard</h2>
+    <p class="text-muted">Per-ward complaint counts, average resolution time and SLA-at-risk for your municipality.</p>
+
+    <div class="mb-3">
+        <label for="municipalityId" class="form-label">Municipality ID</label>
+        <input type="number" class="form-control" id="municipalityId" placeholder="e.g. 1">
+        <button class="btn btn-primary mt-2" id="loadBtn">Load</button>
+    </div>
+
+    <div class="row" id="statCards"></div>
+
+    <h4 class="mt-4">Complaints by ward and status</h4>
+    <table class="table table-striped" id="wardTable">
+        <thead><tr><th>Ward</th><th>Status</th><th>Count</th><th></th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+async function loadDashboard() {
+    const token = localStorage.getItem('nagorikSebaToken');
+    const mid = document.getElementById('municipalityId').value;
+    const url = '/api/authority/dashboard' + (mid ? '?municipalityId=' + encodeURIComponent(mid) : '');
+    const res = await fetch(url, {headers: {'Authorization': 'Bearer ' + token}});
+    if (!res.ok) {
+        alert('Failed to load dashboard: ' + res.status);
+        return;
+    }
+    const data = await res.json();
+    const avg = data.averageResolutionHours == null ? '—' : Number(data.averageResolutionHours).toFixed(1) + ' h';
+    document.getElementById('statCards').innerHTML =
+        '<div class="col-md-4"><div class="card"><div class="card-body">'
+        + '<h5>Role</h5><p>' + data.role + '</p></div></div></div>'
+        + '<div class="col-md-4"><div class="card"><div class="card-body">'
+        + '<h5>Avg resolution</h5><p>' + avg + '</p></div></div></div>'
+        + '<div class="col-md-4"><div class="card"><div class="card-body">'
+        + '<h5>SLA at risk</h5><p>' + data.slaAtRiskCount + '</p></div></div></div>';
+    const rows = [];
+    let max = 1;
+    (data.wardStats || []).forEach(w => {
+        Object.entries(w.counts || {}).forEach(([status, count]) => { if (count > max) max = count; });
+    });
+    (data.wardStats || []).forEach(w => {
+        Object.entries(w.counts || {}).forEach(([status, count]) => {
+            const pct = Math.round((count / max) * 100);
+            rows.push('<tr><td>' + (w.wardName || ('Ward ' + w.wardId)) + '</td><td>' + status + '</td>'
+                + '<td>' + count + '</td>'
+                + '<td style="min-width:160px"><div style="background:#0d6efd;height:10px;width:' + pct + '%"></div></td></tr>');
+        });
+    });
+    document.querySelector('#wardTable tbody').innerHTML = rows.join('') || '<tr><td colspan="4">No data</td></tr>';
+}
+document.getElementById('loadBtn').addEventListener('click', loadDashboard);
+</script>
+</body>
+</html>

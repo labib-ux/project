@@ -45,4 +45,16 @@ public interface TransitionHandler {
      *                    payload end up disagreeing by microseconds
      */
     void execute(Complaint complaint, TransitionCommand command, Instant occurredAt);
+
+    /**
+     * Extra audit detail for the transition {@code metadata} JSONB column.
+     *
+     * <p>Default null (no metadata): only handlers with something auditable to
+     * say override this — in Phase 4, {@code AssignHandler} returns the routing
+     * decision JSON. The lifecycle service stores the return value on the audit
+     * row it writes after {@link #execute} returns.
+     */
+    default String transitionMetadata(Complaint complaint, TransitionCommand command) {
+        return null;
+    }
 }

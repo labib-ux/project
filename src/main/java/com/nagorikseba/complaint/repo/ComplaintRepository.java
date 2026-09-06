@@ -42,4 +42,28 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     List<Complaint> findByWardIdAndStatusNotIn(Long wardId, List<ComplaintStatus> statuses);
 
     List<Complaint> findByAssignedOfficerIdAndStatusIn(Long officerId, List<ComplaintStatus> statuses);
+
+    /**
+     * Dashboard per-ward counts (§4, Phase 4): one row per (ward, status) backed
+     * by {@code idx_complaint_ward_status}. Ward id is null for complaints whose
+     * pin fell outside every known boundary.
+     */
+    @Query("""
+            SELECT c.ward.id, c.status, COUNT(c) FROM Complaint c
+            WHERE c.municipality.id = :municipalityId
+            GROUP BY c.ward.id, c.status
+            """)
+    List<Object[]> countByMunicipalityGroupByWardAndStatus(@Param("municipalityId") Long municipalityId);
+
+    /**
+     * Mean hours from submission to resolution for resolved complaints of one
+     * municipality (the dashboard "avg resolution time" card).
+     */
+    @Query(value = """
+            SELECT AVG(EXTRACT(EPOCH FROM (resolved_at - submitted_at)) / 3600.0)
+            FROM complaints
+            WHERE municipality_id = :municipalityId
+              AND resolved_at IS NOT NULL
+            """, nativeQuery = true)
+    Double averageResolutionHoursByMunicipality(@Param("municipalityId") Long municipalityId);
 }

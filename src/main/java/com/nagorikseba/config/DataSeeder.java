@@ -1,6 +1,7 @@
 package com.nagorikseba.config;
 
 import com.nagorikseba.complaint.domain.Complaint;
+import com.nagorikseba.complaint.domain.ComplaintAssignment;
 import com.nagorikseba.complaint.domain.ComplaintTransition;
 import com.nagorikseba.complaint.domain.enums.Category;
 import com.nagorikseba.complaint.domain.enums.ComplaintAction;
@@ -8,6 +9,7 @@ import com.nagorikseba.complaint.domain.enums.ComplaintStatus;
 import com.nagorikseba.complaint.domain.enums.LocationSource;
 import com.nagorikseba.complaint.domain.enums.ModerationStatus;
 import com.nagorikseba.complaint.domain.enums.Priority;
+import com.nagorikseba.complaint.repo.ComplaintAssignmentRepository;
 import com.nagorikseba.complaint.repo.ComplaintRepository;
 import com.nagorikseba.complaint.repo.ComplaintTransitionRepository;
 import com.nagorikseba.entity.SlaRule;
@@ -68,6 +70,7 @@ public class DataSeeder implements CommandLineRunner {
     private final SlaRuleRepository slaRuleRepository;
     private final ComplaintRepository complaintRepository;
     private final ComplaintTransitionRepository transitionRepository;
+    private final ComplaintAssignmentRepository assignmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
 
@@ -185,6 +188,11 @@ public class DataSeeder implements CommandLineRunner {
 
         seedDemoComplaints(citizen1, citizen2, citizen3, councilor,
                 ward1, ward2, ward3, dhakaNorth, dhakaSouth);
+
+        // Phase 4: one officer per department for the first four categories plus
+        // sample complaints in ASSIGNED and IN_PROGRESS states.
+        seedPhase4OfficersAndAssignments(citizen1, citizen3, councilor,
+                ward1, dhakaNorth);
 
         log.info("Initial data successfully seeded!");
     }
@@ -372,6 +380,99 @@ public class DataSeeder implements CommandLineRunner {
                 .build());
         addTransition(c10, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen1,
                 "Complaint submitted", now.minus(1, ChronoUnit.DAYS));
+    }
+
+    /**
+     * Phase 4 demo data: one officer per department for the first four
+     * categories (officer1@demo … officer4@demo, password demo1234), office
+     * locations on those departments for distance routing, and sample
+     * complaints in ASSIGNED and IN_PROGRESS states with assignment rows.
+     */
+    private void seedPhase4OfficersAndAssignments(User citizen1, User citizen3, User councilor,
+                                                  Ward ward1, Municipality dhakaNorth) {
+        Instant now = clock.instant();
+        Category[] categories = {Category.ROADS, Category.WATER_SUPPLY, Category.ELECTRICITY, Category.SANITATION};
+        double[][] offices = {{23.7925, 90.4120}, {23.7890, 90.4000}, {23.7870, 90.4020}, {23.7885, 90.3990}};
+
+        for (int i = 0; i < categories.length; i++) {
+            Department department = departmentRepository
+                    .findByMunicipalityIdAndCode(dhakaNorth.getId(), categories[i].name())
+                    .orElseThrow();
+            department.setOfficeLocation(createPoint(offices[i][0], offices[i][1]));
+            departmentRepository.save(department);
+
+            User officer = userRepository.save(User.builder()
+                    .fullName("Demo Officer " + (i + 1))
+                    .email("officer" + (i + 1) + "@demo")
+                    .phone("0170020000" + (i + 1))
+                    .passwordHash(passwordEncoder.encode("demo1234"))
+                    .role(UserRole.DEPT_OFFICER)
+                    .ward(ward1)
+                    .department(department)
+                    .active(true)
+                    .build());
+            seedMembership(officer, dhakaNorth, ward1, department);
+
+            if (i == 0) {
+                // 11 — ASSIGNED (ROADS, officer1)
+                Instant assigned = now.minus(1, ChronoUnit.DAYS);
+                Complaint c11 = save(base(citizen1, ward1, dhakaNorth,
+                        "Pothole cluster near Gulshan 2", "Three potholes in a row near the Gulshan 2 circle",
+                        Category.ROADS, Priority.HIGH, 23.7910, 90.4100, now.minus(2, ChronoUnit.DAYS))
+                        .status(ComplaintStatus.ASSIGNED)
+                        .assignedDepartment(department)
+                        .assignedOfficer(officer)
+                        .firstVerifiedAt(now.minus(2, ChronoUnit.DAYS).plus(6, ChronoUnit.HOURS))
+                        .firstAssignedAt(assigned)
+                        .lastTransitionAt(assigned)
+                        .build());
+                addTransition(c11, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen1,
+                        "Complaint submitted", now.minus(2, ChronoUnit.DAYS));
+                addTransition(c11, ComplaintStatus.SUBMITTED, ComplaintStatus.VERIFIED, ComplaintAction.VERIFY,
+                        councilor, "Verified - road damage confirmed", now.minus(2, ChronoUnit.DAYS).plus(6, ChronoUnit.HOURS));
+                addTransition(c11, ComplaintStatus.VERIFIED, ComplaintStatus.ASSIGNED, ComplaintAction.ASSIGN,
+                        councilor, "Assigned to ROADS", assigned);
+                assignmentRepository.save(ComplaintAssignment.builder()
+                        .complaint(c11)
+                        .department(department)
+                        .officer(officer)
+                        .assignedBy(councilor)
+                        .strategyUsed("MANUAL")
+                        .strategyExplanation("manually assigned to department ROADS by seed data")
+                        .build());
+            }
+
+            if (i == 1) {
+                // 12 — IN_PROGRESS (WATER_SUPPLY, officer2)
+                Instant assigned = now.minus(20, ChronoUnit.HOURS);
+                Complaint c12 = save(base(citizen3, ward1, dhakaNorth,
+                        "Low water pressure in Gulshan", "Water pressure very low for two days in Gulshan block B",
+                        Category.WATER_SUPPLY, Priority.HIGH, 23.7930, 90.4110, now.minus(2, ChronoUnit.DAYS))
+                        .status(ComplaintStatus.IN_PROGRESS)
+                        .assignedDepartment(department)
+                        .assignedOfficer(officer)
+                        .firstVerifiedAt(now.minus(2, ChronoUnit.DAYS).plus(4, ChronoUnit.HOURS))
+                        .firstAssignedAt(assigned)
+                        .lastTransitionAt(now.minus(4, ChronoUnit.HOURS))
+                        .build());
+                addTransition(c12, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT, citizen3,
+                        "Complaint submitted", now.minus(2, ChronoUnit.DAYS));
+                addTransition(c12, ComplaintStatus.SUBMITTED, ComplaintStatus.VERIFIED, ComplaintAction.VERIFY,
+                        councilor, "Verified - supply issue confirmed", now.minus(2, ChronoUnit.DAYS).plus(4, ChronoUnit.HOURS));
+                addTransition(c12, ComplaintStatus.VERIFIED, ComplaintStatus.ASSIGNED, ComplaintAction.ASSIGN,
+                        councilor, "Assigned to WATER_SUPPLY", assigned);
+                addTransition(c12, ComplaintStatus.ASSIGNED, ComplaintStatus.IN_PROGRESS, ComplaintAction.START,
+                        officer, "Work started", now.minus(4, ChronoUnit.HOURS));
+                assignmentRepository.save(ComplaintAssignment.builder()
+                        .complaint(c12)
+                        .department(department)
+                        .officer(officer)
+                        .assignedBy(councilor)
+                        .strategyUsed("MANUAL")
+                        .strategyExplanation("manually assigned to department WATER_SUPPLY by seed data")
+                        .build());
+            }
+        }
     }
 
     /** The fields every demo complaint shares; callers add status and its timestamps. */

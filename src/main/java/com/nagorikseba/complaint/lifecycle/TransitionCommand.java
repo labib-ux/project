@@ -22,6 +22,10 @@ import java.util.List;
  * @param expectedVersion       the aggregate version the caller last saw. A mismatch
  *                              is a 409, which is how a stale dashboard tab is stopped
  *                              from overwriting a decision someone else already made
+ * @param departmentId          ASSIGN only, manual path: the chosen department.
+ *                              Null selects the auto-assign path (resolver decides)
+ * @param officerId             ASSIGN only, manual path: the chosen officer.
+ *                              Null leaves officer selection to the resolver
  */
 public record TransitionCommand(
         ComplaintAction action,
@@ -30,13 +34,24 @@ public record TransitionCommand(
         String note,
         List<Long> evidenceAttachmentIds,
         String idempotencyKey,
-        int expectedVersion
+        int expectedVersion,
+        Long departmentId,
+        Long officerId
 ) {
 
     /** The common case: an action with a note and no attached evidence. */
     public static TransitionCommand of(ComplaintAction action, Long complaintId, Long actorId,
                                        String note, String idempotencyKey, int expectedVersion) {
-        return new TransitionCommand(action, complaintId, actorId, note, List.of(), idempotencyKey, expectedVersion);
+        return new TransitionCommand(action, complaintId, actorId, note, List.of(),
+                idempotencyKey, expectedVersion, null, null);
+    }
+
+    /** Manual ASSIGN with an explicitly picked department and optional officer. */
+    public static TransitionCommand ofAssignment(ComplaintAction action, Long complaintId, Long actorId,
+                                                 String note, Long departmentId, Long officerId,
+                                                 String idempotencyKey, int expectedVersion) {
+        return new TransitionCommand(action, complaintId, actorId, note, List.of(),
+                idempotencyKey, expectedVersion, departmentId, officerId);
     }
 
     public boolean hasIdempotencyKey() {

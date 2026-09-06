@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/head :: head('Authority Queue')}">
+</head>
+<body>
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<div class="container py-4">
+    <h2>Department Queue</h2>
+    <p class="text-muted">Active complaints for your municipality, filterable by status.</p>
+
+    <div class="row g-2 mb-3">
+        <div class="col-md-3">
+            <label for="municipalityId" class="form-label">Municipality ID</label>
+            <input type="number" class="form-control" id="municipalityId" placeholder="e.g. 1">
+        </div>
+        <div class="col-md-5">
+            <label for="statusFilter" class="form-label">Status (comma-separated, blank = active)</label>
+            <input type="text" class="form-control" id="statusFilter" placeholder="VERIFIED,ASSIGNED">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-primary" id="loadBtn">Load</button>
+        </div>
+    </div>
+
+    <table class="table table-striped" id="queueTable">
+        <thead><tr><th>Reference</th><th>Title</th><th>Status</th><th>Ward</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+function authHeaders() {
+    return {'Authorization': 'Bearer ' + localStorage.getItem('nagorikSebaToken')};
+}
+async function loadQueue() {
+    const mid = document.getElementById('municipalityId').value;
+    const statuses = document.getElementById('statusFilter').value.trim();
+    let url = '/api/authority/queue?municipalityId=' + encodeURIComponent(mid);
+    if (statuses) {
+        statuses.split(',').forEach(s => { url += '&status=' + encodeURIComponent(s.trim()); });
+    }
+    const res = await fetch(url, {headers: authHeaders()});
+    if (!res.ok) {
+        alert('Failed to load queue: ' + res.status);
+        return;
+    }
+    const items = await res.json();
+    document.querySelector('#queueTable tbody').innerHTML = items.map(c =>
+        '<tr><td>' + c.referenceCode + '</td><td>' + c.title + '</td><td>' + c.status + '</td>'
+        + '<td>' + (c.wardName || '—') + '</td>'
+        + '<td><button class="btn btn-sm btn-success" onclick="verifyComplaint(\'' + c.referenceCode + '\')">Verify</button> '
+        + '<button class="btn btn-sm btn-primary" onclick="autoAssign(\'' + c.referenceCode + '\')">Auto-assign</button> '
+        + '<button class="btn btn-sm btn-secondary" onclick="startWork(\'' + c.referenceCode + '\')">Start</button></td></tr>'
+    ).join('') || '<tr><td colspan="5">No complaints</td></tr>';
+}
+async function verifyComplaint(ref) {
+    await fetch('/api/authority/complaints/' + ref + '/verify?note=Verified-from-queue',
+        {method: 'POST', headers: authHeaders()});
+    loadQueue();
+}
+async function autoAssign(ref) {
+    await fetch('/api/authority/complaints/' + ref + '/assign/auto',
+        {method: 'POST', headers: authHeaders()});
+    loadQueue();
+}
+async function startWork(ref) {
+    await fetch('/api/authority/complaints/' + ref + '/start',
+        {method: 'POST', headers: authHeaders()});
+    loadQueue();
+}
+document.getElementById('loadBtn').addEventListener('click', loadQueue);
+</script>
+</body>
+</html>

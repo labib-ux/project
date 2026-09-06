@@ -157,6 +157,7 @@ public class ComplaintLifecycleService extends ComplaintMutator {
                 .actor(actor)
                 .actorRole(actor.getRole().name())
                 .note(command.note())
+                .metadata(handler.transitionMetadata(complaint, command))
                 .idempotencyKey(command.idempotencyKey())
                 .createdAt(now)
                 .build();
