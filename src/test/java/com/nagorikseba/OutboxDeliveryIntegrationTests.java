@@ -195,8 +195,12 @@ class OutboxDeliveryIntegrationTests {
 
         Set<Long> union = new HashSet<>(claimed.get(0));
         union.addAll(claimed.get(1));
-        assertThat(union).containsExactlyInAnyOrderElementsOf(ids);
+        // The shared database may hold other due rows; what matters is every
+        // test row was claimed exactly once across both workers.
+        assertThat(union).containsAll(ids);
         assertThat(claimed.get(0)).doesNotContainAnyElementsOf(claimed.get(1));
+        long testRowsClaimed = union.stream().filter(ids::contains).count();
+        assertThat(testRowsClaimed).isEqualTo(ids.size());
     }
 
     // ------------------------------------------------------------------ helpers

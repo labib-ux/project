@@ -176,6 +176,7 @@ class SlaScannerIntegrationTests {
                 .contentType("image/jpeg")
                 .byteSize(512)
                 .checksumSha256("abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890")
+                .uploadedBy(fixture.officer())
                 .build());
         Complaint fresh = complaintRepository.findById(fixture.complaint().getId()).orElseThrow();
 
