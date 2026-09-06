@@ -3,6 +3,7 @@ package com.nagorikseba.config;
 import com.nagorikseba.complaint.domain.Complaint;
 import com.nagorikseba.complaint.domain.ComplaintAssignment;
 import com.nagorikseba.complaint.domain.ComplaintTransition;
+import com.nagorikseba.complaint.domain.ResolutionAttempt;
 import com.nagorikseba.complaint.domain.enums.Category;
 import com.nagorikseba.complaint.domain.enums.ComplaintAction;
 import com.nagorikseba.complaint.domain.enums.ComplaintStatus;
@@ -12,6 +13,7 @@ import com.nagorikseba.complaint.domain.enums.Priority;
 import com.nagorikseba.complaint.repo.ComplaintAssignmentRepository;
 import com.nagorikseba.complaint.repo.ComplaintRepository;
 import com.nagorikseba.complaint.repo.ComplaintTransitionRepository;
+import com.nagorikseba.complaint.repo.ResolutionAttemptRepository;
 import com.nagorikseba.entity.SlaRule;
 import com.nagorikseba.enums.UserRole;
 import com.nagorikseba.identity.domain.User;
@@ -27,6 +29,7 @@ import com.nagorikseba.municipality.repository.WardRepository;
 import com.nagorikseba.repository.SlaRuleRepository;
 import com.nagorikseba.sla.SlaPolicy;
 import com.nagorikseba.sla.SlaPolicyRepository;
+import com.nagorikseba.sla.SlaService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -74,6 +77,8 @@ public class DataSeeder implements CommandLineRunner {
     private final ComplaintRepository complaintRepository;
     private final ComplaintTransitionRepository transitionRepository;
     private final ComplaintAssignmentRepository assignmentRepository;
+    private final ResolutionAttemptRepository attemptRepository;
+    private final SlaService slaService;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
 
@@ -158,6 +163,27 @@ public class DataSeeder implements CommandLineRunner {
                 .isActive(true)
                 .build());
 
+        // Final cleanup: wards 4–5 fill the Mirpur/Pallabi gaps with boxes that
+        // touch nothing existing (ward 4 shares only the y=23.805 edge with
+        // ward 1 — adjacency, not overlap).
+        Ward ward4 = wardRepository.save(Ward.builder()
+                .municipality(dhakaNorth)
+                .wardNumber(4)
+                .areaName("Mirpur 10")
+                .areaNameBn("মিরপুর ১০")
+                .boundary(createPolygon(23.8050, 90.3550, 23.8200, 90.3700))
+                .isActive(true)
+                .build());
+
+        Ward ward5 = wardRepository.save(Ward.builder()
+                .municipality(dhakaNorth)
+                .wardNumber(5)
+                .areaName("Pallabi")
+                .areaNameBn("পল্লবী")
+                .boundary(createPolygon(23.7550, 90.3500, 23.7700, 90.3650))
+                .isActive(true)
+                .build());
+
         User councilor = userRepository.save(User.builder()
                 .fullName("Councilor Ward 17")
                 .email("councilor17@example.com")
@@ -168,14 +194,51 @@ public class DataSeeder implements CommandLineRunner {
                 .active(true)
                 .build());
 
+        // Final cleanup: the legacy suite logs in as councilor17@example.com,
+        // so that account stays untouched; these @demo twins are the documented
+        // demo credentials (all demo1234) for humans and the smoke test.
+        User councilorDemo = userRepository.save(User.builder()
+                .fullName("Councilor Ward 17 Demo")
+                .email("councilor17@demo")
+                .phone("01700000003")
+                .passwordHash(passwordEncoder.encode("demo1234"))
+                .role(UserRole.WARD_COUNCILOR)
+                .ward(ward17)
+                .active(true)
+                .build());
+
+        User adminDemo = userRepository.save(User.builder()
+                .fullName("Demo Admin")
+                .email("admin@demo")
+                .phone("01700000004")
+                .passwordHash(passwordEncoder.encode("demo1234"))
+                .role(UserRole.ADMIN)
+                .active(true)
+                .build());
+
         // Memberships are what populate the JWT `mids` claim, which is what every
         // tenancy check reads. Without them an authority account authenticates but
         // serves no municipality, and every authority action answers 403.
         seedMembership(councilor, dhakaNorth, ward17, null);
         seedMembership(admin, dhakaNorth, null, null);
+        seedMembership(councilorDemo, dhakaNorth, ward17, null);
+        seedMembership(adminDemo, dhakaNorth, null, null);
 
         seedDepartmentsAndOfficers(dhakaNorth, ward1, "north", "01700100001");
         seedDepartmentsAndOfficers(dhakaSouth, ward3, "south", "01700100002");
+
+        // Final cleanup: PARKS has no Category enum value, so it handles OTHER —
+        // the category-routing lookup matches on the handles array verbatim.
+        // Both municipalities get one: the bulk seeder resolves OTHER in either.
+        for (Municipality municipality : List.of(dhakaNorth, dhakaSouth)) {
+            departmentRepository.save(Department.builder()
+                    .municipality(municipality)
+                    .code("PARKS")
+                    .name("Parks & Green Spaces")
+                    .handlesCategories(new String[]{Category.OTHER.name()})
+                    .isActive(true)
+                    .build());
+        }
 
         for (Category category : Category.values()) {
             slaRuleRepository.saveAll(List.of(
@@ -221,6 +284,11 @@ public class DataSeeder implements CommandLineRunner {
         // sample complaints in ASSIGNED and IN_PROGRESS states.
         seedPhase4OfficersAndAssignments(citizen1, citizen3, councilor,
                 ward1, dhakaNorth);
+
+        // Final cleanup: bulk demo spread (~48 more) across wards, categories
+        // and all nine statuses with matching history rows.
+        seedBulkDemoComplaints(citizen1, citizen2, citizen3, councilor,
+                ward1, ward2, ward3, ward4, ward5, dhakaNorth, dhakaSouth);
 
         log.info("Initial data successfully seeded!");
     }
@@ -501,6 +569,241 @@ public class DataSeeder implements CommandLineRunner {
                         .build());
             }
         }
+    }
+
+    /**
+     * Final cleanup bulk demo: ~48 complaints across five wards, all categories
+     * and all nine statuses, with history rows matching each status.
+     *
+     * <p>Deterministic by construction (modular arithmetic over fixed arrays —
+     * no Random), spanning ~6 months back. dhakaSouth ward 3 only carries
+     * SUBMITTED/VERIFIED/REJECTED/CANCELLED (its only officer is ROADS-posted);
+     * the north wards carry the full spectrum. Every status reaches its value
+     * through {@code Complaint.builder()} at construction — never
+     * {@code setStatus()}, which this class could not call anyway (§7.1
+     * invariant).
+     */
+    private void seedBulkDemoComplaints(User citizen1, User citizen2, User citizen3, User councilor,
+                                        Ward ward1, Ward ward2, Ward ward3, Ward ward4, Ward ward5,
+                                        Municipality dhakaNorth, Municipality dhakaSouth) {
+        Instant now = clock.instant();
+        User[] citizens = {citizen1, citizen2, citizen3};
+        Ward[] wards = {ward1, ward2, ward4, ward5, ward3};
+        double[][][] pins = {
+                {{23.7925, 90.4120}, {23.7955, 90.4080}, {23.7975, 90.4150}, {23.7905, 90.4070}},
+                {{23.7870, 90.3980}, {23.7910, 90.4010}, {23.7890, 90.4030}},
+                {{23.8120, 90.3600}, {23.8150, 90.3650}, {23.8080, 90.3620}},
+                {{23.7600, 90.3550}, {23.7650, 90.3600}, {23.7580, 90.3580}},
+                {{23.7430, 90.3730}, {23.7470, 90.3770}, {23.7450, 90.3750}},
+        };
+        String[][] titles = {
+                {"Pothole on main road", "Broken footpath slabs"},
+                {"No water in the morning line", "Leaking supply pipe"},
+                {"Streetlight dead for a week", "Flickering lamp post"},
+                {"Overflowing dustbin", "Garbage pile uncollected"},
+                {"Waterlogged lane after rain", "Blocked roadside drain"},
+                {"Stagnant pool breeds mosquitoes", "Fogging requested"},
+                {"Open drain foul smell", "Clogged sewer line"},
+                {"Fallen tree branch", "Damaged park bench"},
+        };
+        String[] descriptions = {
+                "Reported by several residents; needs ward attention.",
+                "Worse after rain; schoolchildren use this route daily.",
+        };
+        // Residue-planned spectra: south wards sit at i%5==4, removing one slot
+        // from residues r0–r8 in turn (north counts per residue: 5,5,5,4,4,4,4,4,4).
+        // CLOSED sits at r0 (5 north) plus exactly one south CLOSED via ordinal
+        // indexing — 6 rated closes total. Guaranteed minimums: CLOSED×6 rated,
+        // REOPENED×4 (reopenCount 1–2), REJECTED×6 with reasons, 30+ past-deadline
+        // actives, all 8 categories ×6 and all 5 wards covered.
+        ComplaintStatus[] fullSpectrum = {
+                ComplaintStatus.CLOSED, ComplaintStatus.SUBMITTED, ComplaintStatus.VERIFIED,
+                ComplaintStatus.ASSIGNED, ComplaintStatus.IN_PROGRESS, ComplaintStatus.RESOLVED,
+                ComplaintStatus.REJECTED, ComplaintStatus.CANCELLED, ComplaintStatus.REOPENED,
+        };
+        ComplaintStatus[] southSpectrum = {
+                ComplaintStatus.SUBMITTED, ComplaintStatus.VERIFIED,
+                ComplaintStatus.REJECTED, ComplaintStatus.CANCELLED, ComplaintStatus.CLOSED,
+        };
+        int[] ratings = {5, 4, 3, 5, 4};
+
+        User officer1 = findUser("officer1@demo");
+        User officer2 = findUser("officer2@demo");
+        User officer3 = findUser("officer3@demo");
+        User officer4 = findUser("officer4@demo");
+
+        for (int i = 0; i < 48; i++) {
+            Category category = Category.values()[i % Category.values().length];
+            Ward ward = wards[i % wards.length];
+            Municipality municipality = ward == ward3 ? dhakaSouth : dhakaNorth;
+            User citizen = citizens[i % citizens.length];
+            double[] pin = pins[i % pins.length][(i / pins.length) % pins[i % pins.length].length];
+            Priority priority = Priority.values()[i % Priority.values().length];
+            Instant submitted = now.minus((i * 3L) + 5L, ChronoUnit.DAYS);
+            long ageHours = Math.max(24L, durationHours(submitted, now));
+
+            ComplaintStatus status = ward == ward3
+                    ? southSpectrum[((i - 4) / 5) % southSpectrum.length]
+                    : fullSpectrum[i % fullSpectrum.length];
+
+            Instant verified = submitted.plus(ageHours * 20 / 100, ChronoUnit.HOURS);
+            Instant assigned = submitted.plus(ageHours * 40 / 100, ChronoUnit.HOURS);
+            Instant started = submitted.plus(ageHours * 55 / 100, ChronoUnit.HOURS);
+            Instant resolved = submitted.plus(ageHours * 70 / 100, ChronoUnit.HOURS);
+            Instant terminal = submitted.plus(ageHours * 85 / 100, ChronoUnit.HOURS);
+
+            Department department = findDepartment(municipality, category);
+            User officer = pickOfficer(category, officer1, officer2, officer3, officer4);
+
+            Complaint.ComplaintBuilder builder = base(citizen, ward, municipality,
+                    titles[category.ordinal()][i % 2] + " #" + (13 + i),
+                    descriptions[i % descriptions.length],
+                    category, priority, pin[0], pin[1], submitted)
+                    .status(status)
+                    .lastTransitionAt(submitted);
+
+            switch (status) {
+                case VERIFIED, ASSIGNED, IN_PROGRESS, RESOLVED, CLOSED, REOPENED -> {
+                    builder.firstVerifiedAt(verified).lastTransitionAt(verified);
+                }
+                default -> {
+                }
+            }
+            if (status == ComplaintStatus.ASSIGNED || status == ComplaintStatus.IN_PROGRESS
+                    || status == ComplaintStatus.RESOLVED || status == ComplaintStatus.CLOSED
+                    || status == ComplaintStatus.REOPENED) {
+                builder.assignedDepartment(department).assignedOfficer(officer)
+                        .firstAssignedAt(assigned).lastTransitionAt(assigned);
+            }
+            if (status == ComplaintStatus.RESOLVED || status == ComplaintStatus.CLOSED
+                    || status == ComplaintStatus.REOPENED) {
+                builder.resolvedAt(resolved).lastTransitionAt(resolved);
+            }
+            if (status == ComplaintStatus.CLOSED) {
+                builder.closedAt(terminal).lastTransitionAt(terminal);
+            }
+            if (status == ComplaintStatus.REJECTED) {
+                builder.rejectionReason("Seeded rejection: duplicate of an older report")
+                        .publicVisible(false)
+                        .moderationStatus(ModerationStatus.REJECTED)
+                        .lastTransitionAt(terminal);
+            }
+            if (status == ComplaintStatus.CANCELLED) {
+                builder.cancellationReason("Seeded cancellation: reporter withdrew")
+                        .publicVisible(false)
+                        .lastTransitionAt(terminal);
+            }
+            if (status == ComplaintStatus.REOPENED) {
+                builder.reopenCount(1 + (i % 2)).priority(Priority.HIGH).lastTransitionAt(terminal);
+            }
+            Complaint complaint = save(builder.build());
+
+            addTransition(complaint, null, ComplaintStatus.SUBMITTED, ComplaintAction.SUBMIT,
+                    citizen, "Complaint submitted", submitted);
+            if (status != ComplaintStatus.SUBMITTED) {
+                User verifier = status == ComplaintStatus.CANCELLED ? citizen : councilor;
+                ComplaintAction verifyAction = status == ComplaintStatus.REJECTED
+                        ? ComplaintAction.REJECT : status == ComplaintStatus.CANCELLED
+                        ? ComplaintAction.CANCEL : ComplaintAction.VERIFY;
+                ComplaintStatus afterVerify = status == ComplaintStatus.REJECTED ? ComplaintStatus.REJECTED
+                        : status == ComplaintStatus.CANCELLED ? ComplaintStatus.CANCELLED
+                        : ComplaintStatus.VERIFIED;
+                String verifyNote = status == ComplaintStatus.REJECTED ? "Seeded rejection: duplicate"
+                        : status == ComplaintStatus.CANCELLED ? "Seeded cancellation" : "Seeded verification";
+                addTransition(complaint, ComplaintStatus.SUBMITTED, afterVerify, verifyAction,
+                        verifier, verifyNote, verifiedOrTerminal(verified, terminal, status));
+            }
+            if (status == ComplaintStatus.ASSIGNED || status == ComplaintStatus.IN_PROGRESS
+                    || status == ComplaintStatus.RESOLVED || status == ComplaintStatus.CLOSED
+                    || status == ComplaintStatus.REOPENED) {
+                addTransition(complaint, ComplaintStatus.VERIFIED, ComplaintStatus.ASSIGNED,
+                        ComplaintAction.ASSIGN, councilor,
+                        "Seeded assignment to " + department.getCode(), assigned);
+                assignmentRepository.save(ComplaintAssignment.builder()
+                        .complaint(complaint)
+                        .department(department)
+                        .officer(officer)
+                        .assignedBy(councilor)
+                        .strategyUsed("MANUAL")
+                        .strategyExplanation("seeded demo assignment")
+                        .build());
+            }
+            if (status == ComplaintStatus.IN_PROGRESS || status == ComplaintStatus.RESOLVED
+                    || status == ComplaintStatus.CLOSED || status == ComplaintStatus.REOPENED) {
+                addTransition(complaint, ComplaintStatus.ASSIGNED, ComplaintStatus.IN_PROGRESS,
+                        ComplaintAction.START, officer, "Seeded work start", started);
+            }
+            if (status == ComplaintStatus.RESOLVED || status == ComplaintStatus.CLOSED
+                    || status == ComplaintStatus.REOPENED) {
+                addTransition(complaint, ComplaintStatus.IN_PROGRESS, ComplaintStatus.RESOLVED,
+                        ComplaintAction.RESOLVE, officer, "Seeded resolution", resolved);
+                int attemptNumber = (int) attemptRepository.countByComplaintId(complaint.getId()) + 1;
+                ResolutionAttempt attempt = attemptRepository.save(ResolutionAttempt.builder()
+                        .complaint(complaint)
+                        .attemptNumber(attemptNumber)
+                        .resolvedAt(resolved)
+                        .resolvedBy(officer)
+                        .resolutionNote("Seeded resolution")
+                        .outcome(ResolutionAttempt.Outcome.PENDING_CITIZEN)
+                        .build());
+                if (status == ComplaintStatus.CLOSED) {
+                    addTransition(complaint, ComplaintStatus.RESOLVED, ComplaintStatus.CLOSED,
+                            ComplaintAction.CLOSE, citizen, "Seeded rating", terminal);
+                    attempt.setOutcome(ResolutionAttempt.Outcome.CLOSED);
+                    attempt.setRating(ratings[i % ratings.length]);
+                    attempt.setRatingFeedback("Seeded feedback");
+                    attempt.setRatedAt(terminal);
+                    attemptRepository.save(attempt);
+                }
+                if (status == ComplaintStatus.REOPENED) {
+                    addTransition(complaint, ComplaintStatus.RESOLVED, ComplaintStatus.REOPENED,
+                            ComplaintAction.REOPEN, citizen, "Seeded reopen: still broken", terminal);
+                    attempt.setOutcome(ResolutionAttempt.Outcome.REOPENED);
+                    attempt.setReopenReason("Seeded reopen: still broken");
+                    attempt.setReopenedAt(terminal);
+                    attemptRepository.save(attempt);
+                }
+                // Close the assignment once work left IN_PROGRESS.
+                assignmentRepository.findByComplaintIdAndUnassignedAtIsNull(complaint.getId())
+                        .ifPresent(open -> open.close(resolved));
+            }
+            if (status == ComplaintStatus.SUBMITTED || status == ComplaintStatus.VERIFIED
+                    || status == ComplaintStatus.ASSIGNED || status == ComplaintStatus.IN_PROGRESS
+                    || status == ComplaintStatus.REOPENED) {
+                // Old submissions snapshot past deadlines so the scanner demo fires.
+                slaService.ensureInstance(complaint);
+            }
+        }
+    }
+
+    /** Dh : picks the seeded officer posted to the category's department. */
+    private User pickOfficer(Category category, User officer1, User officer2, User officer3, User officer4) {
+        return switch (category) {
+            case ROADS -> officer1;
+            case WATER_SUPPLY -> officer2;
+            case ELECTRICITY -> officer3;
+            case SANITATION -> officer4;
+            default -> officer1;
+        };
+    }
+
+    private Department findDepartment(Municipality municipality, Category category) {
+        String code = category == Category.OTHER ? "PARKS" : category.name();
+        return departmentRepository.findByMunicipalityIdAndCode(municipality.getId(), code)
+                .orElseThrow(() -> new IllegalStateException("Missing seeded department " + code));
+    }
+
+    private User findUser(String email) {
+        return userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new IllegalStateException("Missing seeded user " + email));
+    }
+
+    private static long durationHours(Instant start, Instant end) {
+        return Math.max(1L, java.time.Duration.between(start, end).toHours());
+    }
+
+    private static Instant verifiedOrTerminal(Instant verified, Instant terminal, ComplaintStatus status) {
+        return status == ComplaintStatus.REJECTED || status == ComplaintStatus.CANCELLED ? terminal : verified;
     }
 
     /** The fields every demo complaint shares; callers add status and its timestamps. */

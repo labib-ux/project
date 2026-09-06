@@ -1,11 +1,18 @@
 package com.nagorikseba.complaint.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nagorikseba.complaint.domain.Attachment;
 import com.nagorikseba.complaint.domain.Complaint;
 import com.nagorikseba.complaint.domain.ComplaintTransition;
+import com.nagorikseba.complaint.domain.enums.ComplaintAction;
+import com.nagorikseba.complaint.repo.AttachmentRepository;
+import com.nagorikseba.complaint.repo.ComplaintTransitionRepository;
 import com.nagorikseba.identity.domain.User;
+import com.nagorikseba.notification.ComplaintStatusChangedEvent;
 import com.nagorikseba.shared.exception.FileStorageException;
 import com.nagorikseba.shared.service.FileStorageService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
@@ -56,7 +63,13 @@ public class AttachmentService {
 
     private final FileStorageService fileStorageService;
     private final ApplicationEventPublisher eventPublisher;
+    private final AttachmentRepository attachmentRepository;
+    private final ComplaintTransitionRepository transitionRepository;
+    private final ObjectMapper objectMapper;
     private final Clock clock;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final Tika tika = new Tika();
 
@@ -77,7 +90,12 @@ public class AttachmentService {
         List<Attachment> attachments = new ArrayList<>(files.size());
         List<String> stagedKeys = new ArrayList<>(files.size());
         for (MultipartFile file : files) {
-            Attachment attachment = stage(complaint, file, uploader, null);
+            // Persisted here (not only cascaded later): callers outside the
+            // submission template — e.g. the resolve endpoint — never save the
+            // complaint again, and without ids the rows are unreferenceable.
+            // In the submission flow the same managed instances are merely
+            // re-attached to the complaint collection, so no duplicate arises.
+            Attachment attachment = attachmentRepository.save(stage(complaint, file, uploader, null));
             attachments.add(attachment);
             stagedKeys.add(attachment.getStorageKey());
         }
@@ -260,6 +278,62 @@ public class AttachmentService {
             } catch (IOException exception) {
                 log.error("Could not promote attachment {} to final storage", storageKey, exception);
             }
+        }
+    }
+
+    /**
+     * Link resolve evidence to its audit row (final cleanup, §6 RESOLVE).
+     *
+     * <p>Fires BEFORE_COMMIT in the resolving transaction — after the lifecycle
+     * service has saved the RESOLVE transition, so a query here sees it via
+     * auto-flush. Evidence ids come from that transition's {@code metadata}
+     * (written by {@code ResolveHandler}); every id must resolve to a live
+     * attachment of this complaint or the whole resolve rolls back. A native
+     * UPDATE sets {@code transition_id} (and the work-proof flag) without an
+     * Attachment mutator, which no phase has needed otherwise.
+     */
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    public void linkResolveEvidence(ComplaintStatusChangedEvent event) {
+        if (!"RESOLVED".equals(event.to())) {
+            return;
+        }
+        ComplaintTransition resolve = transitionRepository
+                .findByComplaintIdOrderByCreatedAtAsc(event.complaintId()).stream()
+                .filter(transition -> transition.getAction() == ComplaintAction.RESOLVE)
+                .reduce((first, second) -> second)
+                .orElseThrow(() -> new IllegalStateException(
+                        "RESOLVE transition missing for complaint " + event.complaintId()));
+        List<Long> evidenceIds = evidenceIdsOf(resolve);
+        if (evidenceIds.isEmpty()) {
+            return;
+        }
+        int linked = entityManager.createNativeQuery("""
+                UPDATE attachments SET transition_id = :transitionId, is_work_proof = true
+                WHERE id IN :ids
+                  AND complaint_id = :complaintId
+                  AND deleted_at IS NULL
+                """)
+                .setParameter("transitionId", resolve.getId())
+                .setParameter("ids", evidenceIds)
+                .setParameter("complaintId", event.complaintId())
+                .executeUpdate();
+        if (linked != evidenceIds.size()) {
+            throw new IllegalStateException(
+                    "Could not link all proof photos for complaint " + event.complaintId());
+        }
+    }
+
+    private List<Long> evidenceIdsOf(ComplaintTransition transition) {
+        try {
+            if (transition.getMetadata() == null || transition.getMetadata().isBlank()) {
+                return List.of();
+            }
+            List<Long> ids = new ArrayList<>();
+            objectMapper.readTree(transition.getMetadata()).path("evidenceIds")
+                    .forEach(node -> ids.add(node.asLong()));
+            return ids;
+        } catch (Exception e) {
+            throw new IllegalStateException("Unreadable transition metadata", e);
         }
     }
 

@@ -17,6 +17,7 @@ import com.nagorikseba.notification.ComplaintStatusChangedEvent;
 import com.nagorikseba.shared.exception.ResourceNotFoundException;
 import com.nagorikseba.shared.outbox.OutboxPublisher;
 import com.nagorikseba.sla.SlaBreachScanner;
+import com.nagorikseba.sla.SlaService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
@@ -30,12 +31,13 @@ import java.util.Set;
  *
  * <p>Guards: the actor is the assigned officer (or an admin override), and at
  * least one evidence attachment rides with the action — each must exist,
- * belong to this complaint and be un-deleted. (Linking evidence to the audit
- * row's {@code transition_id} needs an Attachment mutator, which no phase has
- * added yet; validation here keeps unproven resolves out while the column stays
- * available.) Opens a {@code resolution_attempts} row in PENDING_CITIZEN,
- * clears the active SLA breach, and publishes both the status event (for
- * channel fan-out) and a {@code COMPLAINT_RESOLVED} outbox row.
+ * belong to this complaint and be un-deleted. Evidence linkage to the audit
+ * row rides on {@link #transitionMetadata}: the service stores it on the
+ * RESOLVE transition, and {@code AttachmentService} links the rows in a
+ * BEFORE_COMMIT listener in the same transaction. Opens a
+ * {@code resolution_attempts} row in PENDING_CITIZEN, ensures the SLA
+ * instance, clears the active SLA breach, and publishes both the status event
+ * (for channel fan-out) and a {@code COMPLAINT_RESOLVED} outbox row.
  */
 @Component
 public class ResolveHandler extends ComplaintMutator implements TransitionHandler {
@@ -44,6 +46,7 @@ public class ResolveHandler extends ComplaintMutator implements TransitionHandle
     private final AttachmentRepository attachmentRepository;
     private final ResolutionAttemptRepository attemptRepository;
     private final SlaBreachScanner breachScanner;
+    private final SlaService slaService;
     private final OutboxPublisher outboxPublisher;
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
@@ -52,6 +55,7 @@ public class ResolveHandler extends ComplaintMutator implements TransitionHandle
                           AttachmentRepository attachmentRepository,
                           ResolutionAttemptRepository attemptRepository,
                           SlaBreachScanner breachScanner,
+                          SlaService slaService,
                           OutboxPublisher outboxPublisher,
                           ApplicationEventPublisher eventPublisher,
                           ObjectMapper objectMapper) {
@@ -59,6 +63,7 @@ public class ResolveHandler extends ComplaintMutator implements TransitionHandle
         this.attachmentRepository = attachmentRepository;
         this.attemptRepository = attemptRepository;
         this.breachScanner = breachScanner;
+        this.slaService = slaService;
         this.outboxPublisher = outboxPublisher;
         this.eventPublisher = eventPublisher;
         this.objectMapper = objectMapper;
@@ -115,6 +120,7 @@ public class ResolveHandler extends ComplaintMutator implements TransitionHandle
 
         changeStatus(complaint, ComplaintStatus.RESOLVED);
         markResolvedAt(complaint, occurredAt);
+        slaService.ensureInstance(complaint);
         breachScanner.clearBreachOnResolve(complaint.getId(), occurredAt);
 
         ObjectNode payload = objectMapper.createObjectNode();
@@ -135,6 +141,22 @@ public class ResolveHandler extends ComplaintMutator implements TransitionHandle
         eventPublisher.publishEvent(new ComplaintStatusChangedEvent(
                 complaint.getId(), actor.getId(), ComplaintStatus.IN_PROGRESS.name(),
                 ComplaintStatus.RESOLVED.name(), command.note(), occurredAt));
+    }
+
+    @Override
+    public String transitionMetadata(Complaint complaint, TransitionCommand command) {
+        // Read back in the same transaction: the attempt row execute() just
+        // saved (handlers stay stateless — no per-request fields to race on).
+        int attemptNumber = attemptRepository
+                .findFirstByComplaintIdOrderByAttemptNumberDesc(complaint.getId())
+                .map(ResolutionAttempt::getAttemptNumber).orElse(0);
+        ObjectNode metadata = objectMapper.createObjectNode();
+        metadata.put("attemptNumber", attemptNumber);
+        var evidence = metadata.putArray("evidenceIds");
+        if (command.evidenceAttachmentIds() != null) {
+            command.evidenceAttachmentIds().forEach(evidence::add);
+        }
+        return write(metadata);
     }
 
     private String write(ObjectNode payload) {

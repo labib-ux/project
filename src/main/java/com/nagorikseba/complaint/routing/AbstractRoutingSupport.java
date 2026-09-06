@@ -45,10 +45,17 @@ public abstract class AbstractRoutingSupport implements ComplaintRoutingStrategy
                 .getResultList();
     }
 
-    /** Active officers posted anywhere in a municipality, lowest user id first. */
+    /**
+     * Active officers posted anywhere in a municipality, lowest user id first.
+     *
+     * <p>No DISTINCT: Postgres rejects {@code ORDER BY} expressions absent from
+     * a DISTINCT select list, and duplicates are harmless downstream —
+     * {@link #leastLoaded} picks the minimum, which is duplicate-insensitive,
+     * so the lowest-id tie-break holds either way.
+     */
     protected List<User> officersOfMunicipality(Long municipalityId) {
         return entityManager.createQuery("""
-                select distinct m.user from UserMunicipalityMembership m
+                select m.user from UserMunicipalityMembership m
                 where m.municipality.id = :municipalityId
                   and m.department is not null
                   and m.validUntil is null

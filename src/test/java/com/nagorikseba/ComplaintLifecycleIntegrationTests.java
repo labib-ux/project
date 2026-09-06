@@ -7,8 +7,12 @@ import com.nagorikseba.complaint.domain.enums.ComplaintAction;
 import com.nagorikseba.complaint.domain.enums.ComplaintStatus;
 import com.nagorikseba.complaint.lifecycle.ComplaintLifecycleService;
 import com.nagorikseba.complaint.lifecycle.TransitionCommand;
+import com.nagorikseba.complaint.repo.AttachmentRepository;
 import com.nagorikseba.complaint.repo.ComplaintRepository;
 import com.nagorikseba.complaint.repo.ComplaintTransitionRepository;
+import com.nagorikseba.municipality.entity.Department;
+import com.nagorikseba.municipality.repository.DepartmentRepository;
+import jakarta.persistence.PersistenceContext;
 import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.identity.domain.UserMunicipalityMembership;
 import com.nagorikseba.identity.repo.MembershipRepository;
@@ -74,6 +78,15 @@ class ComplaintLifecycleIntegrationTests {
 
     @Autowired
     private ComplaintTransitionRepository transitionRepository;
+
+    @Autowired
+    private AttachmentRepository attachmentRepository;
+
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
 
     @Autowired
     private UserRepository userRepository;
@@ -336,6 +349,71 @@ class ComplaintLifecycleIntegrationTests {
                         .header("Authorization", "Bearer " + citizenToken)
                         .param("reason", "Owner cancel"))
                 .andExpect(status().isOk());
+    }
+
+    /**
+     * Proof-photo linkage: after RESOLVE with a fresh work-proof photo, that
+     * attachment row carries the RESOLVE transition's id (report photos stay
+     * unlinked). The link is written by a BEFORE_COMMIT listener, so it only
+     * exists after the request transaction commits — assertions therefore read
+     * the raw column instead of touching lazy proxies.
+     */
+    @Test
+    void resolveLinksProofPhotoToResolveTransition() throws Exception {
+        String refCode = submitComplaint(citizenToken, "Resolve link test", "ROADS", null);
+
+        mockMvc.perform(post("/api/authority/complaints/{ref}/verify", refCode)
+                        .header("Authorization", "Bearer " + officerToken)
+                        .param("note", "verified"))
+                .andExpect(status().isOk());
+
+        Municipality dhakaNorth = municipalityRepository.findBySlug("dhaka-north").orElseThrow();
+        Department roads = departmentRepository
+                .findByMunicipalityIdAndCode(dhakaNorth.getId(), "ROADS").orElseThrow();
+        User deptOfficer = findOrCreate("dept-officer@test.com", "01700000300",
+                "Dept Officer", com.nagorikseba.enums.UserRole.DEPT_OFFICER);
+        if (membershipRepository.findByUserIdAndValidUntilIsNull(deptOfficer.getId()).isEmpty()) {
+            membershipRepository.save(UserMunicipalityMembership.builder()
+                    .user(deptOfficer)
+                    .municipality(dhakaNorth)
+                    .department(roads)
+                    .validFrom(clock.instant())
+                    .build());
+        }
+        String deptToken = login("dept-officer@test.com");
+
+        mockMvc.perform(post("/api/authority/complaints/{ref}/assign", refCode)
+                        .header("Authorization", "Bearer " + officerToken)
+                        .param("departmentId", roads.getId().toString())
+                        .param("officerId", deptOfficer.getId().toString()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/authority/complaints/{ref}/start", refCode)
+                        .header("Authorization", "Bearer " + deptToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(multipart("/api/authority/complaints/{ref}/resolve", refCode)
+                        .file(new MockMultipartFile("photos", "fixed.png", "image/png", PNG))
+                        .header("Authorization", "Bearer " + deptToken)
+                        .param("note", "fixed"))
+                .andExpect(status().isOk());
+
+        Complaint resolved = complaintRepository.findByReferenceCode(refCode).orElseThrow();
+        assertThat(resolved.getStatus()).isEqualTo(ComplaintStatus.RESOLVED);
+        ComplaintTransition resolveTransition = transitionRepository
+                .findByComplaintIdOrderByCreatedAtAsc(resolved.getId()).stream()
+                .filter(transition -> transition.getAction() == ComplaintAction.RESOLVE)
+                .findFirst().orElseThrow();
+        Number linkedTransitionId = (Number) entityManager.createNativeQuery("""
+                SELECT a.transition_id FROM attachments a
+                JOIN complaints c ON c.id = a.complaint_id
+                WHERE c.reference_code = :ref AND a.original_filename = 'fixed.png'
+                ORDER BY a.id DESC LIMIT 1
+                """)
+                .setParameter("ref", refCode)
+                .getSingleResult();
+        assertThat(linkedTransitionId).isNotNull();
+        assertThat(linkedTransitionId.longValue()).isEqualTo(resolveTransition.getId());
     }
 
     // ----------------------------------------------------------------------------- helpers
