@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/head :: head('User Admin')}">
+</head>
+<body>
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<div class="container py-4">
+    <h2>User administration</h2>
+    <p class="text-muted">Activate/deactivate accounts, post memberships, and anonymize deleted users.</p>
+
+    <table class="table table-striped" id="userTable">
+        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+function authHeaders() {
+    return {
+        'Authorization': 'Bearer ' + localStorage.getItem('nagorikSebaToken'),
+        'Content-Type': 'application/json'
+    };
+}
+async function loadUsers() {
+    const users = await (await fetch('/api/admin/users', {headers: authHeaders()})).json();
+    document.querySelector('#userTable tbody').innerHTML = users.map(u =>
+        '<tr><td>' + u.id + '</td><td>' + u.fullName + '</td><td>' + (u.email || '') + '</td>'
+        + '<td>' + u.role + '</td><td>' + u.active + '</td>'
+        + '<td><button class="btn btn-sm btn-secondary" onclick="setActive(' + u.id + ',' + (!u.active) + ')">'
+        + (u.active ? 'Deactivate' : 'Activate') + '</button> '
+        + '<button class="btn btn-sm btn-danger" onclick="deleteUser(' + u.id + ')">Delete</button></td></tr>'
+    ).join('');
+}
+async function setActive(id, active) {
+    await fetch('/api/admin/users/' + id + '/active', {
+        method: 'PATCH', headers: authHeaders(), body: JSON.stringify({active: active})
+    });
+    loadUsers();
+}
+async function deleteUser(id) {
+    if (!confirm('Deactivate user ' + id + ' and anonymize their complaints?')) return;
+    const res = await fetch('/api/admin/users/' + id, {method: 'DELETE', headers: authHeaders()});
+    alert(res.ok ? 'User anonymized.' : 'Failed: ' + res.status);
+    loadUsers();
+}
+loadUsers();
+</script>
+</body>
+</html>

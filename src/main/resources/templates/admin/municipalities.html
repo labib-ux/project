@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/head :: head('Municipality Admin')}">
+</head>
+<body>
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<div class="container py-4">
+    <h2>Municipality administration</h2>
+    <p class="text-muted">Manage municipalities, wards (GeoJSON boundaries) and departments.</p>
+
+    <h4>Municipalities</h4>
+    <table class="table table-striped" id="muniTable">
+        <thead><tr><th>ID</th><th>Slug</th><th>Name</th><th>Active</th></tr></thead>
+        <tbody></tbody>
+    </table>
+
+    <h4 class="mt-4">Add ward from GeoJSON</h4>
+    <form id="wardForm">
+        <div class="row g-2">
+            <div class="col-md-2"><input class="form-control" id="wMunicipality" type="number" placeholder="Municipality ID" required></div>
+            <div class="col-md-2"><input class="form-control" id="wNumber" type="number" placeholder="Ward #" required></div>
+            <div class="col-md-3"><input class="form-control" id="wName" placeholder="Area name" required></div>
+        </div>
+        <div class="mt-2">
+            <label for="wGeoJson" class="form-label">GeoJSON Polygon / MultiPolygon (lng/lat)</label>
+            <textarea class="form-control" id="wGeoJson" rows="4" required>{"type":"Polygon","coordinates":[[[90.36,23.72],[90.44,23.72],[90.44,23.75],[90.36,23.75],[90.36,23.72]]]}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Add ward</button>
+    </form>
+
+    <h4 class="mt-4">Departments</h4>
+    <table class="table table-striped" id="deptTable">
+        <thead><tr><th>ID</th><th>Code</th><th>Name</th><th>Categories</th><th>Active</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+function authHeaders() {
+    return {
+        'Authorization': 'Bearer ' + localStorage.getItem('nagorikSebaToken'),
+        'Content-Type': 'application/json'
+    };
+}
+async function loadAll() {
+    const munis = await (await fetch('/api/admin/municipalities', {headers: authHeaders()})).json();
+    document.querySelector('#muniTable tbody').innerHTML = munis.map(m =>
+        '<tr><td>' + m.id + '</td><td>' + m.slug + '</td><td>' + m.name + '</td><td>' + m.isActive + '</td></tr>'
+    ).join('');
+    const depts = await (await fetch('/api/admin/departments', {headers: authHeaders()})).json();
+    document.querySelector('#deptTable tbody').innerHTML = depts.map(d =>
+        '<tr><td>' + d.id + '</td><td>' + d.code + '</td><td>' + d.name + '</td>'
+        + '<td>' + (d.handlesCategories || []).join(', ') + '</td><td>' + d.isActive + '</td></tr>'
+    ).join('');
+}
+document.getElementById('wardForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const res = await fetch('/api/admin/wards/geojson', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+            municipalityId: Number(document.getElementById('wMunicipality').value),
+            wardNumber: Number(document.getElementById('wNumber').value),
+            areaName: document.getElementById('wName').value,
+            geojson: JSON.parse(document.getElementById('wGeoJson').value)
+        })
+    });
+    alert(res.ok ? 'Ward added.' : 'Failed: ' + res.status + ' ' + await res.text());
+});
+loadAll();
+</script>
+</body>
+</html>

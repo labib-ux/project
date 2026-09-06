@@ -46,6 +46,13 @@ app:
     lockout:
       max-failed-attempts: ${LOCKOUT_MAX_FAILED_ATTEMPTS:5}
       duration: ${LOCKOUT_DURATION:15m}
+  # Servlet rate limits (§8.4). Off by default so integration suites are
+  # unaffected; application-prod.yml turns the master switch on.
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:false}
+    login-per-minute-per-ip: ${RATE_LIMIT_LOGIN:5}
+    register-per-hour-per-ip: ${RATE_LIMIT_REGISTER:3}
+    complaint-submit-per-day-per-user: ${RATE_LIMIT_SUBMIT:10}
 
 management:
   endpoints:

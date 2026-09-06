@@ -97,10 +97,13 @@ public class AttachmentService {
         validateFile(file);
 
         String contentType = detectContentType(file);
-        String checksum = computeChecksum(file);
+        // Privacy (§9.3): re-encode to drop EXIF (including GPS) before anything
+        // is checksummed or stored, so served bytes never carry camera metadata.
+        byte[] data = stripExif(file, contentType);
+        String checksum = computeChecksum(data);
         String storageKey = generateStorageKey(complaint.getReferenceCode(), extensionFor(contentType));
 
-        stageBytes(file, storageKey);
+        stageBytes(data, storageKey);
 
         return Attachment.builder()
                 .complaint(complaint)
@@ -109,13 +112,57 @@ public class AttachmentService {
                 .storageProvider("LOCAL")
                 .originalFilename(file.getOriginalFilename())
                 .contentType(contentType)
-                .byteSize(file.getSize())
+                .byteSize(data.length)
                 .checksumSha256(checksum)
                 .workProof(transition != null)
                 .scanStatus("PENDING")
                 .uploadedBy(uploader)
                 .createdAt(clock.instant())
                 .build();
+    }
+
+    /**
+     * Re-encode JPEG/PNG through ImageIO (read → pixels → write), which drops
+     * every metadata segment including EXIF GPS.
+     *
+     * <p>Falls back to the original bytes whenever re-encoding is impossible:
+     * undecodable content (ImageIO returns null) and formats without a stock
+     * codec (WebP) — uploads must never fail closed on metadata handling, and
+     * the type gate in {@code detectContentType} has already run.
+     */
+    private byte[] stripExif(MultipartFile file, String contentType) {
+        String format = switch (contentType) {
+            case "image/jpeg" -> "jpg";
+            case "image/png" -> "png";
+            default -> null;
+        };
+        if (format == null) {
+            return readBytes(file);
+        }
+        try {
+            byte[] original = readBytes(file);
+            java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(
+                    new java.io.ByteArrayInputStream(original));
+            if (image == null) {
+                return original;
+            }
+            java.io.ByteArrayOutputStream stripped = new java.io.ByteArrayOutputStream(original.length);
+            if (!javax.imageio.ImageIO.write(image, format, stripped)) {
+                return original;
+            }
+            return stripped.toByteArray();
+        } catch (IOException exception) {
+            log.debug("EXIF strip failed, keeping original bytes: {}", exception.getMessage());
+            return readBytes(file);
+        }
+    }
+
+    private byte[] readBytes(MultipartFile file) {
+        try {
+            return file.getBytes();
+        } catch (IOException exception) {
+            throw new FileStorageException("Could not read the uploaded image", exception);
+        }
     }
 
     private void validateFile(MultipartFile file) {
@@ -142,18 +189,12 @@ public class AttachmentService {
         }
     }
 
-    private String computeChecksum(MultipartFile file) {
+    private String computeChecksum(byte[] data) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            try (InputStream inputStream = file.getInputStream()) {
-                byte[] buffer = new byte[8192];
-                int read;
-                while ((read = inputStream.read(buffer)) != -1) {
-                    digest.update(buffer, 0, read);
-                }
-            }
+            digest.update(data);
             return HexFormat.of().formatHex(digest.digest());
-        } catch (IOException | NoSuchAlgorithmException exception) {
+        } catch (NoSuchAlgorithmException exception) {
             throw new FileStorageException("Could not fingerprint the uploaded image", exception);
         }
     }
@@ -182,13 +223,11 @@ public class AttachmentService {
                 today.format(KEY_DATE), referenceCode.toLowerCase(), UUID.randomUUID(), extension);
     }
 
-    private void stageBytes(MultipartFile file, String storageKey) {
+    private void stageBytes(byte[] data, String storageKey) {
         Path scratch = null;
         try {
             scratch = Files.createTempFile("nagorik-seba-", ".upload");
-            try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, scratch, StandardCopyOption.REPLACE_EXISTING);
-            }
+            Files.write(scratch, data);
             fileStorageService.storeTemp(storageKey, scratch);
             scratch = null; // storeTemp moved it
         } catch (IOException exception) {

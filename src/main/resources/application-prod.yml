@@ -1,0 +1,55 @@
+# Nagorik Seba — production profile (Phase 6).
+#
+# Every value comes from the environment: this file MUST NEVER contain actual
+# secrets. Boot fails fast at startup when JWT_SECRET is absent (see
+# JwtSecretValidator in shared.config).
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    clean-disabled: true
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+
+security:
+  jwt:
+    # No default here on purpose — missing JWT_SECRET fails startup.
+    secret: ${JWT_SECRET}
+    access-token-seconds: ${JWT_ACCESS_TOKEN_SECONDS:900}
+    refresh-token-days: ${JWT_REFRESH_TOKEN_DAYS:30}
+    issuer: ${JWT_ISSUER:nagorik-seba}
+
+app:
+  storage:
+    upload-dir: ${APP_STORAGE_PATH:/var/lib/nagorik-seba/uploads}
+  security:
+    cors:
+      allowed-origins: ${APP_CORS_ALLOWED_ORIGINS}
+  sla:
+    default-hours: ${APP_SLA_DEFAULT_HOURS:120}
+  scheduling:
+    enabled: true
+  rate-limit:
+    enabled: true
+  notifications:
+    sms-enabled: ${SMS_ENABLED:false}
+    twilio-sid: ${TWILIO_SID:}
+    twilio-token: ${TWILIO_TOKEN:}
+    twilio-from: ${TWILIO_FROM:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/head :: head('SLA Policy Admin')}">
+</head>
+<body>
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<div class="container py-4">
+    <h2>SLA policy administration</h2>
+    <p class="text-muted">Edits apply to subsequently calculated deadlines only — existing instances keep their snapshots.</p>
+
+    <div class="row g-2 mb-3">
+        <div class="col-md-3">
+            <label for="municipalityId" class="form-label">Municipality ID (blank = all)</label>
+            <input type="number" class="form-control" id="municipalityId">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-primary" id="loadBtn">Load</button>
+        </div>
+    </div>
+
+    <table class="table table-striped" id="policyTable">
+        <thead><tr><th>ID</th><th>Category</th><th>Priority</th><th>Max h</th><th>L1 h</th><th>L2 h</th><th>Active</th><th></th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+function authHeaders() {
+    return {
+        'Authorization': 'Bearer ' + localStorage.getItem('nagorikSebaToken'),
+        'Content-Type': 'application/json'
+    };
+}
+async function loadPolicies() {
+    const mid = document.getElementById('municipalityId').value;
+    const url = '/api/admin/sla-policies' + (mid ? '?municipalityId=' + encodeURIComponent(mid) : '');
+    const policies = await (await fetch(url, {headers: authHeaders()})).json();
+    document.querySelector('#policyTable tbody').innerHTML = policies.map(p =>
+        '<tr><td>' + p.id + '</td><td>' + p.category + '</td><td>' + p.priority + '</td>'
+        + '<td><input type="number" min="1" value="' + p.maxHours + '" id="max-' + p.id + '" style="width:80px"></td>'
+        + '<td>' + (p.escalationLevel1Hours == null ? '—' : p.escalationLevel1Hours) + '</td>'
+        + '<td>' + (p.escalationLevel2Hours == null ? '—' : p.escalationLevel2Hours) + '</td>'
+        + '<td>' + p.active + '</td>'
+        + '<td><button class="btn btn-sm btn-primary" onclick="savePolicy(' + p.id + ')">Save</button></td></tr>'
+    ).join('');
+}
+async function savePolicy(id) {
+    const maxHours = Number(document.getElementById('max-' + id).value);
+    const res = await fetch('/api/admin/sla-policies/' + id, {
+        method: 'PUT', headers: authHeaders(), body: JSON.stringify({maxHours: maxHours})
+    });
+    alert(res.ok ? 'Policy updated.' : 'Failed: ' + res.status);
+    loadPolicies();
+}
+document.getElementById('loadBtn').addEventListener('click', loadPolicies);
+loadPolicies();
+</script>
+</body>
+</html>
