@@ -54,6 +54,7 @@ public class WardMonthlyPerformance {
 
     @Column(name = "total_complaints", nullable = false)
     @Builder.Default
+    @Setter
     private int totalComplaints = 0;
 
     @Column(name = "resolved_complaints", nullable = false)
