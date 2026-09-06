@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS sla_instances (
     deadline_at             TIMESTAMPTZ NOT NULL,
     warn_at                 TIMESTAMPTZ,
     breach_at               TIMESTAMPTZ,
-    last_calculated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    last_calculated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_sla_instance_deadline ON sla_instances (deadline_at)
@@ -61,13 +62,9 @@ CREATE TABLE IF NOT EXISTS sla_breaches (
     created_at              TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_breach_active_per_complaint') THEN
-        ALTER TABLE sla_breaches
-            ADD CONSTRAINT uq_breach_active_per_complaint UNIQUE (complaint_id) WHERE resolved_at IS NULL;
-    END IF;
-END $$;
+-- Partial unique indexes (Postgres has no partial UNIQUE table constraint).
+CREATE UNIQUE INDEX IF NOT EXISTS uq_breach_active_per_complaint
+    ON sla_breaches (complaint_id) WHERE resolved_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_sla_open_breach ON sla_breaches (escalation_level)
     WHERE resolved_at IS NULL;
@@ -84,14 +81,8 @@ ALTER TABLE IF EXISTS notifications
     ADD COLUMN IF NOT EXISTS read_at        TIMESTAMPTZ,
     ADD COLUMN IF NOT EXISTS outbox_id      BIGINT REFERENCES outbox_messages(id) ON DELETE SET NULL;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_notification_outbox_user') THEN
-        ALTER TABLE notifications
-            ADD CONSTRAINT uq_notification_outbox_user UNIQUE (outbox_id, user_id)
-            WHERE outbox_id IS NOT NULL;
-    END IF;
-END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_notification_outbox_user
+    ON notifications (outbox_id, user_id) WHERE outbox_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_notification_user_unread ON notifications (user_id, id DESC)
     WHERE is_read = false;

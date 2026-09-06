@@ -194,8 +194,10 @@ public class SlaBreachScanner {
     }
 
     private List<User> usersInRole(Long municipalityId, UserRole role) {
+        // No DISTINCT: Postgres rejects ORDER BY expressions absent from a
+        // DISTINCT select list, and duplicates are harmless (first match wins).
         return entityManager.createQuery("""
-                select distinct m.user from UserMunicipalityMembership m
+                select m.user from UserMunicipalityMembership m
                 where m.municipality.id = :municipalityId
                   and m.validUntil is null
                   and m.user.role = :role

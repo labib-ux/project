@@ -27,6 +27,7 @@ public class ScoreboardService {
     private final WardMonthlyPerformanceRepository performanceRepository;
     private final Clock clock;
 
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> scoreboard(Long municipalityId, String period) {
         LocalDate periodStart = parsePeriod(period);
         return performanceRepository
