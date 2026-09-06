@@ -7,7 +7,9 @@ import com.nagorikseba.complaint.domain.enums.ComplaintStatus;
 import com.nagorikseba.complaint.lifecycle.ComplaintLifecycleService;
 import com.nagorikseba.complaint.lifecycle.TransitionCommand;
 import com.nagorikseba.complaint.repo.ComplaintRepository;
+import com.nagorikseba.complaint.service.AttachmentService;
 import com.nagorikseba.complaint.service.ComplaintQueryService;
+import com.nagorikseba.identity.repo.UserRepository;
 import com.nagorikseba.entity.SlaRule;
 import com.nagorikseba.enums.UserRole;
 import com.nagorikseba.identity.domain.UserMunicipalityMembership;
@@ -19,6 +21,7 @@ import com.nagorikseba.shared.exception.ResourceNotFoundException;
 import com.nagorikseba.shared.security.AuthenticatedUser;
 import com.nagorikseba.shared.security.PrincipalContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,8 +30,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Clock;
+import java.util.List;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -52,9 +57,8 @@ import java.util.stream.Collectors;
  * not under {@code /api/complaints/...}, whose chain only admits CITIZEN and
  * ADMIN and would answer 403 to an officer token.
  *
- * <p>Phase 4 exposes VERIFY, REJECT, ASSIGN (manual + auto) and START.
- * RESOLVE, CLOSE and REOPEN have no handler in this build and answer 422;
- * their endpoints land with their handlers in Phase 5.
+ * <p>Phase 5 adds RESOLVE here; CLOSE and REOPEN live on the citizen
+ * controller (rate/reopen) and have no handler in earlier builds.
  */
 @RestController
 @RequestMapping("/api/authority")
@@ -75,6 +79,8 @@ public class AuthorityComplaintController {
     private final MembershipRepository membershipRepository;
     private final WardRepository wardRepository;
     private final SlaRuleRepository slaRuleRepository;
+    private final AttachmentService attachmentService;
+    private final UserRepository userRepository;
     private final PrincipalContext principalContext;
     private final Clock clock;
 
@@ -200,6 +206,46 @@ public class AuthorityComplaintController {
             @RequestParam(required = false) String note,
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
         return act(ComplaintAction.START, referenceCode, note, idempotencyKey);
+    }
+
+    /**
+     * IN_PROGRESS → RESOLVED with work-proof photos (Phase 5).
+     *
+     * <p>Photos are staged as complaint attachments first so the handler can
+     * validate them as evidence in the same transaction; at least one is
+     * required. Lives here (not the citizen controller) because the citizen
+     * chain would answer 403 to officer tokens.
+     */
+    @PostMapping(value = "/complaints/{referenceCode}/resolve",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Transactional
+    public ComplaintResponse resolve(
+            @PathVariable String referenceCode,
+            @RequestParam(required = false) String note,
+            @RequestParam("photos") List<MultipartFile> photos,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        if (photos == null || photos.isEmpty()) {
+            throw new IllegalArgumentException("At least one work-proof photo is required to resolve");
+        }
+        Complaint complaint = loadInMunicipality(referenceCode);
+        Long officerId = principalContext.requireUserId();
+        List<Long> evidenceIds = attachmentService
+                .saveAttachments(complaint, photos, userRepository.findById(officerId)
+                        .orElseThrow(() -> new ResourceNotFoundException("User not found: " + officerId)))
+                .stream()
+                .map(attachment -> attachment.getId())
+                .toList();
+        TransitionCommand command = TransitionCommand.ofRated(
+                ComplaintAction.RESOLVE,
+                complaint.getId(),
+                officerId,
+                note,
+                evidenceIds,
+                null,
+                null,
+                idempotencyKey,
+                complaint.getVersion());
+        return queryService.describe(lifecycleService.execute(command));
     }
 
     // ------------------------------------------------------------------ internals
