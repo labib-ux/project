@@ -25,6 +25,8 @@ import com.nagorikseba.municipality.repository.DepartmentRepository;
 import com.nagorikseba.municipality.repository.MunicipalityRepository;
 import com.nagorikseba.municipality.repository.WardRepository;
 import com.nagorikseba.repository.SlaRuleRepository;
+import com.nagorikseba.sla.SlaPolicy;
+import com.nagorikseba.sla.SlaPolicyRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -68,6 +70,7 @@ public class DataSeeder implements CommandLineRunner {
     private final MembershipRepository membershipRepository;
     private final DepartmentRepository departmentRepository;
     private final SlaRuleRepository slaRuleRepository;
+    private final SlaPolicyRepository slaPolicyRepository;
     private final ComplaintRepository complaintRepository;
     private final ComplaintTransitionRepository transitionRepository;
     private final ComplaintAssignmentRepository assignmentRepository;
@@ -184,6 +187,31 @@ public class DataSeeder implements CommandLineRunner {
                             .escalationLevel(1).build(),
                     SlaRule.builder().category(category).priority(Priority.CRITICAL).maxHours(12)
                             .escalationLevel(2).build()));
+        }
+
+        // Phase 5: municipality SLA policies for every category × priority.
+        // Hours mirror the legacy rules (LOW 72, NORMAL 48, HIGH 24, CRITICAL 12);
+        // level 1 escalates at three quarters of the deadline, level 2 at it.
+        for (Municipality municipality : List.of(dhakaNorth, dhakaSouth)) {
+            for (Category category : Category.values()) {
+                for (Priority priority : Priority.values()) {
+                    int hours = switch (priority) {
+                        case LOW -> 72;
+                        case NORMAL -> 48;
+                        case HIGH -> 24;
+                        case CRITICAL -> 12;
+                    };
+                    slaPolicyRepository.save(SlaPolicy.builder()
+                            .municipality(municipality)
+                            .category(category)
+                            .priority(priority)
+                            .maxHours(hours)
+                            .escalationLevel1Hours(hours * 3 / 4)
+                            .escalationLevel2Hours(hours)
+                            .active(true)
+                            .build());
+                }
+            }
         }
 
         seedDemoComplaints(citizen1, citizen2, citizen3, councilor,

@@ -60,6 +60,41 @@
             </div>
         </div>
     </section>
+
+    <section id="live-map" class="container">
+        <p class="eyebrow">Live across the city</p>
+        <h2>What neighbours are reporting</h2>
+        <label for="heatmapMunicipality">Municipality</label>
+        <select id="heatmapMunicipality">
+            <option value="dhaka-north">Dhaka North</option>
+            <option value="dhaka-south">Dhaka South</option>
+        </select>
+        <div id="heatmap" style="height: 420px; border-radius: 8px;"></div>
+        <div id="heatmapLegend"></div>
+
+        <h3>Ward scoreboard</h3>
+        <table id="scoreboardTable">
+            <thead><tr><th>Ward</th><th>Reports</th><th>Resolved</th><th>Rate %</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </section>
 </main>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script th:src="@{/js/heatmap.js}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async function () {
+    var body = document.querySelector('#scoreboardTable tbody');
+    if (!body) return;
+    var res = await fetch('/api/public/wards/scoreboard?municipality=dhaka-north');
+    if (!res.ok) return;
+    var rows = await res.json();
+    body.innerHTML = rows.map(function (row) {
+        return '<tr><td>' + row.areaName + '</td><td>' + row.totalComplaints + '</td>'
+            + '<td>' + row.resolvedComplaints + '</td><td>' + row.resolutionRate + '</td></tr>';
+    }).join('');
+});
+</script>
 </body>
 </html>

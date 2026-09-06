@@ -1,0 +1,5 @@
+# Test profile: background schedulers stay off unless a suite opts in
+# explicitly (see SlaScannerIntegrationTests / OutboxDeliveryIntegrationTests).
+app:
+  scheduling:
+    enabled: false
