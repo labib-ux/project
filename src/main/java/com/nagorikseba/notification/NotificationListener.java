@@ -5,6 +5,7 @@ import com.nagorikseba.complaint.repo.ComplaintRepository;
 import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.shared.outbox.OutboxMessage;
 import com.nagorikseba.shared.outbox.OutboxRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
