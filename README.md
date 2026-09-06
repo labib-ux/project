@@ -1,87 +1,66 @@
 # Nagorik Seba
 
-Nagorik Seba is a ward-level civic complaint platform for Bangladesh. Residents will be able to report local infrastructure problems, track each status change, and rate the resolution. Authorities will be able to assign, resolve, and monitor complaints transparently.
+Nagorik Seba is a ward-level civic complaint platform for Bangladesh. Residents report local infrastructure problems with photos, track every status change, and rate the resolution. Authorities verify, assign, resolve and monitor complaints transparently.
 
-## Current foundation
+Architecture: modular monolith — Spring Boot 3.5 / Java 21 / PostgreSQL 16 + PostGIS / Flyway / Thymeleaf. Design intent lives in `docs/ENTERPRISE_BLUEPRINT.md`; per-phase build records live in `docs/implementation/PHASE-N-HANDOFF.md`.
 
-- Spring Boot 3.5 / Java 21 / Maven Wrapper
-- Spring Security with JWT-based authentication
-- Citizen registration/login plus authenticated complaint submission with local image uploads
-- JPA entities and repositories for users, wards, departments, complaints, status updates, attachments, SLA rules, notifications, and ward performance
-- H2 for a no-setup local start; PostgreSQL profile for deployment
-- Thymeleaf public landing page
+## Quickstart
 
-The complaint workflow, file uploads, dashboards, maps, notifications, and design-pattern services are the next implementation phases.
-
-## Run locally
-
-Java 21 is required. Maven is included through the wrapper, so a global Maven installation is not needed.
+Java 21 is required. Maven ships via the wrapper; Docker provides PostgreSQL + PostGIS.
 
 ```bash
-./mvnw spring-boot:run
+docker run -d --name nagorik-postgis -e POSTGRES_USER=nagorik \
+  -e POSTGRES_PASSWORD=nagorik -e POSTGRES_DB=nagorik_seba \
+  -p 5432:5432 postgis/postgis:16-3.4
+DOCKER_HOST=unix:///Users/nafizimtiazlabib/.docker/run/docker.sock ./mvnw spring-boot:run
 ```
 
-Open `http://localhost:8080`. The development database is an in-memory H2 database, so its data resets when the application stops.
-
-## Authentication API
-
-Register a citizen:
+Open `http://localhost:8080`. Flyway migrates on boot; the seeder loads demo municipalities, wards, officers and complaints on an empty database. Verify with:
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/register \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "fullName":"Amina Rahman",
-    "email":"amina@example.com",
-    "phone":"01712345678",
-    "password":"a-secure-password"
-  }'
+DOCKER_HOST=unix:///Users/nafizimtiazlabib/.docker/run/docker.sock ./mvnw clean verify
 ```
 
-Log in with an email or Bangladeshi phone number:
+## Demo credentials
 
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"identifier":"amina@example.com","password":"a-secure-password"}'
-```
+All demo passwords are `demo1234`, except the two legacy authority accounts noted below.
 
-Both endpoints return a Bearer access token. Send it as `Authorization: Bearer <token>` to protected APIs as they are added.
+| Role | Email | Password |
+|---|---|---|
+| Citizen | `citizen1@demo` | `demo1234` |
+| Citizen | `citizen2@demo`, `citizen3@demo` | `demo1234` |
+| Dept officers | `officer1@demo` … `officer4@demo` (ROADS/WATER_SUPPLY/ELECTRICITY/SANITATION, Dhaka North) | `demo1234` |
+| Ward councilor | `councilor17@example.com` (Ward 17, Dhaka North) | `councilor123` (legacy) |
+| Roads officer | `roads.north@example.com` | `officer123` (legacy) |
+| Admin | `admin@example.com` | `admin123` (legacy) |
 
-## Complaint submission API
+## API summary
 
-Submit one to five JPEG, PNG, or WebP photos with the complaint. The file type is verified from the file contents, files receive random server-side names, and completed photos are available under `/uploads/**` in local development.
+All API errors are RFC-7807 `application/problem+json`. Send JWTs as `Authorization: Bearer <accessToken>`.
 
-```bash
-curl -X POST http://localhost:8080/api/complaints \
-  -H 'Authorization: Bearer <token>' \
-  -F 'title=Large pothole on Lake Road' \
-  -F 'description=The pothole is dangerous for motorcycles, especially after rain.' \
-  -F 'category=ROADS' \
-  -F 'latitude=23.7465' \
-  -F 'longitude=90.3742' \
-  -F 'photos=@/absolute/path/to/pothole.jpg'
-```
+| Group | Example |
+|---|---|
+| Auth — `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout` | `curl -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{"identifier":"citizen1@demo","password":"demo1234"}'` |
+| Citizen complaints — `POST /api/complaints` (multipart + photos), `GET /api/complaints/my`, `GET /api/complaints/{ref}`, `POST …/{ref}/cancel?reason=`, `POST …/{ref}/rate?rating=&feedback=`, `POST …/{ref}/reopen?reason=` | `curl -X POST localhost:8080/api/complaints -H "Authorization: Bearer $CITIZEN" -F title=Pothole -F description=… -F category=ROADS -F latitude=23.79 -F longitude=90.41 -F photos=@pothole.jpg` |
+| Authority — `GET /api/authority/dashboard`, `GET /api/authority/queue`, `POST …/complaints/{ref}/verify`, `…/reject`, `…/assign`, `…/assign/auto`, `…/start`, `…/resolve` | `curl -X POST localhost:8080/api/authority/complaints/$REF/assign/auto -H "Authorization: Bearer $OFFICER"` |
+| Municipalities — `GET /api/municipalities`, `/{slug}`, `/{slug}/wards`, `/{slug}/departments`, `/api/municipalities/{slug}/wards/containing?lat=&lng=` | `curl 'localhost:8080/api/municipalities/dhaka-north/wards'` |
+| Public — `GET /api/public/heatmap?municipality=&minLng=&minLat=&maxLng=&maxLat=`, `GET /api/public/wards/scoreboard?municipality=&period=` (60/min/IP, snapped coords, no PII) | `curl 'localhost:8080/api/public/heatmap?municipality=dhaka-north&minLng=90.36&minLat=23.72&maxLng=90.44&maxLat=23.88'` |
+| Admin (ADMIN only) — `/api/admin/municipalities`, `/api/admin/wards/geojson`, `/api/admin/departments`, `/api/admin/users`, `/api/admin/sla-policies` + pages at `/admin/municipalities`, `/admin/users`, `/admin/sla-policies` | `curl localhost:8080/api/admin/users -H "Authorization: Bearer $ADMIN"` |
 
-The response includes the complaint, uploaded image URLs, and its first `SUBMITTED` timeline event. Citizens can also retrieve their data with `GET /api/complaints/my` or `GET /api/complaints/{id}`.
+Full lifecycle: submit → verify → assign/auto → start → resolve (proof photo) → rate (CLOSED) or reopen (REOPENED, priority HIGH, half-hours SLA). See `docs/implementation/PHASE-5-HANDOFF.md` §(h) for the complete curl chain.
 
-## PostgreSQL
+## Deployment (Render / Railway + Neon)
 
-Set these variables and enable the PostgreSQL profile:
+| Env var | Purpose | Example |
+|---|---|---|
+| `SPRING_PROFILES_ACTIVE` | Must be `prod` | `prod` |
+| `SPRING_DATASOURCE_URL` | Neon/Postgres JDBC URL (with `?sslmode=require` on Neon) | `jdbc:postgresql://host:5432/db?sslmode=require` |
+| `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD` | DB credentials | — |
+| `JWT_SECRET` | **Required.** Base64 access-token key (≥32 bytes); boot fails without it | `openssl rand -base64 48` |
+| `APP_CORS_ALLOWED_ORIGINS` | **Required.** Browser origins, comma-separated | `https://nagorik.example.com` |
+| `APP_STORAGE_PATH` | Upload dir (persistent disk) | `/var/lib/nagorik-seba/uploads` |
+| `APP_SLA_DEFAULT_HOURS` | SLA fallback hours | `120` |
+| `TWILIO_SID` / `TWILIO_TOKEN` / `TWILIO_FROM`, `SMTP_*`, `SMS_ENABLED` | Notification providers (log-only until wired) | — |
+| `CORS_ALLOWED_ORIGINS` is read as `APP_CORS_ALLOWED_ORIGINS` in prod; dev default is `http://localhost:8080` | — | — |
 
-```bash
-export SPRING_PROFILES_ACTIVE=postgres
-export DB_URL='jdbc:postgresql://localhost:5432/nagorik_seba'
-export DB_USERNAME='postgres'
-export DB_PASSWORD='your-password'
-export JWT_SECRET='a-base64-encoded-secret-of-at-least-32-bytes'
-./mvnw spring-boot:run
-```
-
-The `postgres` profile creates or updates the development schema. Before using a shared database, add versioned Flyway or Liquibase migrations and change `ddl-auto` to `validate`.
-
-## Verify
-
-```bash
-./mvnw test
-```
+Checklist: set env vars → deploy (`./mvnw -Pprod package` or the Dockerfile build) → Flyway migrates automatically on boot (`ddl-auto=validate`, `clean-disabled`) → health check path `/actuator/health` (plus `outboxLag` DOWN if the oldest pending outbox row exceeds 10 min) → log in as each demo role and run the demo script in `docs/implementation/PHASE-6-HANDOFF.md` §(c). See that handoff for the full checklist, known limitations and future work.

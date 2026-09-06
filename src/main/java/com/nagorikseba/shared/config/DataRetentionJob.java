@@ -4,8 +4,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +28,6 @@ import java.util.HexFormat;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "app.scheduling.enabled", havingValue = "true", matchIfMissing = false)
 public class DataRetentionJob {
 
     /** Days after terminal status before anonymous contact phones are purged. */
@@ -41,15 +38,17 @@ public class DataRetentionJob {
 
     private final Clock clock;
 
-    @Scheduled(cron = "${app.retention.cron:0 30 3 * * *}")
-    public void scheduledPurge() {
+    /** Daily entry point (called by the conditional trigger); returns rows cleared. */
+    public int scheduledPurge() {
         try {
             int purged = purgeAnonymousPhones();
             if (purged > 0) {
                 log.info("Retention purge cleared {} anonymous contact phone(s)", purged);
             }
+            return purged;
         } catch (Exception e) {
             log.error("Retention purge failed", e);
+            return 0;
         }
     }
 
