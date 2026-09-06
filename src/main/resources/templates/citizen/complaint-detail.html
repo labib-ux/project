@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/head :: head('Complaint Details')}">
+</head>
+<body>
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<div class="container py-4" id="detail" data-ref="">
+    <h2 id="title">Complaint</h2>
+    <p class="text-muted" id="meta"></p>
+
+    <h4>Status timeline</h4>
+    <ul class="list-group mb-4" id="timeline"></ul>
+
+    <h4>Photos</h4>
+    <div class="row mb-4" id="gallery"></div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Rate the resolution</h4>
+            <form id="rateForm">
+                <div class="mb-2">
+                    <label for="rating" class="form-label">Rating (1–5)</label>
+                    <input type="number" class="form-control" id="rating" min="1" max="5" required>
+                </div>
+                <div class="mb-2">
+                    <label for="feedback" class="form-label">Feedback</label>
+                    <textarea class="form-control" id="feedback" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-success">Submit rating</button>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <h4>Reopen</h4>
+            <form id="reopenForm">
+                <div class="mb-2">
+                    <label for="reason" class="form-label">Reason</label>
+                    <textarea class="form-control" id="reason" rows="2" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-warning">Reopen complaint</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/timeline.js}"></script>
+<script>
+function authHeaders() {
+    return {'Authorization': 'Bearer ' + localStorage.getItem('nagorikSebaToken')};
+}
+const ref = new URLSearchParams(window.location.search).get('ref');
+async function submitRate(event) {
+    event.preventDefault();
+    const rating = document.getElementById('rating').value;
+    const feedback = document.getElementById('feedback').value;
+    const res = await fetch('/api/complaints/' + ref + '/rate?rating=' + encodeURIComponent(rating)
+        + '&feedback=' + encodeURIComponent(feedback), {method: 'POST', headers: authHeaders()});
+    alert(res.ok ? 'Thanks for rating!' : 'Rating failed: ' + res.status);
+    if (res.ok) loadDetail();
+}
+async function submitReopen(event) {
+    event.preventDefault();
+    const reason = document.getElementById('reason').value;
+    const res = await fetch('/api/complaints/' + ref + '/reopen?reason=' + encodeURIComponent(reason),
+        {method: 'POST', headers: authHeaders()});
+    alert(res.ok ? 'Complaint reopened.' : 'Reopen failed: ' + res.status);
+    if (res.ok) loadDetail();
+}
+document.getElementById('rateForm').addEventListener('submit', submitRate);
+document.getElementById('reopenForm').addEventListener('submit', submitReopen);
+loadDetail();
+</script>
+</body>
+</html>
