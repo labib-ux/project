@@ -26,6 +26,8 @@ import java.util.List;
  *                              Null selects the auto-assign path (resolver decides)
  * @param officerId             ASSIGN only, manual path: the chosen officer.
  *                              Null leaves officer selection to the resolver
+ * @param rating                CLOSE only: citizen rating 1–5, required
+ * @param feedback              CLOSE only: optional rating feedback
  */
 public record TransitionCommand(
         ComplaintAction action,
@@ -36,14 +38,16 @@ public record TransitionCommand(
         String idempotencyKey,
         int expectedVersion,
         Long departmentId,
-        Long officerId
+        Long officerId,
+        Integer rating,
+        String feedback
 ) {
 
     /** The common case: an action with a note and no attached evidence. */
     public static TransitionCommand of(ComplaintAction action, Long complaintId, Long actorId,
                                        String note, String idempotencyKey, int expectedVersion) {
         return new TransitionCommand(action, complaintId, actorId, note, List.of(),
-                idempotencyKey, expectedVersion, null, null);
+                idempotencyKey, expectedVersion, null, null, null, null);
     }
 
     /** Manual ASSIGN with an explicitly picked department and optional officer. */
@@ -51,7 +55,17 @@ public record TransitionCommand(
                                                  String note, Long departmentId, Long officerId,
                                                  String idempotencyKey, int expectedVersion) {
         return new TransitionCommand(action, complaintId, actorId, note, List.of(),
-                idempotencyKey, expectedVersion, departmentId, officerId);
+                idempotencyKey, expectedVersion, departmentId, officerId, null, null);
+    }
+
+    /** RESOLVE with work-proof evidence, or CLOSE with a citizen rating. */
+    public static TransitionCommand ofRated(ComplaintAction action, Long complaintId, Long actorId,
+                                            String note, List<Long> evidenceAttachmentIds,
+                                            Integer rating, String feedback,
+                                            String idempotencyKey, int expectedVersion) {
+        return new TransitionCommand(action, complaintId, actorId, note,
+                evidenceAttachmentIds != null ? List.copyOf(evidenceAttachmentIds) : List.of(),
+                idempotencyKey, expectedVersion, null, null, rating, feedback);
     }
 
     public boolean hasIdempotencyKey() {

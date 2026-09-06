@@ -115,4 +115,60 @@ public class CitizenComplaintController {
 
         return queryService.describe(lifecycleService.execute(command));
     }
+
+    /**
+     * Rate a resolution: RESOLVED → CLOSED with a 1–5 rating (R10).
+     *
+     * <p>Citizen-only and rating-guarded inside {@code CloseHandler}; the
+     * attempt row flips to CLOSED with the rating attached.
+     */
+    @PostMapping("/{referenceCode}/rate")
+    public ComplaintResponse rate(
+            @PathVariable String referenceCode,
+            @RequestParam int rating,
+            @RequestParam(required = false) String feedback,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+
+        Complaint complaint = complaintRepository.findByReferenceCode(referenceCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint not found: " + referenceCode));
+
+        TransitionCommand command = TransitionCommand.ofRated(
+                ComplaintAction.CLOSE,
+                complaint.getId(),
+                principalContext.requireUserId(),
+                feedback,
+                null,
+                rating,
+                feedback,
+                idempotencyKey,
+                complaint.getVersion());
+
+        return queryService.describe(lifecycleService.execute(command));
+    }
+
+    /**
+     * Send a resolution back: RESOLVED → REOPENED with a mandatory reason.
+     *
+     * <p>Budget, priority escalation and SLA recalculation live in
+     * {@code ReopenHandler}; the 6th reopen is refused with a clear 422.
+     */
+    @PostMapping("/{referenceCode}/reopen")
+    public ComplaintResponse reopen(
+            @PathVariable String referenceCode,
+            @RequestParam String reason,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+
+        Complaint complaint = complaintRepository.findByReferenceCode(referenceCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint not found: " + referenceCode));
+
+        TransitionCommand command = TransitionCommand.of(
+                ComplaintAction.REOPEN,
+                complaint.getId(),
+                principalContext.requireUserId(),
+                reason,
+                idempotencyKey,
+                complaint.getVersion());
+
+        return queryService.describe(lifecycleService.execute(command));
+    }
 }
