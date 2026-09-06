@@ -2,6 +2,7 @@ package com.nagorikseba.shared.outbox;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -27,4 +28,25 @@ public interface OutboxRepository extends JpaRepository<OutboxMessage, Long> {
     List<OutboxMessage> findByAggregateTypeAndAggregateIdOrderByIdAsc(String aggregateType, Long aggregateId);
 
     long countByStatus(String status);
+
+    /**
+     * Relay claim (R4/R5, §7.3): atomically move due rows to PROCESSING and
+     * return them. The inner select locks with SKIP LOCKED, so concurrent
+     * workers on any number of instances claim disjoint sets; the outer guard
+     * on PENDING/FAILED keeps an already-claimed row from being taken twice.
+     */
+    @Modifying
+    @Query(value = """
+            UPDATE outbox_messages SET status = 'PROCESSING'
+            WHERE id IN (
+                SELECT id FROM outbox_messages
+                WHERE status IN ('PENDING', 'FAILED')
+                  AND next_attempt_at <= :now
+                ORDER BY id
+                LIMIT :size
+                FOR UPDATE SKIP LOCKED
+            )
+            RETURNING *
+            """, nativeQuery = true)
+    List<OutboxMessage> claimBatch(@Param("size") int size, @Param("now") Instant now);
 }

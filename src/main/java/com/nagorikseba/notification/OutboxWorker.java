@@ -13,10 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -77,13 +76,10 @@ public class OutboxWorker {
         if (ids.isEmpty()) {
             return 0;
         }
-        List<Future<?>> futures = new ArrayList<>(ids.size());
-        for (Long id : ids) {
-            futures.add(outboxExecutor.execute(() -> {});
-            futures.remove(futures.size() - 1);
-            futures.add(submit(id));
-        }
-        for (Future<?> future : futures) {
+        List<CompletableFuture<Void>> futures = ids.stream()
+                .map(id -> CompletableFuture.runAsync(() -> self.getObject().processOne(id), outboxExecutor))
+                .toList();
+        for (CompletableFuture<Void> future : futures) {
             try {
                 future.get(60, TimeUnit.SECONDS);
             } catch (Exception e) {
@@ -127,11 +123,6 @@ public class OutboxWorker {
                     id, retries, MAX_ATTEMPTS, e.getMessage());
         }
         outboxRepository.save(message);
-    }
-
-    private Future<?> submit(Long id) {
-        return ((java.util.concurrent.ExecutorService) outboxExecutor).submit(
-                () -> self.getObject().processOne(id));
     }
 
     private static String truncated(Exception e) {
