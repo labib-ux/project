@@ -64,6 +64,31 @@ public class ComplaintMapper {
         return userId != null && complaint.getCitizen() != null && complaint.getCitizen().getId().equals(userId);
     }
 
+    /**
+     * Public projection (C36, §9): snapped coordinates, no PII, ever.
+     *
+     * <p>Unlike {@link #toResponse}, this takes no principal: citizen name and
+     * phone are always null, the typed address is dropped (free text can carry
+     * PII), and coordinates snap to ~100 m so the point is heatmap-useful but
+     * doorstep-useless. Used by the public heatmap detail branch; enforced here
+     * centrally, never inline at call sites.
+     */
+    public ComplaintResponse toPublicResponse(Complaint complaint, List<Attachment> attachments,
+                                              List<ComplaintTransition> transitions) {
+        ComplaintResponse response = toResponse(complaint, attachments, transitions);
+        response.setCitizenName(null);
+        response.setCitizenPhone(null);
+        response.setAddressText(null);
+        response.setLatitude(snap(response.getLatitude()));
+        response.setLongitude(snap(response.getLongitude()));
+        return response;
+    }
+
+    /** Snap to 0.001° (~100 m at Dhaka): matches the heatmap grid. */
+    public static Double snap(Double coordinate) {
+        return coordinate == null ? null : Math.round(coordinate * 1000.0) / 1000.0;
+    }
+
     private AttachmentResponse toAttachmentResponse(Attachment attachment) {
         return AttachmentResponse.builder()
                 .id(attachment.getId())
