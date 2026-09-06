@@ -166,39 +166,53 @@ class OutboxDeliveryIntegrationTests {
 
     @Test
     void concurrentWorkersClaimDisjointSets() throws Exception {
-        Instant future = clock.instant().plusSeconds(3600);
         List<Long> ids = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             ids.add(saveRow("COMPLAINT", (long) i, "COMPLAINT_SUBMITTED",
                     payload((long) i, "NS-" + i, "SUBMITTED", null)).getId());
         }
+        // After the rows: every row's nextAttemptAt lies before this instant.
+        Instant future = clock.instant().plusSeconds(7200);
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
         CountDownLatch start = new CountDownLatch(1);
         List<Set<Long>> claimed = List.of(new HashSet<>(), new HashSet<>());
+        List<java.util.concurrent.Future<?>> futures = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             int index = i;
-            executor.submit(() -> {
+            futures.add(executor.submit(() -> {
                 try {
                     start.await();
-                    // Through the worker's transactional claim, like the relay does.
-                    worker.claim(4, future).stream()
+                    // Through the worker's transactional claim, like the relay
+                    // does. Oversized batch: sibling suites may share this
+                    // database and leave their own due rows behind.
+                    worker.claim(50, future).stream()
                             .map(OutboxMessage::getId).forEach(claimed.get(index)::add);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            });
+            }));
         }
         start.countDown();
         executor.shutdown();
         assertThat(executor.awaitTermination(60, TimeUnit.SECONDS)).isTrue();
+        for (java.util.concurrent.Future<?> futureResult : futures) {
+            try {
+                futureResult.get(10, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                throw new AssertionError("Claim worker thread failed", e);
+            }
+        }
 
         Set<Long> union = new HashSet<>(claimed.get(0));
         union.addAll(claimed.get(1));
         // The shared database may hold other due rows; what matters is every
-        // test row was claimed exactly once across both workers.
+        // test row was claimed exactly once across both workers (a fast worker
+        // may legitimately take the whole batch, leaving the other empty).
         assertThat(union).containsAll(ids);
-        assertThat(claimed.get(0)).doesNotContainAnyElementsOf(claimed.get(1));
+        Set<Long> overlap = new HashSet<>(claimed.get(0));
+        overlap.retainAll(claimed.get(1));
+        assertThat(overlap).isEmpty();
         long testRowsClaimed = union.stream().filter(ids::contains).count();
         assertThat(testRowsClaimed).isEqualTo(ids.size());
     }

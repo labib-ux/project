@@ -15,9 +15,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,7 +40,6 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "app.scheduling.enabled", havingValue = "true", matchIfMissing = false)
 public class SlaBreachScanner {
 
     /** Complaint statuses still on the clock. */
@@ -59,18 +56,6 @@ public class SlaBreachScanner {
 
     @PersistenceContext
     private EntityManager entityManager;
-
-    @Scheduled(cron = "${app.sla.scan-cron:0 0 * * * *}")
-    public void scheduledScan() {
-        try {
-            int detected = scanOnce();
-            if (detected > 0) {
-                log.info("SLA scanner detected {} breach(es)", detected);
-            }
-        } catch (Exception e) {
-            log.error("SLA scanner run failed", e);
-        }
-    }
 
     /** One scan pass; returns the number of breaches recorded. */
     @Transactional

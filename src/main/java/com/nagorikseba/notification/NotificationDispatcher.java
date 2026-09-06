@@ -12,7 +12,6 @@ import com.nagorikseba.shared.outbox.OutboxMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -65,7 +64,12 @@ public class NotificationDispatcher {
         return List.copyOf(senders.keySet());
     }
 
-    @Transactional
+    /**
+     * Deliberately non-transactional: delivery always runs inside the worker's
+     * per-row transaction. An inner boundary here would mark the shared
+     * transaction rollback-only when delivery throws, making the catch-and-
+     * backoff in the worker uncommittable.
+     */
     public void dispatch(OutboxMessage message) throws Exception {
         switch (message.getEventType()) {
             case "SMS_SEND", "EMAIL_SEND" -> {

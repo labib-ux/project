@@ -5,8 +5,6 @@ import com.nagorikseba.shared.outbox.OutboxRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +30,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 @Slf4j
-@ConditionalOnProperty(name = "app.scheduling.enabled", havingValue = "true", matchIfMissing = false)
 public class OutboxWorker {
 
     /** Attempts before a row is parked FAILED (terminal). */
@@ -54,19 +51,6 @@ public class OutboxWorker {
         this.outboxExecutor = outboxExecutor;
         this.self = self;
         this.clock = clock;
-    }
-
-    @Scheduled(fixedDelayString = "${app.outbox.poll-ms:10000}",
-            initialDelayString = "${app.outbox.poll-ms:10000}")
-    public void poll() {
-        try {
-            int claimed = processBatch(50);
-            if (claimed > 0) {
-                log.debug("Outbox relay processed {} row(s)", claimed);
-            }
-        } catch (Exception e) {
-            log.error("Outbox relay batch failed", e);
-        }
     }
 
     /** Claim due rows, then deliver each on the executor and wait for all. */
