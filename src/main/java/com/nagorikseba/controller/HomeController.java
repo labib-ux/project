@@ -30,4 +30,45 @@ public class HomeController {
         model.addAttribute("categories", Category.values());
         return "citizen/complaint-form";
     }
+
+    @GetMapping("/citizen/complaints/new")
+    public String newComplaintPlural(Model model) {
+        model.addAttribute("categories", Category.values());
+        return "citizen/complaint-form";
+    }
+
+    @GetMapping("/login/authority")
+    public String authorityLogin() {
+        return "authority-login";
+    }
+
+    @GetMapping("/citizen/dashboard")
+    public String citizenDashboard() {
+        return "citizen/dashboard";
+    }
+
+    @GetMapping("/citizen/complaints/{referenceCode}")
+    public String citizenComplaintDetail() {
+        return "citizen/complaint-detail";
+    }
+
+    @GetMapping("/authority/dashboard")
+    public String authorityDashboard() {
+        return "authority/dashboard";
+    }
+
+    @GetMapping("/authority/queue")
+    public String authorityQueue() {
+        return "authority/queue";
+    }
+
+    @GetMapping("/authority/complaints/{referenceCode}")
+    public String authorityComplaintDetail() {
+        return "authority/complaint-detail";
+    }
+
+    @GetMapping("/admin")
+    public String adminIndex() {
+        return "admin/index";
+    }
 }

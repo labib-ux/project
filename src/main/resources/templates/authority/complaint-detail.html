@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/head :: head('Complaint Audit')}">
+</head>
+<body>
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<div class="container py-4">
+    <a href="/authority/queue" class="btn btn-sm btn-link mb-2">&larr; Back to queue</a>
+    <h2 id="detailTitle">Complaint</h2>
+    <p class="text-muted" id="detailMeta"></p>
+
+    <div class="row">
+        <div class="col-lg-7">
+            <h4>Location</h4>
+            <div id="authorityMap" style="height: 300px; border-radius: 8px; border: 1px solid #dee2e6;" class="mb-3"></div>
+
+            <h4>Photo evidence</h4>
+            <div class="row mb-4" id="authorityGallery"></div>
+            <div class="lightbox hidden" id="authorityLightbox" role="dialog" aria-label="Photo viewer">
+                <button class="lightbox-close" id="authorityLightboxClose" aria-label="Close viewer">&times;</button>
+                <img id="authorityLightboxImg" alt="evidence photo enlarged">
+            </div>
+
+            <h4 class="mt-3">Record</h4>
+            <table class="table table-sm" id="auditTable">
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="col-lg-5">
+            <h4>Status timeline</h4>
+            <ul class="timeline-events mb-4" id="authorityTimeline"></ul>
+
+            <h4>Advance status</h4>
+            <div class="card"><div class="card-body">
+                <div class="mb-2">
+                    <label for="advNote" class="form-label">Note / reason</label>
+                    <textarea class="form-control" id="advNote" rows="2"
+                              placeholder="Visible to the citizen on the timeline"></textarea>
+                </div>
+                <div class="d-grid gap-2" id="actionButtons"></div>
+            </div></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script th:src="@{/js/app.js}"></script>
+<script th:src="@{/js/authority-detail.js}"></script>
+</body>
+</html>

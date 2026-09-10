@@ -24,14 +24,21 @@
     </table>
 </div>
 
+<script th:src="@{/js/app.js}"></script>
 <script>
 async function loadDashboard() {
-    const token = localStorage.getItem('nagorikSebaToken');
+    const App = window.NagorikSeba;
+    if (!App || !App.getToken()) {
+        window.location.replace('/login/authority?next=/authority/dashboard');
+        return;
+    }
     const mid = document.getElementById('municipalityId').value;
     const url = '/api/authority/dashboard' + (mid ? '?municipalityId=' + encodeURIComponent(mid) : '');
-    const res = await fetch(url, {headers: {'Authorization': 'Bearer ' + token}});
-    if (!res.ok) {
-        alert('Failed to load dashboard: ' + res.status);
+    let data;
+    try {
+        data = await App.apiJson(url);
+    } catch (error) {
+        App.toast(error.message, 'error');
         return;
     }
     const data = await res.json();

@@ -34,12 +34,27 @@
                 <input name="identifier" autocomplete="username" required placeholder="you@example.com or 01712345678">
             </label>
             <label>Password
-                <input name="password" type="password" autocomplete="current-password" minlength="8" maxlength="72" required placeholder="At least 8 characters">
+                <span class="password-wrap">
+                    <input name="password" type="password" autocomplete="current-password" minlength="8" maxlength="72" required placeholder="At least 8 characters">
+                    <button type="button" class="password-toggle" data-toggle-password>Show</button>
+                </span>
+            </label>
+            <label th:if="${register}">Confirm password
+                <input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required placeholder="Repeat the password">
             </label>
             <button class="button button-primary auth-submit" type="submit">
                 <span th:text="${register} ? 'Create account' : 'Sign in'">Sign in</span><b>→</b>
             </button>
             <p id="auth-feedback" class="auth-feedback" role="status" aria-live="polite"></p>
+            <div class="demo-box">
+                <strong>Demo accounts</strong> — tap to fill:
+                <div>
+                    <button type="button" data-demo-fill="citizen1@demo">Citizen</button>
+                    <button type="button" data-demo-fill="officer1@demo">Officer</button>
+                    <button type="button" data-demo-fill="councilor17@demo">Councilor</button>
+                    <button type="button" data-demo-fill="admin@demo">Admin</button>
+                </div>
+            </div>
         </form>
 
         <p class="auth-switch" th:if="${register}">Already have an account? <a href="/login?next=/citizen/complaint/new">Sign in</a></p>

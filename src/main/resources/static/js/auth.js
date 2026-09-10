@@ -1,6 +1,39 @@
 const form = document.querySelector('#auth-form');
 const feedback = document.querySelector('#auth-feedback');
 
+const BD_PHONE_RE = /^01[3-9]\d{8}$/;
+const INTL_PHONE_RE = /^(?:\+8801|8801|01)[3-9]\d{8}$/;
+
+function fail(message) {
+    feedback.textContent = message;
+    feedback.className = 'auth-feedback error';
+}
+
+document.querySelectorAll('[data-toggle-password]').forEach((button) => {
+    button.addEventListener('click', () => {
+        const input = button.parentElement.querySelector('input');
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        button.textContent = show ? 'Hide' : 'Show';
+    });
+});
+
+document.querySelectorAll('[data-demo-fill]').forEach((button) => {
+    button.addEventListener('click', () => {
+        const identifier = button.getAttribute('data-demo-fill');
+        const register = form && form.dataset.register === 'true';
+        if (register) {
+            const email = form.querySelector('[name="email"]');
+            if (email) email.value = identifier;
+        } else {
+            const field = form.querySelector('[name="identifier"]');
+            if (field) field.value = identifier;
+        }
+        const password = form.querySelector('[name="password"]');
+        if (password) password.value = 'demo1234';
+    });
+});
+
 if (form) {
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -11,6 +44,16 @@ if (form) {
 
         const register = form.dataset.register === 'true';
         const values = Object.fromEntries(new FormData(form));
+        if (register) {
+            if (values.phone && !INTL_PHONE_RE.test(values.phone.trim())) {
+                fail('Enter a valid Bangladeshi mobile number, e.g. 01712345678.');
+                return;
+            }
+            if (values.password !== values.confirmPassword) {
+                fail('Passwords do not match.');
+                return;
+            }
+        }
         const payload = register
             ? { fullName: values.fullName, email: values.email, phone: values.phone || null, password: values.password }
             : { identifier: values.identifier, password: values.password };

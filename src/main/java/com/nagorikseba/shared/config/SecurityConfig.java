@@ -137,6 +137,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/login", "/register", "/citizen/complaint/new").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", "/favicon.ico").permitAll()
+                        .requestMatchers("/login/authority", "/citizen/dashboard", "/citizen/complaints/**").permitAll()
+                        .requestMatchers("/authority/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()

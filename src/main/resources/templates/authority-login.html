@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authority Sign in | Nagorik Seba</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="auth-page">
+<main class="auth-layout">
+    <a class="brand auth-brand" href="/"><span>ন</span> নাগরিক সেবা</a>
+    <section class="auth-panel authority-login-card">
+        <span class="authority-badge">Authority Portal</span>
+        <p class="eyebrow">Officers, councilors, admins</p>
+        <h1>Authority sign in</h1>
+        <p class="auth-intro">Use your officer, councilor, or admin account. Citizen accounts cannot access authority tools.</p>
+
+        <form id="authority-login-form" novalidate>
+            <label>Email or mobile number
+                <input name="identifier" autocomplete="username" required placeholder="officer1@demo">
+            </label>
+            <label>Password
+                <span class="password-wrap">
+                    <input name="password" type="password" autocomplete="current-password" required placeholder="Account password">
+                    <button type="button" class="password-toggle" data-toggle-password>Show</button>
+                </span>
+            </label>
+            <button class="button button-primary btn-authority auth-submit" type="submit">
+                <span>Sign in</span><b>→</b>
+            </button>
+            <p id="authority-feedback" class="auth-feedback" role="status" aria-live="polite"></p>
+            <div class="demo-box">
+                <strong>Demo accounts</strong> — tap to fill:
+                <div>
+                    <button type="button" data-demo-fill="officer1@demo">Officer</button>
+                    <button type="button" data-demo-fill="councilor17@demo">Councilor</button>
+                    <button type="button" data-demo-fill="admin@demo">Admin</button>
+                </div>
+            </div>
+        </form>
+    </section>
+    <aside class="auth-aside" aria-hidden="true">
+        <p class="eyebrow">For officials</p>
+        <blockquote>“Verify reports, assign departments, and resolve issues — with every step on the record.”</blockquote>
+        <div class="aside-shape shape-one"></div><div class="aside-shape shape-two"></div>
+    </aside>
+</main>
+<script th:src="@{/js/app.js}"></script>
+<script th:src="@{/js/authority-login.js}"></script>
+</body>
+</html>

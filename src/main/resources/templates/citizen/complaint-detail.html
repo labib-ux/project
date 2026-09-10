@@ -14,6 +14,10 @@
 
     <h4>Photos</h4>
     <div class="row mb-4" id="gallery"></div>
+    <div class="lightbox hidden" id="lightbox" role="dialog" aria-label="Photo viewer">
+        <button class="lightbox-close" id="lightboxClose" aria-label="Close viewer">&times;</button>
+        <img id="lightboxImg" alt="complaint photo enlarged">
+    </div>
 
     <div class="row">
         <div class="col-md-6">
@@ -43,32 +47,70 @@
     </div>
 </div>
 
+<script th:src="@{/js/app.js}"></script>
 <script th:src="@{/js/timeline.js}"></script>
 <script>
-function authHeaders() {
-    return {'Authorization': 'Bearer ' + localStorage.getItem('nagorikSebaToken')};
-}
-const ref = new URLSearchParams(window.location.search).get('ref');
-async function submitRate(event) {
-    event.preventDefault();
-    const rating = document.getElementById('rating').value;
-    const feedback = document.getElementById('feedback').value;
-    const res = await fetch('/api/complaints/' + ref + '/rate?rating=' + encodeURIComponent(rating)
-        + '&feedback=' + encodeURIComponent(feedback), {method: 'POST', headers: authHeaders()});
-    alert(res.ok ? 'Thanks for rating!' : 'Rating failed: ' + res.status);
-    if (res.ok) loadDetail();
-}
-async function submitReopen(event) {
-    event.preventDefault();
-    const reason = document.getElementById('reason').value;
-    const res = await fetch('/api/complaints/' + ref + '/reopen?reason=' + encodeURIComponent(reason),
-        {method: 'POST', headers: authHeaders()});
-    alert(res.ok ? 'Complaint reopened.' : 'Reopen failed: ' + res.status);
-    if (res.ok) loadDetail();
-}
-document.getElementById('rateForm').addEventListener('submit', submitRate);
-document.getElementById('reopenForm').addEventListener('submit', submitReopen);
-loadDetail();
+(function () {
+    var App = window.NagorikSeba;
+    if (!App || !App.getToken()) {
+        window.location.replace('/login?next=' + encodeURIComponent(window.location.pathname));
+        return;
+    }
+    function ref() {
+        var segments = window.location.pathname.split('/').filter(Boolean);
+        if (segments.length >= 3 && segments[0] === 'citizen' && segments[1] === 'complaints') {
+            return decodeURIComponent(segments[2]);
+        }
+        return new URLSearchParams(window.location.search).get('ref');
+    }
+    async function submitRate(event) {
+        event.preventDefault();
+        try {
+            await App.apiJson('/api/complaints/' + ref() + '/rate?rating='
+                + encodeURIComponent(document.getElementById('rating').value)
+                + '&feedback=' + encodeURIComponent(document.getElementById('feedback').value),
+                {method: 'POST'});
+            App.toast('Thanks for rating!', 'success');
+            loadDetail();
+        } catch (error) {
+            App.toast(error.message, 'error');
+        }
+    }
+    async function submitReopen(event) {
+        event.preventDefault();
+        try {
+            await App.apiJson('/api/complaints/' + ref() + '/reopen?reason='
+                + encodeURIComponent(document.getElementById('reason').value),
+                {method: 'POST'});
+            App.toast('Complaint reopened.', 'success');
+            loadDetail();
+        } catch (error) {
+            App.toast(error.message, 'error');
+        }
+    }
+    function openLightbox(src) {
+        document.getElementById('lightboxImg').src = src;
+        document.getElementById('lightbox').classList.remove('hidden');
+    }
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.add('hidden');
+        document.getElementById('lightboxImg').removeAttribute('src');
+    }
+    document.getElementById('rateForm').addEventListener('submit', submitRate);
+    document.getElementById('reopenForm').addEventListener('submit', submitReopen);
+    document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+    document.getElementById('lightbox').addEventListener('click', function (event) {
+        if (event.target.id === 'lightbox') closeLightbox();
+    });
+    document.getElementById('gallery').addEventListener('click', function (event) {
+        var img = event.target.closest('img');
+        if (img) openLightbox(img.src);
+    });
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') closeLightbox();
+    });
+    loadDetail();
+})();
 </script>
 </body>
 </html>

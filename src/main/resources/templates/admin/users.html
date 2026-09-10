@@ -9,42 +9,152 @@
     <h2>User administration</h2>
     <p class="text-muted">Activate/deactivate accounts, post memberships, and anonymize deleted users.</p>
 
+    <button class="btn btn-primary mb-3" id="createOpen">Add citizen / posting</button>
+
     <table class="table table-striped" id="userTable">
         <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th>Actions</th></tr></thead>
         <tbody></tbody>
     </table>
 </div>
 
+<div class="slide-in-backdrop hidden" id="createBackdrop"></div>
+<aside class="slide-in" id="createPanel" aria-label="Add citizen">
+    <h4>Add citizen</h4>
+    <p class="text-muted">Registers the account, then posts the municipality membership. Officer and councilor roles are assigned through a separate privileged process.</p>
+    <div class="mb-2">
+        <label for="newName" class="form-label">Full name</label>
+        <input class="form-control" id="newName" maxlength="120" required>
+    </div>
+    <div class="mb-2">
+        <label for="newEmail" class="form-label">Email</label>
+        <input class="form-control" id="newEmail" type="email" maxlength="120" required>
+    </div>
+    <div class="mb-2">
+        <label for="newPhone" class="form-label">Mobile number</label>
+        <input class="form-control" id="newPhone" placeholder="01712345678" required>
+    </div>
+    <div class="mb-2">
+        <label for="newMunicipality" class="form-label">Municipality</label>
+        <select class="form-select" id="newMunicipality"></select>
+    </div>
+    <p id="createFeedback" class="text-danger"></p>
+    <div class="d-flex gap-2 justify-content-end">
+        <button class="btn btn-secondary" id="createCancel">Cancel</button>
+        <button class="btn btn-primary" id="createConfirm">Create</button>
+    </div>
+</aside>
+
+<script th:src="@{/js/app.js}"></script>
 <script>
-function authHeaders() {
-    return {
-        'Authorization': 'Bearer ' + localStorage.getItem('nagorikSebaToken'),
-        'Content-Type': 'application/json'
-    };
-}
-async function loadUsers() {
-    const users = await (await fetch('/api/admin/users', {headers: authHeaders()})).json();
-    document.querySelector('#userTable tbody').innerHTML = users.map(u =>
-        '<tr><td>' + u.id + '</td><td>' + u.fullName + '</td><td>' + (u.email || '') + '</td>'
-        + '<td>' + u.role + '</td><td>' + u.active + '</td>'
-        + '<td><button class="btn btn-sm btn-secondary" onclick="setActive(' + u.id + ',' + (!u.active) + ')">'
-        + (u.active ? 'Deactivate' : 'Activate') + '</button> '
-        + '<button class="btn btn-sm btn-danger" onclick="deleteUser(' + u.id + ')">Delete</button></td></tr>'
-    ).join('');
-}
-async function setActive(id, active) {
-    await fetch('/api/admin/users/' + id + '/active', {
-        method: 'PATCH', headers: authHeaders(), body: JSON.stringify({active: active})
+(function () {
+    var App = window.NagorikSeba;
+    if (!App || !App.getToken()) {
+        window.location.replace('/login?next=/admin/users');
+        return;
+    }
+    function headers() {
+        return {
+            'Authorization': 'Bearer ' + localStorage.getItem('nagorikSebaToken'),
+            'Content-Type': 'application/json'
+        };
+    }
+    async function loadUsers() {
+        try {
+            const users = await App.apiJson('/api/admin/users');
+            document.querySelector('#userTable tbody').innerHTML = users.map(u =>
+                '<tr><td>' + u.id + '</td><td>' + App.esc(u.fullName) + '</td><td>' + App.esc(u.email || '') + '</td>'
+                + '<td>' + u.role + '</td><td>' + u.active + '</td>'
+                + '<td><button class="btn btn-sm btn-secondary" data-set-active="' + u.id + '" data-active="' + (!u.active) + '">'
+                + (u.active ? 'Deactivate' : 'Activate') + '</button> '
+                + '<button class="btn btn-sm btn-danger" data-delete-user="' + u.id + '">Delete</button></td></tr>'
+            ).join('');
+        } catch (error) {
+            App.toast(error.message, 'error');
+        }
+    }
+    async function setActive(id, active) {
+        try {
+            await App.apiJson('/api/admin/users/' + id + '/active', {
+                method: 'PATCH', headers: headers(), body: JSON.stringify({active: active})
+            });
+            loadUsers();
+        } catch (error) {
+            App.toast(error.message, 'error');
+        }
+    }
+    async function deleteUser(id) {
+        if (!confirm('Deactivate user ' + id + ' and anonymize their complaints?')) return;
+        try {
+            await App.apiJson('/api/admin/users/' + id, {method: 'DELETE'});
+            App.toast('User anonymized.', 'success');
+        } catch (error) {
+            App.toast(error.message, 'error');
+        }
+        loadUsers();
+    }
+    function openPanel() {
+        document.getElementById('createPanel').classList.add('open');
+        document.getElementById('createBackdrop').classList.remove('hidden');
+        App.apiJson('/api/municipalities').then(function (munis) {
+            document.getElementById('newMunicipality').innerHTML = munis.map(function (m) {
+                return '<option value="' + m.id + '">' + App.esc(m.name) + '</option>';
+            }).join('');
+        }).catch(function (error) {
+            App.toast(error.message, 'error');
+        });
+    }
+    function closePanel() {
+        document.getElementById('createPanel').classList.remove('open');
+        document.getElementById('createBackdrop').classList.add('hidden');
+    }
+    async function createUser() {
+        var feedback = document.getElementById('createFeedback');
+        feedback.textContent = '';
+        var name = document.getElementById('newName').value.trim();
+        var email = document.getElementById('newEmail').value.trim();
+        var phone = document.getElementById('newPhone').value.trim();
+        var municipalityId = Number(document.getElementById('newMunicipality').value);
+        if (!name || !email || !phone || !municipalityId) {
+            feedback.textContent = 'Name, email, phone and municipality are required.';
+            return;
+        }
+        if (!/^(?:\+8801|8801|01)[3-9]\d{8}$/.test(phone)) {
+            feedback.textContent = 'Enter a valid Bangladeshi mobile number.';
+            return;
+        }
+        try {
+            var created = await App.apiJson('/api/auth/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({fullName: name, email: email, phone: phone, password: 'Temp1234!'})
+            });
+            await App.apiJson('/api/admin/users/' + created.user.id + '/memberships', {
+                method: 'POST',
+                headers: headers(),
+                body: JSON.stringify({municipalityId: municipalityId})
+            });
+            App.toast('Citizen created with temporary password Temp1234!.', 'success');
+            closePanel();
+            loadUsers();
+        } catch (error) {
+            feedback.textContent = error.message;
+        }
+    }
+    document.querySelector('#userTable tbody').addEventListener('click', function (event) {
+        var setBtn = event.target.closest('[data-set-active]');
+        if (setBtn) {
+            setActive(setBtn.getAttribute('data-set-active'), setBtn.getAttribute('data-active') === 'true');
+            return;
+        }
+        var delBtn = event.target.closest('[data-delete-user]');
+        if (delBtn) deleteUser(delBtn.getAttribute('data-delete-user'));
     });
+    document.getElementById('createOpen').addEventListener('click', openPanel);
+    document.getElementById('createCancel').addEventListener('click', closePanel);
+    document.getElementById('createBackdrop').addEventListener('click', closePanel);
+    document.getElementById('createConfirm').addEventListener('click', createUser);
     loadUsers();
-}
-async function deleteUser(id) {
-    if (!confirm('Deactivate user ' + id + ' and anonymize their complaints?')) return;
-    const res = await fetch('/api/admin/users/' + id, {method: 'DELETE', headers: authHeaders()});
-    alert(res.ok ? 'User anonymized.' : 'Failed: ' + res.status);
-    loadUsers();
-}
-loadUsers();
+})();
 </script>
 </body>
 </html>

@@ -29,46 +29,118 @@
     </table>
 </div>
 
+<div class="lightbox hidden" id="resolveModal" role="dialog" aria-label="Resolve complaint">
+    <div class="card" style="width: min(480px, 92vw);">
+        <div class="card-body">
+            <h5>Resolve <span id="resolveRef"></span></h5>
+            <div class="mb-2">
+                <label for="resolveNote" class="form-label">Resolution note</label>
+                <textarea class="form-control" id="resolveNote" rows="2"></textarea>
+            </div>
+            <div class="mb-2">
+                <label for="resolvePhotos" class="form-label">Work-proof photo (required)</label>
+                <input type="file" class="form-control" id="resolvePhotos" accept="image/*" required>
+            </div>
+            <p id="resolveFeedback" class="text-danger"></p>
+            <div class="d-flex gap-2 justify-content-end">
+                <button type="button" class="btn btn-secondary" id="resolveCancel">Cancel</button>
+                <button type="button" class="btn btn-success" id="resolveConfirm">Resolve</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/app.js}"></script>
 <script>
 function authHeaders() {
     return {'Authorization': 'Bearer ' + localStorage.getItem('nagorikSebaToken')};
 }
+var App = window.NagorikSeba;
+var resolveTarget = null;
 async function loadQueue() {
+    if (!App || !App.getToken()) {
+        window.location.replace('/login/authority?next=/authority/queue');
+        return;
+    }
     const mid = document.getElementById('municipalityId').value;
     const statuses = document.getElementById('statusFilter').value.trim();
     let url = '/api/authority/queue?municipalityId=' + encodeURIComponent(mid);
     if (statuses) {
         statuses.split(',').forEach(s => { url += '&status=' + encodeURIComponent(s.trim()); });
     }
-    const res = await fetch(url, {headers: authHeaders()});
-    if (!res.ok) {
-        alert('Failed to load queue: ' + res.status);
+    let items;
+    try {
+        items = await App.apiJson(url);
+    } catch (error) {
+        App.toast(error.message, 'error');
         return;
     }
-    const items = await res.json();
     document.querySelector('#queueTable tbody').innerHTML = items.map(c =>
         '<tr><td>' + c.referenceCode + '</td><td>' + c.title + '</td><td>' + c.status + '</td>'
         + '<td>' + (c.wardName || '—') + '</td>'
         + '<td><button class="btn btn-sm btn-success" onclick="verifyComplaint(\'' + c.referenceCode + '\')">Verify</button> '
         + '<button class="btn btn-sm btn-primary" onclick="autoAssign(\'' + c.referenceCode + '\')">Auto-assign</button> '
-        + '<button class="btn btn-sm btn-secondary" onclick="startWork(\'' + c.referenceCode + '\')">Start</button></td></tr>'
+        + '<button class="btn btn-sm btn-secondary" onclick="startWork(\'' + c.referenceCode + '\')">Start</button> '
+        + '<button class="btn btn-sm btn-outline-success" onclick="openResolve(\'' + c.referenceCode + '\')">Resolve</button></td></tr>'
     ).join('') || '<tr><td colspan="5">No complaints</td></tr>';
 }
 async function verifyComplaint(ref) {
-    await fetch('/api/authority/complaints/' + ref + '/verify?note=Verified-from-queue',
-        {method: 'POST', headers: authHeaders()});
+    try {
+        await App.apiJson('/api/authority/complaints/' + ref + '/verify?note=Verified-from-queue',
+            {method: 'POST'});
+        App.toast('Verified ' + ref + '.', 'success');
+    } catch (error) {
+        App.toast(error.message, 'error');
+    }
     loadQueue();
 }
 async function autoAssign(ref) {
-    await fetch('/api/authority/complaints/' + ref + '/assign/auto',
-        {method: 'POST', headers: authHeaders()});
+    try {
+        await App.apiJson('/api/authority/complaints/' + ref + '/assign/auto', {method: 'POST'});
+        App.toast('Assigned ' + ref + '.', 'success');
+    } catch (error) {
+        App.toast(error.message, 'error');
+    }
     loadQueue();
 }
 async function startWork(ref) {
-    await fetch('/api/authority/complaints/' + ref + '/start',
-        {method: 'POST', headers: authHeaders()});
+    try {
+        await App.apiJson('/api/authority/complaints/' + ref + '/start', {method: 'POST'});
+        App.toast('Work started on ' + ref + '.', 'success');
+    } catch (error) {
+        App.toast(error.message, 'error');
+    }
     loadQueue();
 }
+function openResolve(ref) {
+    resolveTarget = ref;
+    document.getElementById('resolveRef').textContent = ref;
+    document.getElementById('resolveFeedback').textContent = '';
+    document.getElementById('resolvePhotos').value = '';
+    document.getElementById('resolveModal').classList.remove('hidden');
+}
+document.getElementById('resolveCancel').addEventListener('click', function () {
+    document.getElementById('resolveModal').classList.add('hidden');
+});
+document.getElementById('resolveConfirm').addEventListener('click', async function () {
+    var photos = document.getElementById('resolvePhotos').files;
+    if (!photos || photos.length < 1) {
+        document.getElementById('resolveFeedback').textContent = 'A work-proof photo is required.';
+        return;
+    }
+    var body = new FormData();
+    body.append('note', document.getElementById('resolveNote').value);
+    body.append('photos', photos[0]);
+    try {
+        await App.apiJson('/api/authority/complaints/' + resolveTarget + '/resolve',
+            {method: 'POST', body: body});
+        App.toast('Resolved ' + resolveTarget + '.', 'success');
+        document.getElementById('resolveModal').classList.add('hidden');
+    } catch (error) {
+        document.getElementById('resolveFeedback').textContent = error.message;
+    }
+    loadQueue();
+});
 document.getElementById('loadBtn').addEventListener('click', loadQueue);
 </script>
 </body>
