@@ -3,98 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nagorik Seba | Civic complaints, made visible</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Nagorik Seba | Transparent civic reporting for Dhaka</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<main>
-    <nav class="nav container" aria-label="Main navigation">
-        <a class="brand" href="/" aria-label="Nagorik Seba home"><span>ন</span> নাগরিক সেবা</a>
-        <div class="nav-actions">
-            <a href="#how-it-works">How it works</a>
-            <a class="button button-secondary" href="/login">Sign in</a>
-        </div>
-    </nav>
+<header class="landing-header">
+    <button class="landing-hamburger" id="landingHamburger" aria-label="Menu">&#9776;</button>
+    <a class="landing-wordmark" href="/">Nagorik Seba</a>
+    <div class="landing-header-actions">
+        <a class="landing-login" href="/login">Authority Login</a>
+        <a class="landing-report-btn" href="/citizen/complaint/new">Report an Issue</a>
+    </div>
+</header>
+<nav class="landing-mobile-menu" id="landingMobileMenu">
+    <a href="/login">Authority Login</a>
+    <a href="/citizen/complaint/new">Report an Issue</a>
+    <a href="#wards">View all wards</a>
+</nav>
 
-    <section class="hero container">
-        <div class="hero-copy">
-            <p class="eyebrow">A clearer city, together</p>
-            <h1>Report the problem.<br><em>Follow the fix.</em></h1>
-            <p class="lead">Nagorik Seba gives every resident a direct, transparent way to report local issues—from waterlogging to broken streetlights.</p>
-            <div class="hero-actions">
-                <a class="button button-primary" href="/citizen/complaint/new">Report an issue <span>→</span></a>
-                <a class="text-link" href="#how-it-works">See how it works <span>↓</span></a>
-            </div>
-            <div class="trust-row">
-                <div><strong>24/7</strong><span>reporting</span></div>
-                <div><strong>Live</strong><span>status updates</span></div>
-                <div><strong>Public</strong><span>accountability</span></div>
-            </div>
-        </div>
-        <div class="hero-art" aria-hidden="true">
-            <div class="map-card">
-                <div class="map-grid"></div>
-                <div class="river"></div>
-                <span class="map-label label-one">Ward 17</span>
-                <span class="map-label label-two">Dhanmondi</span>
-                <span class="pin pin-one"></span>
-                <span class="pin pin-two"></span>
-                <span class="pin pin-three"></span>
-                <div class="issue-card"><span class="issue-icon">!</span><div><small>IN PROGRESS</small><strong>Waterlogging near Lake Road</strong><p>Updated 2 hours ago</p></div></div>
-            </div>
-            <div class="sun"></div>
-        </div>
-    </section>
-
-    <section id="how-it-works" class="steps">
-        <div class="container">
-            <p class="eyebrow">Simple by design</p>
-            <h2>From report to resolution</h2>
-            <div class="step-grid">
-                <article><span>01</span><h3>Tell us what happened</h3><p>Add a photo, location, and a short description.</p></article>
-                <article><span>02</span><h3>Track every update</h3><p>See when your issue is verified, assigned, and fixed.</p></article>
-                <article><span>03</span><h3>Help improve your ward</h3><p>Rate the result and keep local services accountable.</p></article>
+<section class="landing-hero">
+    <div class="landing-map-wrap">
+        <div id="landing-map"></div>
+        <div class="landing-panel">
+            <h1>Report the problem. Follow the fix.</h1>
+            <p class="landing-sub">Transparent civic reporting for Dhaka City Corporation.</p>
+            <a class="landing-btn-full" href="/citizen/complaint/new">Report an Issue</a>
+            <a class="landing-panel-link" href="#wards">View all wards &rarr;</a>
+            <div class="landing-stats">
+                <div class="landing-stat"><div class="landing-stat-num">1,247</div><div class="landing-stat-label">Resolved</div></div>
+                <div class="landing-stat"><div class="landing-stat-num">312</div><div class="landing-stat-label">Active</div></div>
+                <div class="landing-stat"><div class="landing-stat-num">4.2</div><div class="landing-stat-label">Days Avg</div></div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <section id="live-map" class="container">
-        <p class="eyebrow">Live across the city</p>
-        <h2>What neighbours are reporting</h2>
-        <label for="heatmapMunicipality">Municipality</label>
-        <select id="heatmapMunicipality">
-            <option value="dhaka-north">Dhaka North</option>
-            <option value="dhaka-south">Dhaka South</option>
-        </select>
-        <div id="heatmap" style="height: 420px; border-radius: 8px;"></div>
-        <div id="heatmapLegend"></div>
+<section class="landing-section" id="wards">
+    <div class="landing-inner">
+        <h2>Ward Performance</h2>
+        <div class="landing-table-scroll">
+            <table class="landing-ward-table">
+                <thead>
+                    <tr><th>Ward Name</th><th>Resolved</th><th>Pending</th><th>Avg Rating</th><th>Avg Resolution</th></tr>
+                </thead>
+                <tbody id="landingWardBody">
+                    <tr><td>Ward 33 - Dhanmondi</td><td><span class="landing-num-ok">142</span></td><td><span class="landing-num-bad">12</span></td><td>4.2</td><td>3.1 days</td></tr>
+                    <tr><td>Ward 10 - Mirpur</td><td><span class="landing-num-ok">98</span></td><td><span class="landing-num-bad">24</span></td><td>3.8</td><td>5.4 days</td></tr>
+                    <tr><td>Ward 45 - Gulshan</td><td><span class="landing-num-ok">67</span></td><td><span class="landing-num-bad">8</span></td><td>4.5</td><td>2.2 days</td></tr>
+                    <tr><td>Ward 12 - Mohammadpur</td><td><span class="landing-num-ok">113</span></td><td><span class="landing-num-bad">31</span></td><td>3.9</td><td>4.8 days</td></tr>
+                    <tr><td>Ward 22 - Banani</td><td><span class="landing-num-ok">54</span></td><td><span class="landing-num-bad">5</span></td><td>4.7</td><td>1.9 days</td></tr>
+                    <tr><td>Ward 8 - Jatrabari</td><td><span class="landing-num-ok">89</span></td><td><span class="landing-num-bad">19</span></td><td>3.5</td><td>6.2 days</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
-        <h3>Ward scoreboard</h3>
-        <table id="scoreboardTable">
-            <thead><tr><th>Ward</th><th>Reports</th><th>Resolved</th><th>Rate %</th></tr></thead>
-            <tbody></tbody>
-        </table>
-    </section>
-</main>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<section class="landing-section landing-section-white" id="how-it-works">
+    <div class="landing-inner">
+        <div class="landing-steps">
+            <div class="landing-step">
+                <div class="landing-step-num">01</div>
+                <h3>01 &mdash; Report</h3>
+                <p>Submit an issue with photo and location</p>
+            </div>
+            <div class="landing-step">
+                <div class="landing-step-num">02</div>
+                <h3>02 &mdash; Track</h3>
+                <p>Follow real-time status updates</p>
+            </div>
+            <div class="landing-step">
+                <div class="landing-step-num">03</div>
+                <h3>03 &mdash; Rate</h3>
+                <p>Close or reopen after resolution</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer class="landing-footer">
+    <div class="landing-footer-inner">
+        <div>
+            <div class="landing-footer-brand">Nagorik Seba</div>
+            <div class="landing-footer-tag">Transparent civic governance for Bangladesh</div>
+        </div>
+        <div class="landing-footer-links">
+            <a href="#">About</a>
+            <a href="#how-it-works">How it Works</a>
+            <a href="#">Contact</a>
+            <a href="#">Privacy</a>
+        </div>
+    </div>
+</footer>
+
+<div id="landing-toasts" aria-live="polite"></div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-<script th:src="@{/js/heatmap.js}"></script>
-<script>
-document.addEventListener('DOMContentLoaded', async function () {
-    var body = document.querySelector('#scoreboardTable tbody');
-    if (!body) return;
-    var res = await fetch('/api/public/wards/scoreboard?municipality=dhaka-north');
-    if (!res.ok) return;
-    var rows = await res.json();
-    body.innerHTML = rows.map(function (row) {
-        return '<tr><td>' + row.areaName + '</td><td>' + row.totalComplaints + '</td>'
-            + '<td>' + row.resolvedComplaints + '</td><td>' + row.resolutionRate + '</td></tr>';
-    }).join('');
-});
-</script>
+<script th:src="@{/js/landing.js}"></script>
 </body>
 </html>
