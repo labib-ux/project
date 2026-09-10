@@ -9,6 +9,8 @@
     }
 
     var ACTIVE = ['SUBMITTED', 'VERIFIED', 'ASSIGNED', 'IN_PROGRESS', 'REOPENED'];
+    var currentFilter = 'ALL';
+    var allComplaints = [];
 
     function card(title, value) {
         return '<div class="col-md-4 mb-3"><div class="card"><div class="card-body">'
@@ -29,24 +31,50 @@
             + '</div></div></div>';
     }
 
+    function visibleComplaints() {
+        if (currentFilter === 'ACTIVE') {
+            return allComplaints.filter(function (c) { return ACTIVE.indexOf(c.status) !== -1; });
+        }
+        if (currentFilter === 'RESOLVED') {
+            return allComplaints.filter(function (c) { return ACTIVE.indexOf(c.status) === -1; });
+        }
+        return allComplaints;
+    }
+
+    function renderList() {
+        var complaints = visibleComplaints();
+        var empty = complaints.length === 0;
+        document.getElementById('emptyState').hidden = !empty;
+        document.getElementById('complaintList').innerHTML =
+            complaints.map(row).join('');
+        document.querySelectorAll('#filterTabs button').forEach(function (button) {
+            var on = button.dataset.filter === currentFilter;
+            button.classList.toggle('btn-primary', on);
+            button.classList.toggle('btn-outline-primary', !on);
+        });
+    }
+
     async function load() {
         try {
-            var complaints = await App.apiJson('/api/complaints/my');
-            var active = complaints.filter(function (c) { return ACTIVE.indexOf(c.status) !== -1; }).length;
+            allComplaints = await App.apiJson('/api/complaints/my');
+            var active = allComplaints.filter(function (c) { return ACTIVE.indexOf(c.status) !== -1; }).length;
             document.getElementById('dashboardSummary').textContent =
-                complaints.length + ' total — ' + active + ' active';
+                allComplaints.length + ' total — ' + active + ' active';
             document.getElementById('statCards').innerHTML =
-                card('Total reports', complaints.length)
+                card('Total reports', allComplaints.length)
                 + card('Active', active)
-                + card('Resolved & closed', complaints.length - active);
-            var empty = complaints.length === 0;
-            document.getElementById('emptyState').hidden = !empty;
-            document.getElementById('complaintList').innerHTML =
-                complaints.map(row).join('');
+                + card('Resolved & closed', allComplaints.length - active);
+            renderList();
         } catch (error) {
             App.toast(error.message, 'error');
         }
     }
 
+    document.querySelectorAll('#filterTabs button').forEach(function (button) {
+        button.addEventListener('click', function () {
+            currentFilter = button.dataset.filter;
+            renderList();
+        });
+    });
     document.addEventListener('DOMContentLoaded', load);
 })();

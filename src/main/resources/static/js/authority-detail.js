@@ -58,6 +58,21 @@
             }).join('') || '<p class="text-muted">No photos attached.</p>';
     }
 
+    var STAGES = ['SUBMITTED', 'VERIFIED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'];
+
+    function renderStages(complaint) {
+        var reached = STAGES.indexOf(complaint.status);
+        if (reached < 0) {
+            document.getElementById('stageTracker').innerHTML =
+                '<li class="stage-terminal">Terminal status: ' + App.esc(complaint.status) + '</li>';
+            return;
+        }
+        document.getElementById('stageTracker').innerHTML = STAGES.map(function (stage, index) {
+            var cls = index < reached ? 'stage-done' : (index === reached ? 'stage-current' : 'stage-todo');
+            return '<li class="' + cls + '">' + stage.replace(/_/g, ' ') + '</li>';
+        }).join('');
+    }
+
     function renderTimeline(complaint) {
         document.getElementById('authorityTimeline').innerHTML =
             (complaint.timeline || []).map(function (step) {
@@ -130,6 +145,7 @@
             renderAudit(complaint);
             renderMap(complaint);
             renderGallery(complaint);
+            renderStages(complaint);
             renderTimeline(complaint);
             renderActions(complaint);
         } catch (error) {

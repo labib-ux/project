@@ -1135,6 +1135,22 @@ table.landing-ward-table { width: 100%; border-collapse: collapse; background: #
 .landing-toast.success { border-left-color: #16a34a; }
 .landing-toast.error { border-left-color: #dc2626; }
 
+/* Dashboard filter tabs */
+#filterTabs { display: flex; gap: 0.5rem; }
+
+/* Stage tracker (authority detail): chevron pipeline, flat, no shadows */
+.stage-tracker { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; }
+.stage-tracker > li {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+  padding: 0.35rem 0.75rem 0.35rem 1.1rem; margin-right: -1px;
+  border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%, 10px 50%);
+}
+.stage-tracker > li:first-child { padding-left: 0.75rem; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%); }
+.stage-tracker > li.stage-done { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+.stage-tracker > li.stage-current { background: #2563eb; color: #fff; border-color: #2563eb; }
+.stage-tracker > li.stage-terminal { clip-path: none; background: #f1f5f9; color: #475569; }
+
 @media (max-width: 767px) {
   .landing-hamburger { display: block; }
   .landing-header { justify-content: flex-start; gap: 12px; }
