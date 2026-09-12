@@ -688,28 +688,39 @@ body {
 .status-REJECTED { background-color: #dc3545; }
 .status-CANCELLED { background-color: #6c757d; }
 
-/* Plain tables (standalone pages; Bootstrap tables keep their own look) */
-table {
+/* Opt-in plain tables (Bootstrap .table keeps its own look).
+   Use class="data-table", or rely on #scoreboardTable below. */
+table.data-table, #scoreboardTable {
     border-collapse: collapse;
     width: 100%;
     background-color: #fff;
 }
 
-th,
-td {
+.data-table th, .data-table td,
+#scoreboardTable th, #scoreboardTable td {
     text-align: left;
     padding: 0.75rem 0.5rem;
     border-bottom: 1px solid #e5e7eb;
 }
 
-th {
-    background-color: #f3f4f6;
+.data-table th, #scoreboardTable th {
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
-tbody tr:hover {
+.data-table thead th, #scoreboardTable thead th {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.data-table tbody tr:nth-child(even),
+#scoreboardTable tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.data-table tbody tr:hover,
+#scoreboardTable tbody tr:hover {
     background-color: rgba(13, 110, 253, 0.05);
 }
 
@@ -816,34 +827,17 @@ tbody tr:hover {
    ========================================================================== */
 
 /* ── RESET & BASE ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* NOTE: no global * margin/padding reset and no bare-element nav/table/form
+   rules in this section — those leak onto Bootstrap pages (fragment nav,
+   queue/admin tables, .btn-*) and break them. Page-specific systems above
+   and .landing-* below own their markup instead. */
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
        sans-serif; font-size: 16px; color: #1a1a2e;
        background: #f8f9fa; line-height: 1.6; }
 a { color: #2563eb; text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-/* ── NAVIGATION ── */
-nav {
-  background: #1a1a2e;
-  color: white;
-  padding: 0 2rem;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-nav .brand { color: #fff; text-decoration: none; font-weight: 800; font-size: 1.25rem; }
-nav .brand span {
-  display: inline-block; background: #fff; color: #1a1a2e;
-  border-radius: 6px; padding: 0 0.4rem; margin-right: 0.4rem;
-}
-nav a { color: #fff; text-decoration: none; font-weight: 600; }
-nav .nav-actions { display: flex; align-items: center; gap: 1rem; }
+/* ── NAVIGATION (standalone civic pages only; fragment nav keeps Bootstrap) ── */
 .hamburger {
   display: none; background: transparent; border: 1px solid #fff;
   color: #fff; border-radius: 8px; padding: 0.4rem 0.7rem;
@@ -861,28 +855,9 @@ nav .nav-actions { display: flex; align-items: center; gap: 1rem; }
 .feature-badges span { color: #6b7280; font-size: 0.875rem; }
 
 /* ── BUTTONS ── */
-.btn-primary {
-  background: #2563eb; color: white; border: none;
-  padding: 0.75rem 1.5rem; border-radius: 8px;
-  cursor: pointer; font-size: 1rem; font-weight: 600;
-}
-.btn-primary:hover { background: #1d4ed8; }
-.btn-secondary { background: transparent; color: #2563eb;
-  border: 2px solid #2563eb; padding: 0.75rem 1.5rem; border-radius: 8px;
-  cursor: pointer; font-size: 1rem; font-weight: 600; }
-.btn-secondary:hover { background: rgba(37, 99, 235, 0.08); }
-.btn-danger {
-  background: #dc2626; color: white; border: none;
-  padding: 0.75rem 1.5rem; border-radius: 8px;
-  cursor: pointer; font-size: 1rem; font-weight: 600;
-}
-.btn-danger:hover { background: #b91c1c; }
-.btn-success {
-  background: #15803d; color: white; border: none;
-  padding: 0.75rem 1.5rem; border-radius: 8px;
-  cursor: pointer; font-size: 1rem; font-weight: 600;
-}
-.btn-success:hover { background: #166534; }
+/* NOTE: .btn-* belongs to Bootstrap (loaded first on fragment pages), so no
+   redefinitions here — the custom vocabulary is .button/.button-primary/
+   .button-secondary above. Only the disabled affordance is shared. */
 button:disabled { opacity: 0.65; cursor: not-allowed; }
 
 /* ── FORMS ── */
@@ -892,19 +867,21 @@ button:disabled { opacity: 0.65; cursor: not-allowed; }
   padding: 2rem; max-width: 720px; margin: 2rem auto;
 }
 .form-group { margin-bottom: 1.25rem; }
-.form-group label, label {
+.form-group label {
   display: block; font-weight: 600; margin-bottom: 0.35rem; color: #1a1a2e;
 }
-input, textarea, select {
+.form-group input, .form-group textarea, .form-group select,
+.form-container input, .form-container textarea, .form-container select {
   width: 100%; box-sizing: border-box;
   padding: 0.6rem 0.75rem; border: 1px solid #d1d5db;
   border-radius: 8px; font: inherit; background: #fff; color: #1a1a2e;
 }
-input:focus, textarea:focus, select:focus {
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus,
+.form-container input:focus, .form-container textarea:focus, .form-container select:focus {
   outline: none; border-color: #2563eb;
   box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
 }
-textarea { min-height: 110px; resize: vertical; }
+.form-container textarea { min-height: 110px; resize: vertical; }
 .form-hint { color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem; }
 .form-error { color: #991b1b; font-size: 0.875rem; font-weight: 600; margin-top: 0.25rem; }
 
@@ -946,11 +923,10 @@ textarea { min-height: 110px; resize: vertical; }
 .stat-card .stat-label { color: #6b7280; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* ── TABLES ── */
-.table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #e5e7eb; }
-table thead { background: #1a1a2e; }
-table thead th { color: #fff; }
-table tbody tr:nth-child(even) { background: #f8fafc; }
-table td, table th { padding: 0.75rem 0.75rem; }
+/* NOTE: element-level table rules lived here and leaked onto every Bootstrap
+   .table (queue, admin, dashboard). Plain-table styling now lives in the
+   opt-in .data-table / #scoreboardTable block above; only the wrapper stays. */
+.table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #e2e8f0; }
 
 /* ── TIMELINE ── */
 .timeline { list-style: none; padding: 0; margin: 1rem 0; position: relative; }
