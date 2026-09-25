@@ -146,6 +146,22 @@ public class AuthorityComplaintController {
         return visible.stream().map(queryService::describe).toList();
     }
 
+    /**
+     * Authority detail view: same reference-code addressing as the citizen
+     * endpoint, but reachable with officer/councilor/admin tokens.
+     *
+     * <p>Tenancy is enforced via {@code loadInMunicipality}: the caller must
+     * serve the complaint's municipality. The citizen endpoint
+     * ({@code /api/complaints/**}) only admits CITIZEN/ADMIN by the security
+     * chain, so without this endpoint the authority detail page gets 403.
+     */
+    @GetMapping("/complaints/{referenceCode}")
+    @Transactional(readOnly = true)
+    public ComplaintResponse findByReferenceCode(@PathVariable String referenceCode) {
+        Complaint complaint = loadInMunicipality(referenceCode);
+        return queryService.describe(complaint);
+    }
+
     /** SUBMITTED → VERIFIED. The note is optional; it is recorded on the audit row. */
     @PostMapping("/complaints/{referenceCode}/verify")
     public ComplaintResponse verify(

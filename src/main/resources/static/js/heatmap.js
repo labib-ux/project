@@ -49,13 +49,23 @@
             markersLayer = L.layerGroup().addTo(map);
         }
         if (!window.L) return;
-        if (data.clustered) {
+        if (data.clustered && window.L.heatLayer) {
             heatLayer = L.heatLayer(
                 data.points.map(function (cell) {
                     return [cell.lat, cell.lng, cell.count];
                 }),
                 {radius: 25, blur: 15}
             ).addTo(map);
+        } else if (data.clustered) {
+            // leaflet.heat plugin not loaded — fall back to scaled circle markers.
+            data.points.forEach(function (cell) {
+                var radius = 4 + Math.min(12, Math.sqrt(cell.count || 1) * 2);
+                L.circleMarker([cell.lat, cell.lng], {
+                    radius: radius,
+                    color: categoryColor(cell.category),
+                    fillOpacity: 0.55
+                }).bindPopup((cell.category || 'Reports') + ' — ' + (cell.count || 1) + ' in ~100m cell').addTo(markersLayer);
+            });
         } else {
             data.points.forEach(function (point) {
                 L.circleMarker([point.lat, point.lng], {

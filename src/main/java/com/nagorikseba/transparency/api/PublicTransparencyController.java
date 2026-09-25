@@ -1,6 +1,8 @@
 package com.nagorikseba.transparency.api;
 
+import com.nagorikseba.municipality.dto.WardResponse;
 import com.nagorikseba.municipality.repository.MunicipalityRepository;
+import com.nagorikseba.municipality.service.MunicipalityService;
 import com.nagorikseba.shared.exception.ResourceNotFoundException;
 import com.nagorikseba.transparency.HeatmapService;
 import com.nagorikseba.transparency.ScoreboardService;
@@ -29,6 +31,7 @@ public class PublicTransparencyController {
     private final HeatmapService heatmapService;
     private final ScoreboardService scoreboardService;
     private final MunicipalityRepository municipalityRepository;
+    private final MunicipalityService municipalityService;
 
     /**
      * Public heatmap bbox: snapped coordinates, no citizen fields.
@@ -53,5 +56,22 @@ public class PublicTransparencyController {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Municipality not found: " + municipality)).getId();
         return ResponseEntity.ok(scoreboardService.scoreboard(municipalityId, period));
+    }
+
+    /**
+     * Point-in-polygon ward lookup for the complaint wizard / map picker.
+     *
+     * <p>Frontend calls {@code /api/public/wards/lookup?lat=&lng=}; this is the
+     * canonical public alias. A municipality-scoped variant also exists at
+     * {@code /api/municipalities/{slug}/wards/containing} and
+     * {@code /api/municipalities/public/wards/lookup} — all three are permitAll.
+     */
+    @GetMapping("/wards/lookup")
+    public ResponseEntity<WardResponse> lookupWardByPoint(
+            @RequestParam double lat,
+            @RequestParam double lng) {
+        return municipalityService.findWardContainingPoint(lat, lng)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

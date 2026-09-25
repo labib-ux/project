@@ -71,4 +71,9 @@ public class HomeController {
     public String adminIndex() {
         return "admin/index";
     }
+
+    @GetMapping({"/wards", "/heatmap"})
+    public String wardsHeatmap() {
+        return "public/wards";
+    }
 }

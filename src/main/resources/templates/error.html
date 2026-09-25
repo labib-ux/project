@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Something went wrong | Nagorik Seba'">Something went wrong | Nagorik Seba</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="auth-page">
+<main class="auth-layout">
+    <a class="brand auth-brand" href="/"><span>ন</span> নাগরিক সেবা</a>
+    <section class="auth-panel" role="alert">
+        <p class="eyebrow">Nagorik Seba</p>
+        <h1 th:text="${status} ? ('Error ' + ${status}) : 'Something went wrong'">Something went wrong</h1>
+        <p class="auth-intro" th:text="${error} ?: 'The page you asked for could not be shown.'">The page could not be shown.</p>
+        <p class="text-muted small" th:if="${message}" th:text="${message}"></p>
+        <p class="text-muted small" th:if="${path}" th:text="'Path: ' + ${path}"></p>
+        <div class="d-flex gap-2 mt-3" style="display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap">
+            <a class="button button-primary" href="/">Back to home</a>
+            <a class="button" style="border:1px solid #d1d5db" href="/wards">View wards map</a>
+            <a class="button" style="border:1px solid #d1d5db" href="/citizen/dashboard">My complaints</a>
+        </div>
+    </section>
+    <aside class="auth-aside" aria-hidden="true">
+        <p class="eyebrow">We're on it</p>
+        <blockquote>"Every report is a step toward a more responsive neighbourhood."</blockquote>
+        <div class="aside-shape shape-one"></div><div class="aside-shape shape-two"></div>
+    </aside>
+</main>
+</body>
+</html>

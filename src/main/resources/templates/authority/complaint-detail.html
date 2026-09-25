@@ -43,7 +43,29 @@
                               placeholder="Visible to the citizen on the timeline"></textarea>
                 </div>
                 <div class="d-grid gap-2" id="actionButtons"></div>
+                <p class="text-muted small mt-2 mb-0">Resolve needs a work-proof photo — use the Resolve button for the upload dialog.</p>
             </div></div>
+        </div>
+    </div>
+</div>
+
+<div class="lightbox hidden" id="detailResolveModal" role="dialog" aria-label="Resolve complaint">
+    <div class="card" style="width: min(480px, 92vw);">
+        <div class="card-body">
+            <h5>Resolve <span id="detailResolveRef"></span></h5>
+            <div class="mb-2">
+                <label for="detailResolveNote" class="form-label">Resolution note</label>
+                <textarea class="form-control" id="detailResolveNote" rows="2"></textarea>
+            </div>
+            <div class="mb-2">
+                <label for="detailResolvePhotos" class="form-label">Work-proof photo (required)</label>
+                <input type="file" class="form-control" id="detailResolvePhotos" accept="image/*" required>
+            </div>
+            <p id="detailResolveFeedback" class="text-danger"></p>
+            <div class="d-flex gap-2 justify-content-end">
+                <button type="button" class="btn btn-secondary" id="detailResolveCancel">Cancel</button>
+                <button type="button" class="btn btn-success" id="detailResolveConfirm">Resolve</button>
+            </div>
         </div>
     </div>
 </div>

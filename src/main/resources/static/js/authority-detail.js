@@ -101,11 +101,54 @@
         });
     }
 
+    function idempotencyKey() {
+        try {
+            return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
+        } catch (e) {
+            return String(Date.now());
+        }
+    }
+
+    function openResolveModal() {
+        var modal = document.getElementById('detailResolveModal');
+        if (!modal) return;
+        document.getElementById('detailResolveRef').textContent = ref();
+        document.getElementById('detailResolveNote').value = document.getElementById('advNote').value.trim();
+        document.getElementById('detailResolveFeedback').textContent = '';
+        document.getElementById('detailResolvePhotos').value = '';
+        modal.classList.remove('hidden');
+    }
+
+    function closeResolveModal() {
+        var modal = document.getElementById('detailResolveModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    async function submitResolveModal() {
+        var photos = document.getElementById('detailResolvePhotos').files;
+        if (!photos || photos.length < 1) {
+            document.getElementById('detailResolveFeedback').textContent = 'A work-proof photo is required.';
+            return;
+        }
+        var body = new FormData();
+        body.append('note', document.getElementById('detailResolveNote').value);
+        body.append('photos', photos[0]);
+        try {
+            await App.apiJson('/api/authority/complaints/' + encodeURIComponent(ref()) + '/resolve',
+                {method: 'POST', body: body, headers: {'Idempotency-Key': idempotencyKey()}});
+            App.toast('Complaint resolved.', 'success');
+            closeResolveModal();
+            load();
+        } catch (error) {
+            document.getElementById('detailResolveFeedback').textContent = error.message;
+        }
+    }
+
     async function runAction(action) {
         var note = document.getElementById('advNote').value.trim();
-        var path = '/api/authority/complaints/' + ref() + '/' + action;
+        var path = '/api/authority/complaints/' + encodeURIComponent(ref()) + '/' + action;
         try {
-            var options = { method: 'POST' };
+            var options = { method: 'POST', headers: {'Idempotency-Key': idempotencyKey()} };
             if (action === 'reject' && !note) {
                 App.toast('A reason is required to reject.', 'error');
                 return;
@@ -115,7 +158,7 @@
             } else if (action === 'assign') {
                 path += '/auto' + (note ? '?note=' + encodeURIComponent(note) : '');
             } else if (action === 'resolve') {
-                App.toast('Resolving needs a proof photo — use the queue Resolve dialog.', 'error');
+                openResolveModal();
                 return;
             }
             await App.apiJson(path, options);
@@ -138,7 +181,7 @@
 
     async function load() {
         try {
-            var complaint = await App.apiJson('/api/complaints/' + ref());
+            var complaint = await App.apiJson('/api/authority/complaints/' + encodeURIComponent(ref()));
             document.getElementById('detailTitle').textContent = complaint.title || 'Complaint';
             document.getElementById('detailMeta').textContent =
                 complaint.referenceCode + ' — ' + complaint.status;
@@ -162,7 +205,15 @@
         if (event.target.id === 'authorityLightbox') closeLightbox();
     });
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') closeLightbox();
+        if (event.key === 'Escape') { closeLightbox(); closeResolveModal(); }
+    });
+    var resolveCancel = document.getElementById('detailResolveCancel');
+    if (resolveCancel) resolveCancel.addEventListener('click', closeResolveModal);
+    var resolveConfirm = document.getElementById('detailResolveConfirm');
+    if (resolveConfirm) resolveConfirm.addEventListener('click', submitResolveModal);
+    var resolveModal = document.getElementById('detailResolveModal');
+    if (resolveModal) resolveModal.addEventListener('click', function (event) {
+        if (event.target.id === 'detailResolveModal') closeResolveModal();
     });
     document.addEventListener('DOMContentLoaded', load);
 })();

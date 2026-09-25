@@ -20,7 +20,7 @@
     </div>
 
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <h4>Rate the resolution</h4>
             <form id="rateForm">
                 <div class="mb-2">
@@ -34,7 +34,7 @@
                 <button type="submit" class="btn btn-success">Submit rating</button>
             </form>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
             <h4>Reopen</h4>
             <form id="reopenForm">
                 <div class="mb-2">
@@ -42,6 +42,17 @@
                     <textarea class="form-control" id="reason" rows="2" required></textarea>
                 </div>
                 <button type="submit" class="btn btn-warning">Reopen complaint</button>
+            </form>
+        </div>
+        <div class="col-md-4">
+            <h4>Withdraw</h4>
+            <p class="text-muted small">Only while SUBMITTED or VERIFIED. This hides the report from the public map.</p>
+            <form id="cancelForm">
+                <div class="mb-2">
+                    <label for="cancelReason" class="form-label">Reason</label>
+                    <textarea class="form-control" id="cancelReason" rows="2" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-outline-danger">Withdraw complaint</button>
             </form>
         </div>
     </div>
@@ -66,10 +77,10 @@
     async function submitRate(event) {
         event.preventDefault();
         try {
-            await App.apiJson('/api/complaints/' + ref() + '/rate?rating='
+            await App.apiJson('/api/complaints/' + encodeURIComponent(ref()) + '/rate?rating='
                 + encodeURIComponent(document.getElementById('rating').value)
                 + '&feedback=' + encodeURIComponent(document.getElementById('feedback').value),
-                {method: 'POST'});
+                {method: 'POST', headers: {'Idempotency-Key': idempotencyKey()}});
             App.toast('Thanks for rating!', 'success');
             loadDetail();
         } catch (error) {
@@ -79,10 +90,30 @@
     async function submitReopen(event) {
         event.preventDefault();
         try {
-            await App.apiJson('/api/complaints/' + ref() + '/reopen?reason='
+            await App.apiJson('/api/complaints/' + encodeURIComponent(ref()) + '/reopen?reason='
                 + encodeURIComponent(document.getElementById('reason').value),
-                {method: 'POST'});
+                {method: 'POST', headers: {'Idempotency-Key': idempotencyKey()}});
             App.toast('Complaint reopened.', 'success');
+            loadDetail();
+        } catch (error) {
+            App.toast(error.message, 'error');
+        }
+    }
+    function idempotencyKey() {
+        try {
+            return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
+        } catch (e) {
+            return String(Date.now());
+        }
+    }
+    async function submitCancel(event) {
+        event.preventDefault();
+        if (!confirm('Withdraw this complaint? This cannot be undone.')) return;
+        try {
+            await App.apiJson('/api/complaints/' + encodeURIComponent(ref()) + '/cancel?reason='
+                + encodeURIComponent(document.getElementById('cancelReason').value),
+                {method: 'POST', headers: {'Idempotency-Key': idempotencyKey()}});
+            App.toast('Complaint withdrawn.', 'success');
             loadDetail();
         } catch (error) {
             App.toast(error.message, 'error');
@@ -98,6 +129,7 @@
     }
     document.getElementById('rateForm').addEventListener('submit', submitRate);
     document.getElementById('reopenForm').addEventListener('submit', submitReopen);
+    document.getElementById('cancelForm').addEventListener('submit', submitCancel);
     document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
     document.getElementById('lightbox').addEventListener('click', function (event) {
         if (event.target.id === 'lightbox') closeLightbox();

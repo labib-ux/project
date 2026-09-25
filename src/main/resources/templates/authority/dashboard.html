@@ -41,7 +41,6 @@ async function loadDashboard() {
         App.toast(error.message, 'error');
         return;
     }
-    const data = await res.json();
     const avg = data.averageResolutionHours == null ? '—' : Number(data.averageResolutionHours).toFixed(1) + ' h';
     document.getElementById('statCards').innerHTML =
         '<div class="col-md-4"><div class="card"><div class="card-body">'

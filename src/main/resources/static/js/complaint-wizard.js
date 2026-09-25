@@ -223,7 +223,8 @@
             body.append('latitude', document.getElementById('wzLatitude').value);
             body.append('longitude', document.getElementById('wzLongitude').value);
             photos.forEach(function (file) { body.append('photos', file); });
-            var result = await App.apiJson('/api/complaints', { method: 'POST', body: body });
+            var idempotencyKey = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
+            var result = await App.apiJson('/api/complaints', { method: 'POST', body: body, headers: {'Idempotency-Key': idempotencyKey} });
             App.toast('Report ' + result.referenceCode + ' submitted.', 'success');
             setTimeout(function () {
                 window.location.assign('/citizen/dashboard');
