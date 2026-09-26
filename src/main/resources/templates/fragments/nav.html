@@ -80,8 +80,7 @@
                         <span
                             class="hidden sm:inline-block text-xs font-mono text-surface-variant border-r border-outline-variant pr-3"
                             sec:authentication="name">User</span>
-                        <a href="#"
-                            onclick="localStorage.removeItem('nagorikSebaToken'); localStorage.removeItem('nagorikSebaUser'); window.location.assign('/'); return false;"
+                        <a href="#" data-signout
                             class="text-xs uppercase font-mono text-red-400 hover:text-red-300 tracking-wider px-2 py-1 border border-red-500/30 hover:border-red-400">
                             Sign Out
                         </a>
@@ -134,19 +133,10 @@
                 </div>
             </div>
         </aside>
-    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var toggle = document.getElementById('mobileNavToggle');
-            var drawer = document.getElementById('mobileNavDrawer');
-            if (toggle && drawer) {
-                toggle.addEventListener('click', function () {
-                    drawer.classList.toggle('hidden');
-                });
-            }
-        });
-    </script>
+        <!-- Fragment behaviour: external file, page CSP blocks inline scripts -->
+        <script th:src="@{/js/nav.js}"></script>
+    </div>
 </body>
 
 </html>

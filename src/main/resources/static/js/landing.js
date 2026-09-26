@@ -154,7 +154,20 @@
         });
     }
 
+    /* Reference-code tracker (CSP-safe submit listener; replaces inline onsubmit). */
+    function initTracker() {
+        var form = document.getElementById('trackForm');
+        if (!form) return;
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            var input = document.getElementById('trackInput');
+            var code = input ? input.value.trim() : '';
+            if (code) window.location.assign('/citizen/complaints/' + encodeURIComponent(code));
+        });
+    }
+
     function init() {
+        initTracker();
         var el = document.getElementById('landing-map');
         if (!el || !window.L) return;
         var map = L.map('landing-map').setView([23.8103, 90.4125], 11);
