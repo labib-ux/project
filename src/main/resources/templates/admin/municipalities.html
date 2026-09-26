@@ -1,42 +1,191 @@
 <!DOCTYPE html>
 <html xmlns:th="https://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments/head :: head('Municipality Admin')}">
+
+<head th:replace="~{fragments/head :: head('Municipality & Ward Admin')}">
+    <title>Municipality Admin</title>
 </head>
-<body>
-<div th:replace="~{fragments/nav :: nav}"></div>
 
-<div class="container py-4">
-    <h2>Municipality administration</h2>
-    <p class="text-muted">Manage municipalities, wards (GeoJSON boundaries) and departments.</p>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
 
-    <h4>Municipalities</h4>
-    <table class="table table-striped" id="muniTable">
-        <thead><tr><th>ID</th><th>Slug</th><th>Name</th><th>Active</th></tr></thead>
-        <tbody></tbody>
-    </table>
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
 
-    <h4 class="mt-4">Add ward from GeoJSON</h4>
-    <form id="wardForm">
-        <div class="row g-2">
-            <div class="col-md-2"><input class="form-control" id="wMunicipality" type="number" placeholder="Municipality ID" required></div>
-            <div class="col-md-2"><input class="form-control" id="wNumber" type="number" placeholder="Ward #" required></div>
-            <div class="col-md-3"><input class="form-control" id="wName" placeholder="Area name" required></div>
+    <main class="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-8">
+
+        <!-- Header -->
+        <section class="border-b border-outline-variant pb-6 mb-6">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div
+                        class="inline-flex items-center gap-2 px-2.5 py-0.5 bg-inverse-surface text-white font-mono text-[11px] font-bold uppercase tracking-wider mb-2">
+                        <span class="material-symbols-outlined text-sm">location_city</span>
+                        <span>MUNICIPAL GEOGRAPHIC DIRECTORY</span>
+                    </div>
+                    <h1 class="text-3xl font-bold uppercase tracking-tight text-on-surface">Municipalities, Wards &amp;
+                        Depots</h1>
+                    <p class="text-secondary text-sm mt-1">
+                        Configure City Corporation boundaries, GeoJSON ward boundary polygons, and departmental routing.
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a th:href="@{/admin}"
+                        class="bg-surface-container-lowest hover:bg-surface-container border border-outline text-on-surface font-mono font-semibold text-xs px-4 py-2.5 flex items-center gap-1.5 uppercase transition-colors">
+                        <span class="material-symbols-outlined text-base">arrow_back</span>
+                        <span>Back to Admin Overview</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Layout Split -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- Sidebar Navigation Rail -->
+            <nav class="lg:col-span-3 bg-surface-container-lowest border border-outline-variant p-4 space-y-1 font-mono text-xs uppercase"
+                aria-label="Admin Navigation">
+                <a th:href="@{/admin}"
+                    class="flex items-center gap-2.5 px-3 py-2 text-on-surface hover:bg-surface-container border border-transparent hover:border-outline-variant">
+                    <span class="material-symbols-outlined text-base">dashboard</span>
+                    <span>System Overview</span>
+                </a>
+                <a th:href="@{/admin/municipalities}"
+                    class="flex items-center gap-2.5 px-3 py-2 bg-inverse-surface text-white font-bold border border-inverse-surface">
+                    <span class="material-symbols-outlined text-base">location_city</span>
+                    <span>Municipalities &amp; Wards</span>
+                </a>
+                <a th:href="@{/admin/users}"
+                    class="flex items-center gap-2.5 px-3 py-2 text-on-surface hover:bg-surface-container border border-transparent hover:border-outline-variant">
+                    <span class="material-symbols-outlined text-base">manage_accounts</span>
+                    <span>User Roles &amp; Access</span>
+                </a>
+                <a th:href="@{/admin/sla-policies}"
+                    class="flex items-center gap-2.5 px-3 py-2 text-on-surface hover:bg-surface-container border border-transparent hover:border-outline-variant">
+                    <span class="material-symbols-outlined text-base">timer</span>
+                    <span>SLA Escalation Rules</span>
+                </a>
+            </nav>
+
+            <!-- Main Content -->
+            <div class="lg:col-span-9 space-y-8">
+
+                <!-- Municipalities Table Card -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-6">
+                    <h2
+                        class="text-sm font-mono font-bold uppercase tracking-wider text-on-surface mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">apartment</span>
+                        <span>Registered Municipalities</span>
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs font-mono" id="muniTable">
+                            <thead>
+                                <tr
+                                    class="bg-surface-container-low border-b-2 border-inverse-surface uppercase text-secondary">
+                                    <th class="py-2.5 px-3 font-semibold">ID</th>
+                                    <th class="py-2.5 px-3 font-semibold">Slug Identifier</th>
+                                    <th class="py-2.5 px-3 font-semibold">Official Name</th>
+                                    <th class="py-2.5 px-3 font-semibold">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-outline-variant">
+                                <tr>
+                                    <td colspan="4" class="py-4 text-center text-secondary">Loading municipalities...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Add Ward GeoJSON Form -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-6">
+                    <h2
+                        class="text-sm font-mono font-bold uppercase tracking-wider text-on-surface mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">polyline</span>
+                        <span>Ingest Ward Boundary Polygon (GeoJSON)</span>
+                    </h2>
+                    <form id="wardForm" class="space-y-4 font-mono text-xs">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label for="wMunicipality"
+                                    class="block text-[11px] uppercase font-bold text-secondary mb-1">Municipality ID
+                                    *</label>
+                                <input class="w-full text-xs" id="wMunicipality" type="number" placeholder="1" required>
+                            </div>
+                            <div>
+                                <label for="wNumber"
+                                    class="block text-[11px] uppercase font-bold text-secondary mb-1">Ward Number
+                                    *</label>
+                                <input class="w-full text-xs" id="wNumber" type="number" placeholder="e.g. 15" required>
+                            </div>
+                            <div>
+                                <label for="wName"
+                                    class="block text-[11px] uppercase font-bold text-secondary mb-1">Area / Locality
+                                    Name *</label>
+                                <input class="w-full text-xs font-sans" id="wName" placeholder="e.g. Dhanmondi / R/A"
+                                    required>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="wGeoJson" class="block text-[11px] uppercase font-bold text-secondary mb-1">
+                                GeoJSON Polygon / MultiPolygon Coordinates (lng/lat) *
+                            </label>
+                            <textarea class="w-full font-mono text-xs p-2.5" id="wGeoJson" rows="4"
+                                required>{"type":"Polygon","coordinates":[[[90.36,23.72],[90.44,23.72],[90.44,23.75],[90.36,23.75],[90.36,23.72]]]}</textarea>
+                        </div>
+                        <button type="submit"
+                            class="bg-primary-container hover:bg-blue-700 text-white font-mono text-xs uppercase font-bold py-2 px-5 transition-colors">
+                            Commit Ward Boundary
+                        </button>
+                    </form>
+                </section>
+
+                <!-- Departments Table -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-6">
+                    <h2
+                        class="text-sm font-mono font-bold uppercase tracking-wider text-on-surface mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">corporate_fare</span>
+                        <span>Departmental Dispatch Units</span>
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs font-mono" id="deptTable">
+                            <thead>
+                                <tr
+                                    class="bg-surface-container-low border-b-2 border-inverse-surface uppercase text-secondary">
+                                    <th class="py-2.5 px-3 font-semibold">ID</th>
+                                    <th class="py-2.5 px-3 font-semibold">Unit Code</th>
+                                    <th class="py-2.5 px-3 font-semibold">Department Title</th>
+                                    <th class="py-2.5 px-3 font-semibold">Assigned Categories</th>
+                                    <th class="py-2.5 px-3 font-semibold">Operational Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-outline-variant">
+                                <tr>
+                                    <td colspan="5" class="py-4 text-center text-secondary">Loading departmental
+                                        units...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+
         </div>
-        <div class="mt-2">
-            <label for="wGeoJson" class="form-label">GeoJSON Polygon / MultiPolygon (lng/lat)</label>
-            <textarea class="form-control" id="wGeoJson" rows="4" required>{"type":"Polygon","coordinates":[[[90.36,23.72],[90.44,23.72],[90.44,23.75],[90.36,23.75],[90.36,23.72]]]}</textarea>
+
+    </main>
+
+    <!-- Global Footer -->
+    <footer
+        class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · ROOT ADMINISTRATION CONSOLE</span>
+            <span class="text-outline">SYSTEM ADMIN ACCESS</span>
         </div>
-        <button type="submit" class="btn btn-primary mt-2">Add ward</button>
-    </form>
+    </footer>
 
-    <h4 class="mt-4">Departments</h4>
-    <table class="table table-striped" id="deptTable">
-        <thead><tr><th>ID</th><th>Code</th><th>Name</th><th>Categories</th><th>Active</th></tr></thead>
-        <tbody></tbody>
-    </table>
-</div>
-
-<script th:src="@{/js/app.js}"></script>
-<script th:src="@{/js/admin-municipalities.js}"></script>
+    <!-- Scripts -->
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/admin-municipalities.js}"></script>
 </body>
+
 </html>

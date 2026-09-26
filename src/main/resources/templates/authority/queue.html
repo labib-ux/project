@@ -1,56 +1,291 @@
 <!DOCTYPE html>
 <html xmlns:th="https://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments/head :: head('Authority Queue')}">
+
+<head th:replace="~{fragments/head :: head('Authority Operational Queue')}">
+    <title>Authority Queue</title>
 </head>
-<body>
-<div th:replace="~{fragments/nav :: nav}"></div>
 
-<div class="container py-4">
-    <h2>Department Queue</h2>
-    <p class="text-muted">Active complaints for your municipality, filterable by status.</p>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
 
-    <div class="row g-2 mb-3">
-        <div class="col-md-3">
-            <label for="municipalityId" class="form-label">Municipality ID</label>
-            <input type="number" class="form-control" id="municipalityId" placeholder="e.g. 1">
-        </div>
-        <div class="col-md-5">
-            <label for="statusFilter" class="form-label">Status (comma-separated, blank = active)</label>
-            <input type="text" class="form-control" id="statusFilter" placeholder="VERIFIED,ASSIGNED">
-        </div>
-        <div class="col-md-2 d-flex align-items-end">
-            <button class="btn btn-primary" id="loadBtn">Load</button>
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
+
+    <main class="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-8">
+
+        <!-- Header -->
+        <section class="border-b border-outline-variant pb-6 mb-6">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div
+                        class="inline-flex items-center gap-2 px-2.5 py-0.5 bg-teal-800 text-white font-mono text-[11px] font-bold uppercase tracking-wider mb-2">
+                        <span class="material-symbols-outlined text-sm">view_list</span>
+                        <span>MUNICIPAL DISPATCH QUEUE // OPERATIONAL TICKETS</span>
+                    </div>
+                    <h1 class="text-3xl font-bold uppercase tracking-tight text-on-surface">Active Grievance Queue</h1>
+                    <p class="text-secondary text-sm mt-1">
+                        Filter, verify, assign departments, and track resolution workflows across your jurisdiction.
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a th:href="@{/authority/dashboard}"
+                        class="bg-surface-container-lowest hover:bg-surface-container border border-outline text-on-surface font-mono font-semibold text-xs px-4 py-2.5 flex items-center gap-1.5 uppercase transition-colors">
+                        <span class="material-symbols-outlined text-base">dashboard</span>
+                        <span>Back to Dashboard</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filter Controls Toolbar -->
+        <section class="bg-surface-container-low border border-outline-variant p-4 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                <div class="sm:col-span-3">
+                    <label for="municipalityId"
+                        class="block text-[11px] font-mono font-bold uppercase text-secondary mb-1">
+                        Municipality ID <span class="text-error">*</span>
+                    </label>
+                    <input type="number" id="municipalityId" placeholder="e.g. 1"
+                        class="w-full text-xs font-mono py-1.5 px-3">
+                </div>
+                <div class="sm:col-span-6">
+                    <label for="statusFilter"
+                        class="block text-[11px] font-mono font-bold uppercase text-secondary mb-1">
+                        Filter Statuses <span class="text-[10px] text-outline font-normal">(Comma-separated, blank = all
+                            active)</span>
+                    </label>
+                    <input type="text" id="statusFilter" placeholder="e.g. SUBMITTED, VERIFIED, ASSIGNED, IN_PROGRESS"
+                        class="w-full text-xs font-mono py-1.5 px-3">
+                </div>
+                <div class="sm:col-span-3 flex gap-2">
+                    <button id="loadBtn"
+                        class="flex-1 bg-inverse-surface hover:bg-black text-white text-xs font-mono uppercase font-bold py-2 px-4 transition-colors flex items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-sm">refresh</span>
+                        <span>Load Queue</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Queue Table Card -->
+        <section class="bg-surface-container-lowest border border-outline-variant p-6">
+            <div class="flex justify-between items-center pb-4 mb-4 border-b border-outline-variant">
+                <h2
+                    class="text-sm font-mono font-bold uppercase tracking-wider text-on-surface flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">pending_actions</span>
+                    <span>Actionable Dossiers</span>
+                </h2>
+                <span class="text-xs font-mono text-secondary uppercase">LIVE MUNICIPAL TICKETS</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm" id="queueTable">
+                    <thead>
+                        <tr
+                            class="bg-surface-container-low border-b-2 border-inverse-surface font-mono text-xs uppercase text-secondary">
+                            <th class="py-2.5 px-3 font-semibold">Reference</th>
+                            <th class="py-2.5 px-3 font-semibold">Incident Title</th>
+                            <th class="py-2.5 px-3 font-semibold">Status</th>
+                            <th class="py-2.5 px-3 font-semibold">Ward Jurisdiction</th>
+                            <th class="py-2.5 px-3 font-semibold text-right">Workflow Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-outline-variant font-mono text-xs">
+                        <tr>
+                            <td colspan="5" class="py-6 text-center text-secondary">
+                                Enter Municipality ID and click 'Load Queue' to fetch pending complaints.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Dialog for Resolving with Proof Photo -->
+    <div class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 select-none"
+        id="resolveModal" role="dialog" aria-label="Resolve complaint">
+        <div class="bg-surface-container-lowest border border-inverse-surface w-full max-w-md p-6 space-y-4">
+            <div class="border-b border-outline-variant pb-3 flex justify-between items-center">
+                <h3 class="font-mono text-sm font-bold uppercase text-on-surface">
+                    Resolve Dossier <span id="resolveRef" class="text-primary font-bold"></span>
+                </h3>
+                <span class="material-symbols-outlined text-emerald-600">verified</span>
+            </div>
+
+            <div class="space-y-3 font-sans text-xs">
+                <div>
+                    <label for="resolveNote"
+                        class="block font-mono text-[11px] uppercase font-bold text-secondary mb-1">
+                        Resolution Note <span class="text-error">*</span>
+                    </label>
+                    <textarea id="resolveNote" rows="2" placeholder="Describe the remediation work executed..."
+                        class="w-full text-xs font-sans p-2"></textarea>
+                </div>
+                <div>
+                    <label for="resolvePhotos"
+                        class="block font-mono text-[11px] uppercase font-bold text-secondary mb-1">
+                        Work-Proof Photographic Evidence <span class="text-error">*</span>
+                    </label>
+                    <input type="file" id="resolvePhotos" accept="image/*" required
+                        class="w-full text-xs font-mono p-1">
+                    <p class="text-[10px] font-mono text-outline mt-1">Photo showing the completed repair is required by
+                        statute.</p>
+                </div>
+            </div>
+
+            <p id="resolveFeedback" class="text-xs font-mono font-bold text-error" role="status" aria-live="polite"></p>
+
+            <div class="pt-3 border-t border-outline-variant flex justify-end gap-2 font-mono text-xs">
+                <button type="button"
+                    class="bg-surface-container-lowest hover:bg-surface-container border border-outline px-3 py-1.5 uppercase font-semibold"
+                    id="resolveCancel">
+                    Cancel
+                </button>
+                <button type="button"
+                    class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-1.5 uppercase font-bold flex items-center gap-1"
+                    id="resolveConfirm">
+                    <span class="material-symbols-outlined text-sm">task_alt</span>
+                    <span>Commit Resolution</span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <table class="table table-striped" id="queueTable">
-        <thead><tr><th>Reference</th><th>Title</th><th>Status</th><th>Ward</th><th>Actions</th></tr></thead>
-        <tbody></tbody>
-    </table>
-</div>
-
-<div class="lightbox hidden" id="resolveModal" role="dialog" aria-label="Resolve complaint">
-    <div class="card" style="width: min(480px, 92vw);">
-        <div class="card-body">
-            <h5>Resolve <span id="resolveRef"></span></h5>
-            <div class="mb-2">
-                <label for="resolveNote" class="form-label">Resolution note</label>
-                <textarea class="form-control" id="resolveNote" rows="2"></textarea>
-            </div>
-            <div class="mb-2">
-                <label for="resolvePhotos" class="form-label">Work-proof photo (required)</label>
-                <input type="file" class="form-control" id="resolvePhotos" accept="image/*" required>
-            </div>
-            <p id="resolveFeedback" class="text-danger"></p>
-            <div class="d-flex gap-2 justify-content-end">
-                <button type="button" class="btn btn-secondary" id="resolveCancel">Cancel</button>
-                <button type="button" class="btn btn-success" id="resolveConfirm">Resolve</button>
-            </div>
+    <!-- Global Footer -->
+    <footer
+        class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · OPERATIONAL QUEUE</span>
+            <span class="text-outline">AUTHORIZED PERSONNEL ONLY</span>
         </div>
-    </div>
-</div>
+    </footer>
 
-<script th:src="@{/js/app.js}"></script>
-<script th:src="@{/js/authority-queue.js}"></script>
+    <!-- Scripts -->
+    <script th:src="@{/js/app.js}"></script>
+    <script>
+        function authHeaders() {
+            return { 'Authorization': 'Bearer ' + localStorage.getItem('nagorikSebaToken') };
+        }
+        var App = window.NagorikSeba;
+        var resolveTarget = null;
+
+        function statusBadgeHtml(status) {
+            var cls = 'badge-' + (status || 'SUBMITTED');
+            return '<span class="badge-status ' + cls + '">' + (status || 'SUBMITTED') + '</span>';
+        }
+
+        async function loadQueue() {
+            if (!App || !App.getToken()) {
+                window.location.replace('/login/authority?next=/authority/queue');
+                return;
+            }
+            var mid = document.getElementById('municipalityId').value;
+            if (!mid) {
+                App.toast('Enter a municipality ID, or sign in again so it fills automatically.', 'error');
+                return;
+            }
+            var statuses = document.getElementById('statusFilter').value.trim();
+            var url = '/api/authority/queue?municipalityId=' + encodeURIComponent(mid);
+            if (statuses) {
+                statuses.split(',').forEach(function (s) { url += '&status=' + encodeURIComponent(s.trim()); });
+            }
+            var items;
+            try {
+                items = await App.apiJson(url);
+            } catch (error) {
+                App.toast(error.message, 'error');
+                return;
+            }
+            document.querySelector('#queueTable tbody').innerHTML = items.map(function (c) {
+                return '<tr>'
+                    + '<td class="py-2.5 px-3 font-bold text-on-surface"><a class="text-primary hover:underline" href="/authority/complaints/' + encodeURIComponent(c.referenceCode) + '">' + c.referenceCode + '</a></td>'
+                    + '<td class="py-2.5 px-3 font-sans font-medium">' + App.esc(c.title) + '</td>'
+                    + '<td class="py-2.5 px-3">' + statusBadgeHtml(c.status) + '</td>'
+                    + '<td class="py-2.5 px-3 text-secondary">' + App.esc(c.wardName || '—') + '</td>'
+                    + '<td class="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">'
+                    + '<button class="bg-emerald-700 hover:bg-emerald-800 text-white px-2 py-1 uppercase text-[11px] font-bold" onclick="verifyComplaint(\'' + c.referenceCode + '\')">Verify</button>'
+                    + '<button class="bg-primary-container hover:bg-blue-700 text-white px-2 py-1 uppercase text-[11px] font-bold" onclick="autoAssign(\'' + c.referenceCode + '\')">Assign</button>'
+                    + '<button class="bg-inverse-surface hover:bg-black text-white px-2 py-1 uppercase text-[11px] font-bold" onclick="startWork(\'' + c.referenceCode + '\')">Start</button>'
+                    + '<button class="bg-surface-container-lowest hover:bg-surface-container border border-emerald-700 text-emerald-800 px-2 py-1 uppercase text-[11px] font-bold" onclick="openResolve(\'' + c.referenceCode + '\')">Resolve</button>'
+                    + '<a class="bg-surface-container-low hover:bg-surface-container border border-outline px-2 py-1 uppercase text-[11px] font-bold inline-block" href="/authority/complaints/' + encodeURIComponent(c.referenceCode) + '">Dossier →</a>'
+                    + '</td></tr>';
+            }).join('') || '<tr><td colspan="5" class="py-4 text-center text-secondary">No complaints found in current queue.</td></tr>';
+        }
+
+        async function verifyComplaint(ref) {
+            try {
+                await App.apiJson('/api/authority/complaints/' + ref + '/verify?note=Verified-from-queue', { method: 'POST' });
+                App.toast('Verified ' + ref + '.', 'success');
+            } catch (error) {
+                App.toast(error.message, 'error');
+            }
+            loadQueue();
+        }
+
+        async function autoAssign(ref) {
+            try {
+                await App.apiJson('/api/authority/complaints/' + ref + '/assign/auto', { method: 'POST' });
+                App.toast('Assigned ' + ref + ' to department.', 'success');
+            } catch (error) {
+                App.toast(error.message, 'error');
+            }
+            loadQueue();
+        }
+
+        async function startWork(ref) {
+            try {
+                await App.apiJson('/api/authority/complaints/' + ref + '/start', { method: 'POST' });
+                App.toast('Work started on ' + ref + '.', 'success');
+            } catch (error) {
+                App.toast(error.message, 'error');
+            }
+            loadQueue();
+        }
+
+        function openResolve(ref) {
+            resolveTarget = ref;
+            document.getElementById('resolveRef').textContent = ref;
+            document.getElementById('resolveFeedback').textContent = '';
+            document.getElementById('resolvePhotos').value = '';
+            document.getElementById('resolveModal').classList.remove('hidden');
+        }
+
+        document.getElementById('resolveCancel').addEventListener('click', function () {
+            document.getElementById('resolveModal').classList.add('hidden');
+        });
+
+        document.getElementById('resolveConfirm').addEventListener('click', async function () {
+            var photos = document.getElementById('resolvePhotos').files;
+            if (!photos || photos.length < 1) {
+                document.getElementById('resolveFeedback').textContent = 'A work-proof photo is required.';
+                return;
+            }
+            var body = new FormData();
+            body.append('note', document.getElementById('resolveNote').value);
+            body.append('photos', photos[0]);
+            try {
+                await App.apiJson('/api/authority/complaints/' + resolveTarget + '/resolve', { method: 'POST', body: body });
+                App.toast('Resolved ' + resolveTarget + '.', 'success');
+                document.getElementById('resolveModal').classList.add('hidden');
+            } catch (error) {
+                document.getElementById('resolveFeedback').textContent = error.message;
+            }
+            loadQueue();
+        });
+
+        document.getElementById('loadBtn').addEventListener('click', loadQueue);
+        (function prefillMunicipality() {
+            try {
+                var user = JSON.parse(localStorage.getItem('nagorikSebaUser') || 'null');
+                var mids = user && user.municipalityIds ? Array.from(user.municipalityIds) : [];
+                if (mids.length === 1) {
+                    document.getElementById('municipalityId').value = mids[0];
+                    loadQueue();
+                }
+            } catch (e) { /* leave manual entry */ }
+        })();
+    </script>
 </body>
+
 </html>

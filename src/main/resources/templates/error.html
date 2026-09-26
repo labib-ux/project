@@ -1,31 +1,72 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="'Something went wrong | Nagorik Seba'">Something went wrong | Nagorik Seba</title>
-    <link rel="stylesheet" th:href="@{/css/app.css}">
+
+<head th:replace="~{fragments/head :: head('System Exception Notice')}">
+    <title>Error Notice</title>
 </head>
-<body class="auth-page">
-<main class="auth-layout">
-    <a class="brand auth-brand" href="/"><span>ন</span> নাগরিক সেবা</a>
-    <section class="auth-panel" role="alert">
-        <p class="eyebrow">Nagorik Seba</p>
-        <h1 th:text="${status} ? ('Error ' + ${status}) : 'Something went wrong'">Something went wrong</h1>
-        <p class="auth-intro" th:text="${error} ?: 'The page you asked for could not be shown.'">The page could not be shown.</p>
-        <p class="text-muted small" th:if="${message}" th:text="${message}"></p>
-        <p class="text-muted small" th:if="${path}" th:text="'Path: ' + ${path}"></p>
-        <div class="d-flex gap-2 mt-3" style="display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap">
-            <a class="button button-primary" href="/">Back to home</a>
-            <a class="button" style="border:1px solid #d1d5db" href="/wards">View wards map</a>
-            <a class="button" style="border:1px solid #d1d5db" href="/citizen/dashboard">My complaints</a>
+
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
+
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
+
+    <main class="flex-grow flex items-center justify-center py-12 px-4 md:px-8">
+        <div class="w-full max-w-xl border border-outline-variant bg-surface-container-lowest p-8 md:p-10 text-center">
+
+            <div
+                class="w-14 h-14 bg-red-50 border border-red-300 text-error flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-3xl">error_outline</span>
+            </div>
+
+            <div
+                class="inline-block px-2.5 py-0.5 bg-surface-container border border-outline-variant text-[11px] font-mono font-bold text-secondary uppercase tracking-wider mb-2">
+                HTTP EXCEPTION NOTICE // MUNICIPAL REDRESS
+            </div>
+
+            <h1 class="text-2xl font-bold uppercase tracking-tight text-on-surface mb-2"
+                th:text="${status} ? ('System Error ' + ${status}) : 'Something Went Wrong'">
+                System Error
+            </h1>
+
+            <p class="text-xs text-secondary font-mono mb-6"
+                th:text="${error} ?: 'The requested municipal ledger resource could not be found or processed.'">
+                The resource could not be found.
+            </p>
+
+            <div th:if="${path}"
+                class="p-2.5 bg-surface-container-low border border-outline-variant font-mono text-[11px] text-outline text-left mb-6">
+                <span>REQUESTED PATH: </span><code class="text-on-surface font-bold" th:text="${path}">/unknown</code>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-3 font-mono text-xs">
+                <a th:href="@{/}"
+                    class="bg-inverse-surface hover:bg-black text-white px-4 py-2 uppercase font-bold transition-colors">
+                    Back to Portal Home
+                </a>
+                <a th:href="@{/citizen/dashboard}"
+                    class="bg-surface-container-lowest hover:bg-surface-container border border-outline text-on-surface px-4 py-2 uppercase font-semibold transition-colors">
+                    My Complaints
+                </a>
+                <a th:href="@{/wards}"
+                    class="bg-surface-container-lowest hover:bg-surface-container border border-outline text-on-surface px-4 py-2 uppercase font-semibold transition-colors">
+                    Public Wards Map
+                </a>
+            </div>
+
         </div>
-    </section>
-    <aside class="auth-aside" aria-hidden="true">
-        <p class="eyebrow">We're on it</p>
-        <blockquote>"Every report is a step toward a more responsive neighbourhood."</blockquote>
-        <div class="aside-shape shape-one"></div><div class="aside-shape shape-two"></div>
-    </aside>
-</main>
+    </main>
+
+    <!-- Global Footer -->
+    <footer
+        class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · EXCEPTION HANDLER</span>
+            <span class="text-outline">SYSTEM TELEMETRY AUDIT</span>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script th:src="@{/js/app.js}"></script>
 </body>
+
 </html>

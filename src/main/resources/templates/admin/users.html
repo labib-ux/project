@@ -1,50 +1,184 @@
 <!DOCTYPE html>
 <html xmlns:th="https://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments/head :: head('User Admin')}">
+
+<head th:replace="~{fragments/head :: head('User & Account Governance')}">
+    <title>User Administration</title>
 </head>
-<body>
-<div th:replace="~{fragments/nav :: nav}"></div>
 
-<div class="container py-4">
-    <h2>User administration</h2>
-    <p class="text-muted">Activate/deactivate accounts, post memberships, and anonymize deleted users.</p>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
 
-    <button class="btn btn-primary mb-3" id="createOpen">Add citizen / posting</button>
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
 
-    <table class="table table-striped" id="userTable">
-        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th>Actions</th></tr></thead>
-        <tbody></tbody>
-    </table>
-</div>
+    <main class="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-8">
 
-<div class="slide-in-backdrop hidden" id="createBackdrop"></div>
-<aside class="slide-in" id="createPanel" aria-label="Add citizen">
-    <h4>Add citizen</h4>
-    <p class="text-muted">Registers the account, then posts the municipality membership. Officer and councilor roles are assigned through a separate privileged process.</p>
-    <div class="mb-2">
-        <label for="newName" class="form-label">Full name</label>
-        <input class="form-control" id="newName" maxlength="120" required>
-    </div>
-    <div class="mb-2">
-        <label for="newEmail" class="form-label">Email</label>
-        <input class="form-control" id="newEmail" type="email" maxlength="120" required>
-    </div>
-    <div class="mb-2">
-        <label for="newPhone" class="form-label">Mobile number</label>
-        <input class="form-control" id="newPhone" placeholder="01712345678" required>
-    </div>
-    <div class="mb-2">
-        <label for="newMunicipality" class="form-label">Municipality</label>
-        <select class="form-select" id="newMunicipality"></select>
-    </div>
-    <p id="createFeedback" class="text-danger"></p>
-    <div class="d-flex gap-2 justify-content-end">
-        <button class="btn btn-secondary" id="createCancel">Cancel</button>
-        <button class="btn btn-primary" id="createConfirm">Create</button>
-    </div>
-</aside>
+        <!-- Header -->
+        <section class="border-b border-outline-variant pb-6 mb-6">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div
+                        class="inline-flex items-center gap-2 px-2.5 py-0.5 bg-inverse-surface text-white font-mono text-[11px] font-bold uppercase tracking-wider mb-2">
+                        <span class="material-symbols-outlined text-sm">badge</span>
+                        <span>ACCOUNT &amp; ROLE GOVERNANCE</span>
+                    </div>
+                    <h1 class="text-3xl font-bold uppercase tracking-tight text-on-surface">Users &amp; Access Controls
+                    </h1>
+                    <p class="text-secondary text-sm mt-1">
+                        Activate/deactivate accounts, assign municipal postings, and enforce statutory privacy
+                        anonymization.
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button
+                        class="bg-primary-container hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 flex items-center gap-2 uppercase tracking-wider transition-colors"
+                        id="createOpen">
+                        <span class="material-symbols-outlined text-base">person_add</span>
+                        <span>+ Add Citizen / Posting</span>
+                    </button>
+                </div>
+            </div>
+        </section>
 
-<script th:src="@{/js/app.js}"></script>
-<script th:src="@{/js/admin-users.js}"></script>
+        <!-- Admin Layout Split -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- Sidebar Navigation Rail -->
+            <nav class="lg:col-span-3 bg-surface-container-lowest border border-outline-variant p-4 space-y-1 font-mono text-xs uppercase"
+                aria-label="Admin Navigation">
+                <a th:href="@{/admin}"
+                    class="flex items-center gap-2.5 px-3 py-2 text-on-surface hover:bg-surface-container border border-transparent hover:border-outline-variant">
+                    <span class="material-symbols-outlined text-base">dashboard</span>
+                    <span>System Overview</span>
+                </a>
+                <a th:href="@{/admin/municipalities}"
+                    class="flex items-center gap-2.5 px-3 py-2 text-on-surface hover:bg-surface-container border border-transparent hover:border-outline-variant">
+                    <span class="material-symbols-outlined text-base">location_city</span>
+                    <span>Municipalities &amp; Wards</span>
+                </a>
+                <a th:href="@{/admin/users}"
+                    class="flex items-center gap-2.5 px-3 py-2 bg-inverse-surface text-white font-bold border border-inverse-surface">
+                    <span class="material-symbols-outlined text-base">manage_accounts</span>
+                    <span>User Roles &amp; Access</span>
+                </a>
+                <a th:href="@{/admin/sla-policies}"
+                    class="flex items-center gap-2.5 px-3 py-2 text-on-surface hover:bg-surface-container border border-transparent hover:border-outline-variant">
+                    <span class="material-symbols-outlined text-base">timer</span>
+                    <span>SLA Escalation Rules</span>
+                </a>
+            </nav>
+
+            <!-- Main Content Area -->
+            <div class="lg:col-span-9 space-y-6">
+
+                <!-- Users Table Card -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-6">
+                    <div class="flex justify-between items-center pb-4 mb-4 border-b border-outline-variant">
+                        <h2
+                            class="text-sm font-mono font-bold uppercase tracking-wider text-on-surface flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">groups</span>
+                            <span>Registered Accounts Roster</span>
+                        </h2>
+                        <span class="text-xs font-mono text-secondary uppercase">AUTHENTICATION LEDGER</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs font-mono" id="userTable">
+                            <thead>
+                                <tr
+                                    class="bg-surface-container-low border-b-2 border-inverse-surface uppercase text-secondary">
+                                    <th class="py-2.5 px-3 font-semibold">ID</th>
+                                    <th class="py-2.5 px-3 font-semibold">User Identity</th>
+                                    <th class="py-2.5 px-3 font-semibold">Email Account</th>
+                                    <th class="py-2.5 px-3 font-semibold">Authority Role</th>
+                                    <th class="py-2.5 px-3 font-semibold">Active State</th>
+                                    <th class="py-2.5 px-3 font-semibold text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-outline-variant">
+                                <tr>
+                                    <td colspan="6" class="py-6 text-center text-secondary">Loading user telemetry...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Slide-in Drawer for Creating Citizen / Account -->
+    <div class="fixed inset-0 bg-black/60 z-50 hidden" id="createBackdrop"></div>
+    <aside
+        class="fixed right-0 top-0 bottom-0 w-full max-w-md bg-surface-container-lowest border-l border-inverse-surface z-50 p-6 flex flex-col justify-between hidden"
+        id="createPanel" aria-label="Add citizen">
+        <div>
+            <div class="border-b border-outline-variant pb-3 mb-4 flex justify-between items-center">
+                <h3 class="font-mono text-sm font-bold uppercase text-on-surface">Add Citizen / Posting</h3>
+                <span class="material-symbols-outlined text-primary">person_add</span>
+            </div>
+            <p class="text-xs text-secondary mb-4">
+                Registers the account, then creates the municipality posting. Officer roles require privileged
+                elevation.
+            </p>
+            <div class="space-y-3 font-sans text-xs">
+                <div>
+                    <label for="newName"
+                        class="block font-mono text-[11px] uppercase font-bold text-secondary mb-1">Full Name *</label>
+                    <input class="w-full text-xs font-sans p-2" id="newName" maxlength="120" required
+                        placeholder="e.g. Tariq Hasan">
+                </div>
+                <div>
+                    <label for="newEmail"
+                        class="block font-mono text-[11px] uppercase font-bold text-secondary mb-1">Email Address
+                        *</label>
+                    <input class="w-full text-xs font-mono p-2" id="newEmail" type="email" maxlength="120" required
+                        placeholder="tariq@example.com">
+                </div>
+                <div>
+                    <label for="newPhone"
+                        class="block font-mono text-[11px] uppercase font-bold text-secondary mb-1">Bangladeshi Mobile
+                        *</label>
+                    <input class="w-full text-xs font-mono p-2" id="newPhone" placeholder="01712345678" required>
+                </div>
+                <div>
+                    <label for="newMunicipality"
+                        class="block font-mono text-[11px] uppercase font-bold text-secondary mb-1">Jurisdiction
+                        Municipality *</label>
+                    <select class="w-full text-xs font-mono p-2 bg-white" id="newMunicipality"></select>
+                </div>
+            </div>
+            <p id="createFeedback" class="text-xs font-mono font-bold text-error mt-3"></p>
+        </div>
+
+        <div class="pt-4 border-t border-outline-variant flex justify-end gap-2 font-mono text-xs">
+            <button
+                class="bg-surface-container-lowest hover:bg-surface-container border border-outline px-3 py-1.5 uppercase font-semibold"
+                id="createCancel">
+                Cancel
+            </button>
+            <button class="bg-primary-container hover:bg-blue-700 text-white px-4 py-1.5 uppercase font-bold"
+                id="createConfirm">
+                Commit Account
+            </button>
+        </div>
+    </aside>
+
+    <!-- Global Footer -->
+    <footer
+        class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · ROOT ADMINISTRATION CONSOLE</span>
+            <span class="text-outline">SYSTEM ADMIN ACCESS</span>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/admin-users.js}"></script>
 </body>
+
 </html>

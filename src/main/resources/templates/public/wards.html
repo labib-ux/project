@@ -1,78 +1,145 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wards &amp; Live Map | Nagorik Seba</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" th:href="@{/css/app.css}">
+
+<head th:replace="~{fragments/head :: head('Wards & Public Heatmap')}">
+    <title>Wards &amp; Live Map</title>
 </head>
-<body>
-<header class="landing-header">
-    <button class="landing-hamburger" id="wardsHamburger" aria-label="Menu">&#9776;</button>
-    <a class="landing-wordmark" href="/">Nagorik Seba</a>
-    <div class="landing-header-actions">
-        <a class="landing-login" href="/login">Authority Login</a>
-        <a class="landing-report-btn" href="/citizen/complaint/new">Report an Issue</a>
-    </div>
-</header>
-<nav class="landing-mobile-menu" id="wardsMobileMenu">
-    <a href="/">Home</a>
-    <a href="/citizen/complaint/new">Report an Issue</a>
-    <a href="/login">Authority Login</a>
-</nav>
 
-<main class="heatmap-page">
-    <div class="map-overlay-controls">
-        <label for="heatmapMunicipality" class="visually-hidden">Municipality</label>
-        <select id="heatmapMunicipality" aria-label="Municipality">
-            <option value="dhaka-north" selected>Dhaka North</option>
-            <option value="dhaka-south">Dhaka South</option>
-        </select>
-        <span id="heatmapStatus" class="text-muted small" role="status" aria-live="polite">Loading live reports…</span>
-    </div>
-    <div id="heatmap" role="application" aria-label="Public complaint map"></div>
-    <div id="heatmapLegend" class="p-3 small text-muted" aria-label="Map legend"></div>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
 
-    <section class="landing-section" aria-label="Ward scoreboard">
-        <div class="landing-inner">
-            <h2>Ward performance</h2>
-            <p class="landing-sub">Monthly ranking per ward — resolved vs pending, average resolution time.</p>
-            <div class="landing-table-scroll">
-                <table class="landing-ward-table" id="scoreboardTable">
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
+
+    <main class="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-8">
+
+        <!-- Header -->
+        <section class="border-b border-outline-variant pb-6 mb-6">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div
+                        class="inline-flex items-center gap-2 px-2.5 py-0.5 bg-primary/10 border border-primary/20 text-primary font-mono text-[11px] font-bold uppercase tracking-wider mb-2">
+                        <span class="material-symbols-outlined text-sm">map</span>
+                        <span>PUBLIC INFRASTRUCTURE TRANSPARENCY</span>
+                    </div>
+                    <h1 class="text-3xl font-bold uppercase tracking-tight text-on-surface">Wards &amp; Incident Heatmap
+                    </h1>
+                    <p class="text-secondary text-sm mt-1">
+                        Auditing municipal infrastructure health across Dhaka City Corporations in real time.
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a th:href="@{/citizen/complaint/new}"
+                        class="bg-primary-container hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 flex items-center gap-2 uppercase tracking-wider transition-colors">
+                        <span class="material-symbols-outlined text-base">add_location_alt</span>
+                        <span>Report an Issue</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Map Section with Filter Toolbar -->
+        <section class="bg-surface-container-lowest border border-outline-variant mb-8 overflow-hidden">
+            <div
+                class="bg-surface-container-low p-3 border-b border-outline-variant flex flex-wrap justify-between items-center gap-3">
+                <div class="flex items-center gap-3">
+                    <label for="heatmapMunicipality" class="text-xs font-mono uppercase font-bold text-secondary">
+                        Jurisdiction:
+                    </label>
+                    <select id="heatmapMunicipality"
+                        class="text-xs font-mono py-1 px-3 border border-outline-variant bg-white">
+                        <option value="dhaka-north" selected>Dhaka North City Corporation (DNCC)</option>
+                        <option value="dhaka-south">Dhaka South City Corporation (DSCC)</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2 text-xs font-mono text-secondary">
+                    <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                    <span id="heatmapStatus">Connecting live GIS stream...</span>
+                </div>
+            </div>
+
+            <!-- Heatmap Canvas -->
+            <div class="relative w-full h-[460px] bg-surface-container">
+                <div id="heatmap" class="w-full h-full"></div>
+            </div>
+
+            <!-- Heatmap Legend -->
+            <div id="heatmapLegend"
+                class="p-3 border-t border-outline-variant bg-surface-container-lowest text-xs font-mono text-secondary flex flex-wrap gap-4 items-center">
+                <span class="font-bold uppercase text-on-surface">Categories:</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#e74c3c]"></span>
+                    Roads</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#3498db]"></span> Water
+                    Supply</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#f1c40f]"></span>
+                    Electricity</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#9b59b6]"></span>
+                    Sanitation</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#1abc9c]"></span>
+                    Waterlogging</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#e67e22]"></span>
+                    Mosquito</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#2ecc71]"></span>
+                    Waste</span>
+            </div>
+        </section>
+
+        <!-- Ward Scoreboard Section -->
+        <section class="bg-surface-container-lowest border border-outline-variant p-6">
+            <div class="flex justify-between items-center pb-4 mb-4 border-b border-outline-variant">
+                <div>
+                    <h2
+                        class="text-base font-mono font-bold uppercase tracking-tight text-on-surface flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">leaderboard</span>
+                        <span>Ward Performance Scoreboard</span>
+                    </h2>
+                    <p class="text-xs text-secondary mt-0.5">Monthly ranking per ward: resolution efficiency and
+                        turnaround.</p>
+                </div>
+                <span class="text-xs font-mono text-secondary uppercase">MONTHLY SNAPSHOT</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm" id="scoreboardTable">
                     <thead>
-                    <tr><th>Ward</th><th>Resolved</th><th>Pending</th><th>Rate</th><th>Avg resolution</th></tr>
+                        <tr
+                            class="bg-surface-container-low border-b-2 border-inverse-surface font-mono text-xs uppercase text-secondary">
+                            <th class="py-2.5 px-3 font-semibold">Ward &amp; Area Name</th>
+                            <th class="py-2.5 px-3 font-semibold">Resolved</th>
+                            <th class="py-2.5 px-3 font-semibold">Pending / In-Work</th>
+                            <th class="py-2.5 px-3 font-semibold">Resolution Rate</th>
+                            <th class="py-2.5 px-3 font-semibold">Avg Turnaround</th>
+                        </tr>
                     </thead>
-                    <tbody id="wardsScoreBody">
-                    <tr><td colspan="5">Loading ward performance…</td></tr>
+                    <tbody id="wardsScoreBody" class="divide-y divide-outline-variant font-mono text-xs">
+                        <tr>
+                            <td colspan="5" class="py-6 text-center text-secondary">
+                                Loading ward performance telemetry...
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
-            <p id="wardsFeedback" class="text-muted small mt-2" role="status" aria-live="polite"></p>
-        </div>
-    </section>
-</main>
+            <p id="wardsFeedback" class="mt-2 text-xs font-mono text-secondary"></p>
+        </section>
 
-<footer class="landing-footer">
-    <div class="landing-footer-inner">
-        <div>
-            <div class="landing-footer-brand">Nagorik Seba</div>
-            <div class="landing-footer-tag">Transparent civic governance for Bangladesh</div>
-        </div>
-        <div class="landing-footer-links">
-            <a href="/wards">Wards</a>
-            <a href="/#how-it-works">How it Works</a>
-            <a href="/citizen/complaint/new">Report</a>
-            <a href="/login/authority">Authority</a>
-        </div>
-    </div>
-</footer>
+    </main>
 
-<div id="landing-toasts" aria-live="polite"></div>
+    <!-- Global Footer -->
+    <footer
+        class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · PUBLIC WARDS &amp; MAP</span>
+            <span class="text-outline">OPEN DATA INITIATIVE</span>
+        </div>
+    </footer>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script th:src="@{/js/heatmap.js}"></script>
-<script th:src="@{/js/wards-scoreboard.js}"></script>
-<style>.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}</style>
+    <!-- Toasts Container -->
+    <div id="landing-toasts"></div>
+
+    <!-- Scripts -->
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/heatmap.js}"></script>
+    <script th:src="@{/js/wards-scoreboard.js}"></script>
 </body>
+
 </html>

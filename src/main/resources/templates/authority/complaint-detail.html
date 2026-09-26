@@ -1,77 +1,265 @@
 <!DOCTYPE html>
 <html xmlns:th="https://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments/head :: head('Complaint Audit')}">
+
+<head th:replace="~{fragments/head :: head('Authority Complaint Audit')}">
+    <title>Complaint Audit</title>
 </head>
-<body>
-<div th:replace="~{fragments/nav :: nav}"></div>
 
-<div class="container py-4">
-    <a href="/authority/queue" class="btn btn-sm btn-link mb-2">&larr; Back to queue</a>
-    <h2 id="detailTitle">Complaint</h2>
-    <p class="text-muted" id="detailMeta"></p>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
 
-    <div class="row">
-        <div class="col-lg-7">
-            <h4>Location</h4>
-            <div id="authorityMap" style="height: 300px; border-radius: 8px; border: 1px solid #dee2e6;" class="mb-3"></div>
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
 
-            <h4>Photo evidence</h4>
-            <div class="row mb-4" id="authorityGallery"></div>
-            <div class="lightbox hidden" id="authorityLightbox" role="dialog" aria-label="Photo viewer">
-                <button class="lightbox-close" id="authorityLightboxClose" aria-label="Close viewer">&times;</button>
-                <img id="authorityLightboxImg" alt="evidence photo enlarged">
-            </div>
+    <main class="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-8">
 
-            <h4 class="mt-3">Record</h4>
-            <table class="table table-sm" id="auditTable">
-                <tbody></tbody>
-            </table>
-        </div>
-
-        <div class="col-lg-5">
-            <h4>Stage tracker</h4>
-            <ol class="stage-tracker mb-4" id="stageTracker"></ol>
-
-            <h4>Status timeline</h4>
-            <ul class="timeline-events mb-4" id="authorityTimeline"></ul>
-
-            <h4>Advance status</h4>
-            <div class="card"><div class="card-body">
-                <div class="mb-2">
-                    <label for="advNote" class="form-label">Note / reason</label>
-                    <textarea class="form-control" id="advNote" rows="2"
-                              placeholder="Visible to the citizen on the timeline"></textarea>
+        <!-- Breadcrumb & Top Bar -->
+        <section class="border-b border-outline-variant pb-4 mb-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+                <div class="flex items-center gap-2">
+                    <a th:href="@{/authority/queue}"
+                        class="text-primary hover:underline flex items-center gap-1 font-bold">
+                        <span class="material-symbols-outlined text-sm">arrow_back</span>
+                        <span>Back to Queue</span>
+                    </a>
+                    <span class="text-outline">/</span>
+                    <span class="text-secondary uppercase">CIVIC OPS AUDIT</span>
+                    <span class="text-outline">/</span>
+                    <span class="font-bold text-on-surface" id="detailMetaRef">DOSSIER</span>
                 </div>
-                <div class="d-grid gap-2" id="actionButtons"></div>
-                <p class="text-muted small mt-2 mb-0">Resolve needs a work-proof photo — use the Resolve button for the upload dialog.</p>
-            </div></div>
+                <div class="flex items-center gap-2 bg-surface-container-low border border-outline-variant px-3 py-1">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span class="font-bold text-[11px] uppercase">SLA ACTIVE</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Case Header Banner -->
+        <section class="bg-surface-container-lowest border border-outline-variant p-6 mb-6">
+            <div
+                class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-outline-variant">
+                <div>
+                    <div class="flex flex-wrap items-center gap-3 mb-2" id="detailBadges">
+                        <span class="font-mono text-xl md:text-2xl font-bold text-on-surface" id="detailTitleRef">#
+                            REF</span>
+                    </div>
+                    <h1 class="text-2xl font-bold text-on-surface tracking-tight" id="detailTitle">
+                        Loading Grievance Dossier...
+                    </h1>
+                    <p class="text-xs font-mono text-secondary mt-1" id="detailMeta">Retrieving telemetry...</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 font-mono text-xs">
+                    <button
+                        class="bg-surface-container-lowest hover:bg-surface-container border border-outline px-3 py-2 flex items-center gap-1.5 uppercase font-semibold"
+                        onclick="window.print()">
+                        <span class="material-symbols-outlined text-sm">print</span>
+                        <span>Print Audit</span>
+                    </button>
+                    <a th:href="@{/authority/queue}"
+                        class="bg-inverse-surface hover:bg-black text-white px-4 py-2 flex items-center gap-1.5 uppercase font-semibold">
+                        <span class="material-symbols-outlined text-sm">view_list</span>
+                        <span>Active Queue</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Metric Strip / Split-cell Tiles -->
+            <div
+                class="grid grid-cols-2 md:grid-cols-4 border border-outline-variant bg-surface-container-low mt-4 divide-y md:divide-y-0 md:divide-x divide-outline-variant text-xs font-mono">
+                <div class="p-3 bg-surface-container-lowest">
+                    <div class="text-[10px] uppercase text-secondary mb-1">Administrative Jurisdiction</div>
+                    <div class="font-bold text-on-surface" id="tileWard">Detecting Ward...</div>
+                </div>
+                <div class="p-3 bg-surface-container-lowest">
+                    <div class="text-[10px] uppercase text-secondary mb-1">Assigned Department</div>
+                    <div class="font-bold text-primary" id="tileDept">Pending Allocation</div>
+                </div>
+                <div class="p-3 bg-surface-container-lowest">
+                    <div class="text-[10px] uppercase text-secondary mb-1">Assigned Field Officer</div>
+                    <div class="font-bold text-on-surface" id="tileOfficer">—</div>
+                </div>
+                <div class="p-3 bg-surface-container-lowest">
+                    <div class="text-[10px] uppercase text-secondary mb-1">Reopen Audit Cycles</div>
+                    <div class="font-bold text-amber-700" id="tileReopens">0 Cycles</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2-Column Work Desk -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- Left 7 Cols: GIS Map, Photos, Record Specifications -->
+            <div class="lg:col-span-7 space-y-6">
+
+                <!-- GIS Coordinate Map -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-5">
+                    <h2
+                        class="text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-3 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-primary text-base">pin_drop</span>
+                        <span>Incident Geolocation Audit (GIS)</span>
+                    </h2>
+                    <div id="authorityMap" class="w-full h-[280px] border border-outline-variant bg-surface-container">
+                    </div>
+                </section>
+
+                <!-- Photo Evidence -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-5">
+                    <h2
+                        class="text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-3 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-primary text-base">photo_camera</span>
+                        <span>Citizen &amp; Work-Proof Evidence</span>
+                    </h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="authorityGallery">
+                        <p class="text-xs text-secondary font-mono col-span-full py-4 text-center">Loading attached
+                            evidence photos...</p>
+                    </div>
+                </section>
+
+                <!-- Record Specifications Table -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-5">
+                    <h2
+                        class="text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-3 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-primary text-base">receipt_long</span>
+                        <span>Formal Audit Specifications</span>
+                    </h2>
+                    <table class="w-full text-xs font-mono border-collapse" id="auditTable">
+                        <tbody class="divide-y divide-outline-variant"></tbody>
+                    </table>
+                </section>
+            </div>
+
+            <!-- Right 5 Cols: Stage Tracker, Advance Status Controls, Timeline -->
+            <div class="lg:col-span-5 space-y-6 sticky top-20">
+
+                <!-- Stage Tracker -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-5">
+                    <h2
+                        class="text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-3 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-primary text-base">linear_scale</span>
+                        <span>Operational Stage Tracker</span>
+                    </h2>
+                    <ol class="space-y-2 font-mono text-xs" id="stageTracker"></ol>
+                </section>
+
+                <!-- Advance Status Action Desk -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-5">
+                    <div class="border-b border-outline-variant pb-2 mb-3 flex justify-between items-center">
+                        <h2
+                            class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-primary text-base">touch_app</span>
+                            <span>Advance Case Status</span>
+                        </h2>
+                        <span class="text-[10px] font-mono text-emerald-700 font-bold uppercase">[AUTHORIZED]</span>
+                    </div>
+
+                    <div class="space-y-3 font-sans text-xs">
+                        <div>
+                            <label for="advNote"
+                                class="block font-mono text-[11px] uppercase font-bold text-secondary mb-1">
+                                Action Audit Note / Remark
+                            </label>
+                            <textarea id="advNote" rows="2"
+                                placeholder="Note recorded in immutable status update history..."
+                                class="w-full text-xs font-sans p-2"></textarea>
+                        </div>
+
+                        <!-- Action Buttons Container -->
+                        <div class="flex flex-col gap-2 pt-2" id="actionButtons">
+                            <p class="text-xs text-secondary font-mono">Evaluating valid transitions...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Audit Timeline -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-5">
+                    <h2
+                        class="text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-3 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-primary text-base">history</span>
+                        <span>Chronological Status Updates</span>
+                    </h2>
+                    <ul class="space-y-3 font-mono text-xs" id="authorityTimeline"></ul>
+                </section>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Photo Lightbox -->
+    <div class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 select-none"
+        id="authorityLightbox" role="dialog" aria-label="Photo viewer">
+        <div class="relative max-w-4xl max-h-[90vh] bg-surface-container-lowest border border-outline p-2">
+            <button
+                class="absolute -top-3 -right-3 w-8 h-8 bg-black text-white border border-white flex items-center justify-center font-bold text-lg hover:bg-gray-800"
+                id="authorityLightboxClose" aria-label="Close viewer">&times;</button>
+            <img id="authorityLightboxImg" alt="enlarged evidence photo" class="max-w-full max-h-[80vh] object-contain">
         </div>
     </div>
-</div>
 
-<div class="lightbox hidden" id="detailResolveModal" role="dialog" aria-label="Resolve complaint">
-    <div class="card" style="width: min(480px, 92vw);">
-        <div class="card-body">
-            <h5>Resolve <span id="detailResolveRef"></span></h5>
-            <div class="mb-2">
-                <label for="detailResolveNote" class="form-label">Resolution note</label>
-                <textarea class="form-control" id="detailResolveNote" rows="2"></textarea>
+    <!-- Resolve Modal Dialog -->
+    <div class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 select-none"
+        id="detailResolveModal" role="dialog" aria-label="Resolve complaint">
+        <div class="bg-surface-container-lowest border border-inverse-surface w-full max-w-md p-6 space-y-4">
+            <div class="border-b border-outline-variant pb-3 flex justify-between items-center">
+                <h3 class="font-mono text-sm font-bold uppercase text-on-surface">
+                    Resolve <span id="detailResolveRef" class="text-primary font-bold"></span>
+                </h3>
+                <span class="material-symbols-outlined text-emerald-600">verified</span>
             </div>
-            <div class="mb-2">
-                <label for="detailResolvePhotos" class="form-label">Work-proof photo (required)</label>
-                <input type="file" class="form-control" id="detailResolvePhotos" accept="image/*" required>
+
+            <div class="space-y-3 font-sans text-xs">
+                <div>
+                    <label for="detailResolveNote"
+                        class="block font-mono text-[11px] uppercase font-bold text-secondary mb-1">
+                        Remediation Summary <span class="text-error">*</span>
+                    </label>
+                    <textarea id="detailResolveNote" rows="2"
+                        placeholder="Summary of work performed by engineering crew..."
+                        class="w-full text-xs font-sans p-2"></textarea>
+                </div>
+                <div>
+                    <label for="detailResolvePhotos"
+                        class="block font-mono text-[11px] uppercase font-bold text-secondary mb-1">
+                        Work-Proof Photo <span class="text-error">*</span>
+                    </label>
+                    <input type="file" id="detailResolvePhotos" accept="image/*" required
+                        class="w-full text-xs font-mono p-1">
+                    <p class="text-[10px] font-mono text-outline mt-1">Photo showing completed repair is required by
+                        statute.</p>
+                </div>
             </div>
-            <p id="detailResolveFeedback" class="text-danger"></p>
-            <div class="d-flex gap-2 justify-content-end">
-                <button type="button" class="btn btn-secondary" id="detailResolveCancel">Cancel</button>
-                <button type="button" class="btn btn-success" id="detailResolveConfirm">Resolve</button>
+
+            <p id="detailResolveFeedback" class="text-xs font-mono font-bold text-error" role="status"
+                aria-live="polite"></p>
+
+            <div class="pt-3 border-t border-outline-variant flex justify-end gap-2 font-mono text-xs">
+                <button type="button"
+                    class="bg-surface-container-lowest hover:bg-surface-container border border-outline px-3 py-1.5 uppercase font-semibold"
+                    id="detailResolveCancel">
+                    Cancel
+                </button>
+                <button type="button"
+                    class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-1.5 uppercase font-bold flex items-center gap-1"
+                    id="detailResolveConfirm">
+                    <span class="material-symbols-outlined text-sm">task_alt</span>
+                    <span>Commit Resolution</span>
+                </button>
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script th:src="@{/js/app.js}"></script>
-<script th:src="@{/js/authority-detail.js}"></script>
+    <!-- Global Footer -->
+    <footer
+        class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · AUTHORITY COMPLAINT DOSSIER</span>
+            <span class="text-outline">AUTHORIZED PERSONNEL ONLY</span>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/authority-detail.js}"></script>
 </body>
+
 </html>

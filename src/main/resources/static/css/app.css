@@ -281,3 +281,41 @@ textarea:focus {
 ::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
+
+/* ==========================================================================
+   Wizard Navigation & Step Indicators
+   ========================================================================== */
+.wizard-pane {
+    display: none;
+}
+
+.wizard-pane.active {
+    display: block;
+}
+
+.wizard-step-tab.active {
+    background-color: #283044 !important;
+    color: #ffffff !important;
+}
+
+.wizard-step-tab.active .step-indicator {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #ffffff !important;
+}
+
+.wizard-step-tab.done {
+    background-color: #f2f3ff !important;
+    color: #004ac6 !important;
+}
+
+.wizard-step-tab.done .step-indicator {
+    background-color: #004ac6 !important;
+    color: #ffffff !important;
+    border-color: #004ac6 !important;
+}
+
+.drop-zone.dragover {
+    border-color: #004ac6 !important;
+    background-color: #eaedff !important;
+}

@@ -1,31 +1,147 @@
 <!DOCTYPE html>
 <html xmlns:th="https://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments/head :: head('SLA Policy Admin')}">
+
+<head th:replace="~{fragments/head :: head('Statutory SLA Policies')}">
+    <title>SLA Policy Administration</title>
 </head>
-<body>
-<div th:replace="~{fragments/nav :: nav}"></div>
 
-<div class="container py-4">
-    <h2>SLA policy administration</h2>
-    <p class="text-muted">Edits apply to subsequently calculated deadlines only — existing instances keep their snapshots.</p>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
 
-    <div class="row g-2 mb-3">
-        <div class="col-md-3">
-            <label for="municipalityId" class="form-label">Municipality ID (blank = all)</label>
-            <input type="number" class="form-control" id="municipalityId">
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
+
+    <main class="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-8">
+
+        <!-- Header -->
+        <section class="border-b border-outline-variant pb-6 mb-6">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div
+                        class="inline-flex items-center gap-2 px-2.5 py-0.5 bg-inverse-surface text-white font-mono text-[11px] font-bold uppercase tracking-wider mb-2">
+                        <span class="material-symbols-outlined text-sm">timer</span>
+                        <span>STATUTORY SLA ESCALATION MATRIX</span>
+                    </div>
+                    <h1 class="text-3xl font-bold uppercase tracking-tight text-on-surface">SLA Policies &amp;
+                        Thresholds</h1>
+                    <p class="text-secondary text-sm mt-1">
+                        Turnaround deadlines and tiered escalation thresholds enforced by the lifecycle state machine.
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a th:href="@{/admin}"
+                        class="bg-surface-container-lowest hover:bg-surface-container border border-outline text-on-surface font-mono font-semibold text-xs px-4 py-2.5 flex items-center gap-1.5 uppercase transition-colors">
+                        <span class="material-symbols-outlined text-base">arrow_back</span>
+                        <span>Back to Overview</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Layout Split -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- Sidebar Navigation Rail -->
+            <nav class="lg:col-span-3 bg-surface-container-lowest border border-outline-variant p-4 space-y-1 font-mono text-xs uppercase"
+                aria-label="Admin Navigation">
+                <a th:href="@{/admin}"
+                    class="flex items-center gap-2.5 px-3 py-2 text-on-surface hover:bg-surface-container border border-transparent hover:border-outline-variant">
+                    <span class="material-symbols-outlined text-base">dashboard</span>
+                    <span>System Overview</span>
+                </a>
+                <a th:href="@{/admin/municipalities}"
+                    class="flex items-center gap-2.5 px-3 py-2 text-on-surface hover:bg-surface-container border border-transparent hover:border-outline-variant">
+                    <span class="material-symbols-outlined text-base">location_city</span>
+                    <span>Municipalities &amp; Wards</span>
+                </a>
+                <a th:href="@{/admin/users}"
+                    class="flex items-center gap-2.5 px-3 py-2 text-on-surface hover:bg-surface-container border border-transparent hover:border-outline-variant">
+                    <span class="material-symbols-outlined text-base">manage_accounts</span>
+                    <span>User Roles &amp; Access</span>
+                </a>
+                <a th:href="@{/admin/sla-policies}"
+                    class="flex items-center gap-2.5 px-3 py-2 bg-inverse-surface text-white font-bold border border-inverse-surface">
+                    <span class="material-symbols-outlined text-base">timer</span>
+                    <span>SLA Escalation Rules</span>
+                </a>
+            </nav>
+
+            <!-- Main Content Area -->
+            <div class="lg:col-span-9 space-y-6">
+
+                <!-- Filter Bar -->
+                <section class="bg-surface-container-low border border-outline-variant p-4">
+                    <div class="flex flex-col sm:flex-row items-center gap-3">
+                        <label for="municipalityId" class="text-xs font-mono uppercase font-bold text-secondary">
+                            Municipality Filter:
+                        </label>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <input type="number" id="municipalityId" placeholder="Blank = All"
+                                class="w-32 text-xs font-mono py-1.5 px-3">
+                            <button id="loadBtn"
+                                class="bg-inverse-surface hover:bg-black text-white text-xs font-mono uppercase font-semibold px-4 py-1.5 transition-colors">
+                                Filter Rules
+                            </button>
+                        </div>
+                        <span class="text-[11px] font-mono text-outline sm:ml-auto">
+                            Modifications apply to future deadlines; active tickets maintain SLA snapshot.
+                        </span>
+                    </div>
+                </section>
+
+                <!-- SLA Policies Table Card -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-6">
+                    <div class="flex justify-between items-center pb-4 mb-4 border-b border-outline-variant">
+                        <h2
+                            class="text-sm font-mono font-bold uppercase tracking-wider text-on-surface flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">rule</span>
+                            <span>Statutory SLA Rules Matrix</span>
+                        </h2>
+                        <span class="text-xs font-mono text-secondary uppercase">MUNICIPAL SLA ENGINE</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs font-mono" id="policyTable">
+                            <thead>
+                                <tr
+                                    class="bg-surface-container-low border-b-2 border-inverse-surface uppercase text-secondary">
+                                    <th class="py-2.5 px-3 font-semibold">ID</th>
+                                    <th class="py-2.5 px-3 font-semibold">Grievance Category</th>
+                                    <th class="py-2.5 px-3 font-semibold">Priority Level</th>
+                                    <th class="py-2.5 px-3 font-semibold">Max Hours</th>
+                                    <th class="py-2.5 px-3 font-semibold">L1 Escalation</th>
+                                    <th class="py-2.5 px-3 font-semibold">L2 Escalation</th>
+                                    <th class="py-2.5 px-3 font-semibold">Status</th>
+                                    <th class="py-2.5 px-3 font-semibold text-right">Commit</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-outline-variant">
+                                <tr>
+                                    <td colspan="8" class="py-6 text-center text-secondary">Loading SLA rule matrix...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+
         </div>
-        <div class="col-md-2 d-flex align-items-end">
-            <button class="btn btn-primary" id="loadBtn">Load</button>
+
+    </main>
+
+    <!-- Global Footer -->
+    <footer
+        class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · ROOT ADMINISTRATION CONSOLE</span>
+            <span class="text-outline">SYSTEM ADMIN ACCESS</span>
         </div>
-    </div>
+    </footer>
 
-    <table class="table table-striped" id="policyTable">
-        <thead><tr><th>ID</th><th>Category</th><th>Priority</th><th>Max h</th><th>L1 h</th><th>L2 h</th><th>Active</th><th></th></tr></thead>
-        <tbody></tbody>
-    </table>
-</div>
-
-<script th:src="@{/js/app.js}"></script>
-<script th:src="@{/js/admin-sla-policies.js}"></script>
+    <!-- Scripts -->
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/admin-sla-policies.js}"></script>
 </body>
+
 </html>

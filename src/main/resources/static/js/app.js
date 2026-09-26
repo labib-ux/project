@@ -89,7 +89,7 @@
 
     function statusBadge(status) {
         var cls = STATUS_BADGE[status] || 'badge-CLOSED';
-        return '<span class="badge ' + cls + '">' + esc(status).replace(/_/g, ' ') + '</span>';
+        return '<span class="badge-status ' + cls + '">' + esc(status).replace(/_/g, ' ') + '</span>';
     }
 
     window.NagorikSeba = {

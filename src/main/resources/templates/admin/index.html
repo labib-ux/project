@@ -1,44 +1,169 @@
 <!DOCTYPE html>
 <html xmlns:th="https://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments/head :: head('Admin Panel')}">
+
+<head th:replace="~{fragments/head :: head('System Administration Console')}">
+    <title>Admin Panel</title>
 </head>
-<body>
-<div th:replace="~{fragments/nav :: nav}"></div>
 
-<div class="container py-4">
-    <h2 class="mb-1">Admin Panel</h2>
-    <p class="text-muted">Municipality entities at a glance. Open a section to manage it.</p>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
 
-    <div class="admin-layout mt-4">
-        <nav class="admin-sidebar" aria-label="Admin sections">
-            <a href="/admin" class="active">Overview</a>
-            <a href="/admin/municipalities">Municipalities</a>
-            <a href="/admin/users">Users</a>
-            <a href="/admin/sla-policies">SLA Policies</a>
-        </nav>
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
 
-        <div class="admin-main">
-            <div class="row" id="overviewCards"></div>
-            <h4 class="mt-4">Sections</h4>
-            <div class="list-group">
-                <a href="/admin/municipalities" class="list-group-item list-group-item-action">
-                    <strong>Municipalities, wards &amp; departments</strong>
-                    <span class="d-block text-muted">Boundaries, offices and category handling.</span>
-                </a>
-                <a href="/admin/users" class="list-group-item list-group-item-action">
-                    <strong>Users &amp; memberships</strong>
-                    <span class="d-block text-muted">Accounts, postings and anonymized deletion.</span>
-                </a>
-                <a href="/admin/sla-policies" class="list-group-item list-group-item-action">
-                    <strong>SLA policies</strong>
-                    <span class="d-block text-muted">Deadlines and escalation thresholds.</span>
-                </a>
+    <main class="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-8">
+
+        <!-- Header -->
+        <section class="border-b border-outline-variant pb-6 mb-6">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div
+                        class="inline-flex items-center gap-2 px-2.5 py-0.5 bg-inverse-surface text-white font-mono text-[11px] font-bold uppercase tracking-wider mb-2">
+                        <span class="material-symbols-outlined text-sm">settings_suggest</span>
+                        <span>CENTRAL CIVIC REGISTRY // ROOT ADMINISTRATION</span>
+                    </div>
+                    <h1 class="text-3xl font-bold uppercase tracking-tight text-on-surface">System Administration</h1>
+                    <p class="text-secondary text-sm mt-1">
+                        Global municipal parameters, ward boundary allocations, SLA policies, and administrative users.
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a th:href="@{/authority/dashboard}"
+                        class="bg-surface-container-lowest hover:bg-surface-container border border-outline text-on-surface font-mono font-semibold text-xs px-4 py-2.5 flex items-center gap-1.5 uppercase transition-colors">
+                        <span class="material-symbols-outlined text-base">dashboard</span>
+                        <span>Authority Hub</span>
+                    </a>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
+        </section>
 
-<script th:src="@{/js/app.js}"></script>
-<script th:src="@{/js/admin-overview.js}"></script>
+        <!-- Admin Workspace Split Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- Sidebar Navigation Rail -->
+            <nav class="lg:col-span-3 bg-surface-container-lowest border border-outline-variant p-4 space-y-1 font-mono text-xs uppercase"
+                aria-label="Admin Navigation">
+                <div class="text-[10px] text-secondary font-bold px-3 py-1 mb-2 tracking-wider">
+                    MODULE SELECTOR
+                </div>
+                <a th:href="@{/admin}"
+                    class="flex items-center gap-2.5 px-3 py-2 bg-inverse-surface text-white font-bold border border-inverse-surface">
+                    <span class="material-symbols-outlined text-base">dashboard</span>
+                    <span>System Overview</span>
+                </a>
+                <a th:href="@{/admin/municipalities}"
+                    class="flex items-center gap-2.5 px-3 py-2 text-on-surface hover:bg-surface-container border border-transparent hover:border-outline-variant">
+                    <span class="material-symbols-outlined text-base">location_city</span>
+                    <span>Municipalities &amp; Wards</span>
+                </a>
+                <a th:href="@{/admin/users}"
+                    class="flex items-center gap-2.5 px-3 py-2 text-on-surface hover:bg-surface-container border border-transparent hover:border-outline-variant">
+                    <span class="material-symbols-outlined text-base">manage_accounts</span>
+                    <span>User Roles &amp; Access</span>
+                </a>
+                <a th:href="@{/admin/sla-policies}"
+                    class="flex items-center gap-2.5 px-3 py-2 text-on-surface hover:bg-surface-container border border-transparent hover:border-outline-variant">
+                    <span class="material-symbols-outlined text-base">timer</span>
+                    <span>SLA Escalation Rules</span>
+                </a>
+            </nav>
+
+            <!-- Main Administration Content Area -->
+            <div class="lg:col-span-9 space-y-8">
+
+                <!-- Overview KPI Tiles Grid -->
+                <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4" id="overviewCards">
+                    <div
+                        class="col-span-full py-8 text-center bg-surface-container-lowest border border-outline-variant font-mono text-xs text-secondary">
+                        Loading system telemetry...
+                    </div>
+                </section>
+
+                <!-- Section Directory Cards -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-6">
+                    <h2
+                        class="text-sm font-mono font-bold uppercase tracking-wider text-on-surface mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">folder_managed</span>
+                        <span>Administrative Governance Modules</span>
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                        <!-- Module 1: Municipalities -->
+                        <a th:href="@{/admin/municipalities}"
+                            class="group p-4 border border-outline-variant hover:border-primary bg-surface-container-low transition-colors block">
+                            <span class="material-symbols-outlined text-primary text-2xl mb-2">apartment</span>
+                            <h3
+                                class="text-sm font-bold text-on-surface uppercase group-hover:text-primary transition-colors">
+                                Municipalities &amp; Wards
+                            </h3>
+                            <p class="text-xs text-secondary mt-1 leading-relaxed">
+                                Manage city corporations, ward polygon boundaries, and zonal engineering depots.
+                            </p>
+                            <span
+                                class="inline-flex items-center gap-1 font-mono text-[11px] text-primary font-bold uppercase mt-3">
+                                <span>Configure</span>
+                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                            </span>
+                        </a>
+
+                        <!-- Module 2: Users -->
+                        <a th:href="@{/admin/users}"
+                            class="group p-4 border border-outline-variant hover:border-primary bg-surface-container-low transition-colors block">
+                            <span class="material-symbols-outlined text-teal-700 text-2xl mb-2">badge</span>
+                            <h3
+                                class="text-sm font-bold text-on-surface uppercase group-hover:text-teal-700 transition-colors">
+                                Users &amp; Memberships
+                            </h3>
+                            <p class="text-xs text-secondary mt-1 leading-relaxed">
+                                Authorize officers, councilors, assign municipal postings, and manage citizen
+                                identities.
+                            </p>
+                            <span
+                                class="inline-flex items-center gap-1 font-mono text-[11px] text-teal-700 font-bold uppercase mt-3">
+                                <span>Manage Accounts</span>
+                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                            </span>
+                        </a>
+
+                        <!-- Module 3: SLA Policies -->
+                        <a th:href="@{/admin/sla-policies}"
+                            class="group p-4 border border-outline-variant hover:border-primary bg-surface-container-low transition-colors block">
+                            <span class="material-symbols-outlined text-amber-700 text-2xl mb-2">av_timer</span>
+                            <h3
+                                class="text-sm font-bold text-on-surface uppercase group-hover:text-amber-700 transition-colors">
+                                Statutory SLA Policies
+                            </h3>
+                            <p class="text-xs text-secondary mt-1 leading-relaxed">
+                                Define resolution turnaround hours and escalation triggers by grievance category.
+                            </p>
+                            <span
+                                class="inline-flex items-center gap-1 font-mono text-[11px] text-amber-700 font-bold uppercase mt-3">
+                                <span>Audit Policies</span>
+                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                            </span>
+                        </a>
+
+                    </div>
+                </section>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Global Footer -->
+    <footer
+        class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · ROOT ADMINISTRATION CONSOLE</span>
+            <span class="text-outline">SYSTEM ADMIN ACCESS</span>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/admin-overview.js}"></script>
 </body>
+
 </html>
