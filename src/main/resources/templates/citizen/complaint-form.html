@@ -1,95 +1,240 @@
 <!DOCTYPE html>
 <html xmlns:th="https://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments/head :: head('Report an Issue')}">
+<head th:replace="~{fragments/head :: head('Lodge Civic Grievance')}">
+    <title>Report an Issue</title>
 </head>
-<body>
-<div th:replace="~{fragments/nav :: nav}"></div>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
+    
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <h1 class="mb-1">Report a local issue</h1>
-            <p class="text-muted">Four quick steps — details, location pin, photos, review.</p>
-
-            <div class="wizard-steps" id="wizardTabs">
-                <div class="wizard-step-tab active" data-step="1">1 · Details</div>
-                <div class="wizard-step-tab" data-step="2">2 · Location</div>
-                <div class="wizard-step-tab" data-step="3">3 · Photos</div>
-                <div class="wizard-step-tab" data-step="4">4 · Review</div>
+    <main class="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-8">
+        
+        <!-- Breadcrumb / Header Title -->
+        <section class="border-b border-outline-variant pb-6 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2 text-[11px] font-mono font-semibold text-secondary uppercase mb-1">
+                        <span>SEC. 14-B PORTAL</span>
+                        <span class="text-outline">/</span>
+                        <span>MUNICIPAL DISPATCH PROTOCOL</span>
+                    </div>
+                    <h1 class="text-2xl md:text-3xl font-bold uppercase tracking-tight text-on-surface">
+                        Lodge Civic Grievance
+                    </h1>
+                    <p class="text-secondary text-xs md:text-sm mt-1 max-w-3xl">
+                        Accurate GIS coordinates and photo evidence ensure immediate dispatch to the designated municipal ward depot under strict statutory SLA timers.
+                    </p>
+                </div>
+                <div class="border border-inverse-surface bg-surface-container-low px-4 py-2 text-right self-start md:self-center font-mono">
+                    <div class="text-[10px] uppercase text-secondary">Statutory Docket</div>
+                    <div class="text-sm font-bold text-primary">#CIVIC-REPORT-NEW</div>
+                </div>
             </div>
+        </section>
 
-            <div class="card"><div class="card-body">
-                <form id="complaintWizard" novalidate>
-                    <section class="wizard-pane active" data-pane="1">
-                        <div class="mb-3">
-                            <label for="wzTitle" class="form-label">Title <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="wzTitle" required maxlength="200"
-                                   placeholder="Brief description of the issue">
+        <!-- 4-Step Wizard Progression Tabs (Stitch Brutalist Step Rail) -->
+        <nav aria-label="Wizard Steps" class="border border-outline-variant bg-surface-container-lowest mb-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-outline-variant" id="wizardTabs">
+                <!-- Step 1 -->
+                <div class="wizard-step-tab p-3 flex items-center gap-3 cursor-pointer bg-inverse-surface text-white" data-step="1">
+                    <div class="w-6 h-6 border border-white/40 flex items-center justify-center font-mono font-bold text-xs bg-white text-black step-indicator">01</div>
+                    <div>
+                        <div class="text-[9px] font-mono uppercase opacity-75">Step 01</div>
+                        <div class="text-xs font-semibold uppercase tracking-wider">Details</div>
+                    </div>
+                </div>
+                <!-- Step 2 -->
+                <div class="wizard-step-tab p-3 flex items-center gap-3 cursor-pointer bg-surface-container-low text-on-surface" data-step="2">
+                    <div class="w-6 h-6 border border-outline flex items-center justify-center font-mono font-bold text-xs step-indicator">02</div>
+                    <div>
+                        <div class="text-[9px] font-mono uppercase text-secondary">Step 02</div>
+                        <div class="text-xs font-semibold uppercase tracking-wider">Location</div>
+                    </div>
+                </div>
+                <!-- Step 3 -->
+                <div class="wizard-step-tab p-3 flex items-center gap-3 cursor-pointer bg-surface-container-low text-on-surface" data-step="3">
+                    <div class="w-6 h-6 border border-outline flex items-center justify-center font-mono font-bold text-xs step-indicator">03</div>
+                    <div>
+                        <div class="text-[9px] font-mono uppercase text-secondary">Step 03</div>
+                        <div class="text-xs font-semibold uppercase tracking-wider">Evidence</div>
+                    </div>
+                </div>
+                <!-- Step 4 -->
+                <div class="wizard-step-tab p-3 flex items-center gap-3 cursor-pointer bg-surface-container-low text-on-surface" data-step="4">
+                    <div class="w-6 h-6 border border-outline flex items-center justify-center font-mono font-bold text-xs step-indicator">04</div>
+                    <div>
+                        <div class="text-[9px] font-mono uppercase text-secondary">Step 04</div>
+                        <div class="text-xs font-semibold uppercase tracking-wider">Review</div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Wizard Container Card -->
+        <div class="bg-surface-container-lowest border border-outline-variant p-6 md:p-8">
+            <form id="complaintWizard" novalidate>
+                
+                <!-- PANE 1: Details & Category -->
+                <section class="wizard-pane active space-y-6" data-pane="1">
+                    <div>
+                        <h2 class="text-lg font-bold text-on-surface uppercase tracking-tight mb-1 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">edit_note</span>
+                            <span>Incident Specifications</span>
+                        </h2>
+                        <p class="text-xs text-secondary">Specify the core category and brief headline for municipal dispatchers.</p>
+                    </div>
+
+                    <!-- Category Selector -->
+                    <div>
+                        <label for="wzCategory" class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-2">
+                            Grievance Category <span class="text-error">*</span>
+                        </label>
+                        <select id="wzCategory" required class="w-full text-sm font-sans">
+                            <option value="">Select Departmental Category...</option>
+                            <option value="ROADS">Roads &amp; Surface Transportation</option>
+                            <option value="WATER_SUPPLY">Drinking Water Supply &amp; Pipeline</option>
+                            <option value="ELECTRICITY">Public Lighting &amp; Electrical Grid</option>
+                            <option value="SANITATION">Sanitation &amp; Sewerage Infrastructure</option>
+                            <option value="WATERLOGGING">Monsoon Drainage &amp; Waterlogging</option>
+                            <option value="MOSQUITO_BREEDING">Mosquito Vector Control &amp; Spraying</option>
+                            <option value="WASTE_MANAGEMENT">Solid Waste &amp; Unattended Garbage</option>
+                            <option value="OTHER">General Civic Infrastructure</option>
+                        </select>
+                    </div>
+
+                    <!-- Title Input -->
+                    <div>
+                        <label for="wzTitle" class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-2">
+                            Issue Headline / Title <span class="text-error">*</span>
+                        </label>
+                        <input type="text" id="wzTitle" required maxlength="200" placeholder="e.g. Major culvert collapse creating hazardous sinkhole near Road 27" class="w-full text-sm">
+                        <p class="text-[11px] text-outline font-mono mt-1">Provide an objective summary under 200 characters.</p>
+                    </div>
+
+                    <!-- Description Input -->
+                    <div>
+                        <label for="wzDescription" class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-2">
+                            Detailed Description <span class="text-error">*</span>
+                        </label>
+                        <textarea id="wzDescription" rows="5" required maxlength="5000" placeholder="Detail the exact physical conditions, severity, any immediate public danger, and landmarks nearby..." class="w-full text-sm"></textarea>
+                    </div>
+                </section>
+
+                <!-- PANE 2: Location Map & Auto-Ward Picker -->
+                <section class="wizard-pane hidden space-y-6" data-pane="2">
+                    <div>
+                        <h2 class="text-lg font-bold text-on-surface uppercase tracking-tight mb-1 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">pin_drop</span>
+                            <span>GIS Pinpoint &amp; Ward Resolution</span>
+                        </h2>
+                        <p class="text-xs text-secondary">Click directly on the map or tap 'Use Current Coordinates' to auto-resolve your ward boundary.</p>
+                    </div>
+
+                    <!-- Action Bar Above Map -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 bg-surface-container-low p-3 border border-outline-variant">
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="wzLocate" class="bg-surface-container-lowest hover:bg-surface-container border border-outline text-xs font-mono font-semibold px-3 py-1.5 flex items-center gap-1.5 uppercase transition-colors">
+                                <span class="material-symbols-outlined text-sm">my_location</span>
+                                <span>Use GPS Location</span>
+                            </button>
+                            <span class="text-[11px] font-mono text-secondary hidden sm:inline">Dhaka Metropolitan Grid</span>
                         </div>
-                        <div class="mb-3">
-                            <label for="wzDescription" class="form-label">Description <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="wzDescription" rows="4" required maxlength="5000"
-                                      placeholder="Describe the issue in detail…"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="wzCategory" class="form-label">Category <span class="text-danger">*</span></label>
-                            <select class="form-select" id="wzCategory" required>
-                                <option value="">Select a category</option>
-                                <option value="ROADS">Roads &amp; Infrastructure</option>
-                                <option value="WATER_SUPPLY">Water Supply</option>
-                                <option value="ELECTRICITY">Electricity</option>
-                                <option value="SANITATION">Sanitation</option>
-                                <option value="WATERLOGGING">Waterlogging</option>
-                                <option value="MOSQUITO_BREEDING">Mosquito Breeding</option>
-                                <option value="WASTE_MANAGEMENT">Waste Management</option>
-                                <option value="OTHER">Other</option>
-                            </select>
-                        </div>
-                    </section>
-
-                    <section class="wizard-pane" data-pane="2">
-                        <p class="text-muted">Click the map to drop the location pin. Your ward is detected automatically.</p>
-                        <div id="wizardMap" style="height: 320px; border-radius: 8px; border: 1px solid #dee2e6;"></div>
-                        <div class="mt-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" id="wzLocate">Use my location</button>
-                        </div>
-                        <input type="hidden" id="wzLatitude" required>
-                        <input type="hidden" id="wzLongitude" required>
-                        <div id="wzWardInfo" class="mt-2 text-muted small"></div>
-                    </section>
-
-                    <section class="wizard-pane" data-pane="3">
-                        <p class="text-muted">Add 1–5 photos (JPEG, PNG, WebP, max 10 MB each).</p>
-                        <div class="drop-zone" id="wzDropZone">
-                            <span>Drop photos here or <u>browse files</u></span>
-                            <input type="file" id="wzPhotos" accept="image/*" multiple hidden>
-                        </div>
-                        <ul class="photo-preview" id="wzPhotoList"></ul>
-                    </section>
-
-                    <section class="wizard-pane" data-pane="4">
-                        <p class="text-muted">Check everything before submitting.</p>
-                        <dl id="wzReview"></dl>
-                    </section>
-
-                    <p id="wzFeedback" class="text-danger" role="status" aria-live="polite"></p>
-
-                    <div class="wizard-nav">
-                        <button type="button" class="btn btn-secondary" id="wzBack">Back</button>
-                        <div>
-                            <a th:href="@{/citizen/dashboard}" class="btn btn-link">Cancel</a>
-                            <button type="button" class="btn btn-primary" id="wzNext">Next</button>
-                            <button type="submit" class="btn btn-success" id="wzSubmit" hidden>Submit Complaint</button>
+                        <div id="wzWardInfo" class="font-mono text-xs font-bold text-primary flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">info</span>
+                            <span>Click map to drop marker</span>
                         </div>
                     </div>
-                </form>
-            </div></div>
-        </div>
-    </div>
-</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script th:src="@{/js/app.js}"></script>
-<script th:src="@{/js/complaint-wizard.js}"></script>
+                    <!-- Map Container -->
+                    <div class="relative w-full h-[360px] border border-outline-variant bg-surface-container">
+                        <div id="wizardMap" class="w-full h-full"></div>
+                    </div>
+
+                    <input type="hidden" id="wzLatitude" required>
+                    <input type="hidden" id="wzLongitude" required>
+                </section>
+
+                <!-- PANE 3: Photo Evidence Upload -->
+                <section class="wizard-pane hidden space-y-6" data-pane="3">
+                    <div>
+                        <h2 class="text-lg font-bold text-on-surface uppercase tracking-tight mb-1 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">add_a_photo</span>
+                            <span>Photographic Verification</span>
+                        </h2>
+                        <p class="text-xs text-secondary">Upload 1 to 5 photos showing the problem clearly (JPEG, PNG, WebP up to 10 MB each).</p>
+                    </div>
+
+                    <!-- Drag & Drop Zone -->
+                    <div id="wzDropZone" class="border-2 border-dashed border-outline-variant hover:border-primary p-8 text-center bg-surface-container-low cursor-pointer transition-colors">
+                        <span class="material-symbols-outlined text-outline text-4xl mb-2">cloud_upload</span>
+                        <div class="text-sm font-semibold text-on-surface">Click to select photos or drag &amp; drop files here</div>
+                        <div class="text-xs text-secondary font-mono mt-1">PNG, JPG, WEBP (Max 5 files · Verified Magic-Byte Content)</div>
+                        <input type="file" id="wzPhotos" accept="image/*" multiple class="hidden">
+                    </div>
+
+                    <!-- Photo Preview List -->
+                    <ul class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3" id="wzPhotoList"></ul>
+                </section>
+
+                <!-- PANE 4: Audit Review & Confirmation -->
+                <section class="wizard-pane hidden space-y-6" data-pane="4">
+                    <div>
+                        <h2 class="text-lg font-bold text-on-surface uppercase tracking-tight mb-1 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">fact_check</span>
+                            <span>Review Statutory Submission</span>
+                        </h2>
+                        <p class="text-xs text-secondary">Please audit all fields before committing to the municipal queue.</p>
+                    </div>
+
+                    <div class="bg-surface-container-low border border-outline-variant p-5">
+                        <dl class="space-y-4 font-mono text-xs divide-y divide-outline-variant" id="wzReview"></dl>
+                    </div>
+
+                    <div class="p-3 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-mono">
+                        <span class="font-bold">[STATUTORY NOTICE]</span> Submitting false civic grievances is an offense under Dhaka Municipal Act § 41. All submissions are timestamped and geo-verified.
+                    </div>
+                </section>
+
+                <!-- Feedback Display -->
+                <p id="wzFeedback" class="text-xs font-mono font-bold text-error mt-4" role="status" aria-live="polite"></p>
+
+                <!-- Navigation Controls -->
+                <div class="pt-6 border-t border-outline-variant flex justify-between items-center mt-6">
+                    <button type="button" id="wzBack" class="bg-surface-container-lowest hover:bg-surface-container border border-outline text-on-surface text-xs font-mono uppercase font-semibold px-4 py-2 flex items-center gap-1 transition-colors disabled:opacity-40">
+                        <span class="material-symbols-outlined text-sm">arrow_back</span>
+                        <span>Back</span>
+                    </button>
+                    <div class="flex items-center gap-3">
+                        <a th:href="@{/citizen/dashboard}" class="text-xs font-mono uppercase text-secondary hover:text-on-surface px-2 py-1">
+                            Cancel
+                        </a>
+                        <button type="button" id="wzNext" class="bg-primary-container hover:bg-blue-700 text-white text-xs font-mono uppercase font-semibold px-5 py-2 flex items-center gap-1 transition-colors">
+                            <span>Continue</span>
+                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                        </button>
+                        <button type="submit" id="wzSubmit" class="hidden bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-mono uppercase font-semibold px-6 py-2 flex items-center gap-1.5 transition-colors">
+                            <span class="material-symbols-outlined text-sm">send</span>
+                            <span>Commit Grievance</span>
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · INCIDENT INGESTION ENGINE</span>
+            <span class="text-outline">SECURE CITIZEN ACCESS</span>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/complaint-wizard.js}"></script>
 </body>
 </html>

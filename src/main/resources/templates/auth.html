@@ -1,71 +1,178 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${register} ? 'Create account | Nagorik Seba' : 'Sign in | Nagorik Seba'">Nagorik Seba</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/app.css}">
+<head th:replace="~{fragments/head :: head(${register} ? 'Create Citizen Account' : 'Citizen Sign In')}">
+    <title>Nagorik Seba</title>
 </head>
-<body class="auth-page">
-<main class="auth-layout">
-    <a class="brand auth-brand" href="/"><span>ন</span> নাগরিক সেবা</a>
-    <section class="auth-panel">
-        <p class="eyebrow" th:text="${register} ? 'Join your community' : 'Welcome back'">Welcome</p>
-        <h1 th:text="${register} ? 'Create your account' : 'Sign in to Nagorik Seba'">Sign in</h1>
-        <p class="auth-intro" th:text="${register} ? 'Use one account to report, follow, and rate local issues.' : 'Use your email or mobile number to continue.'">Use your account to continue.</p>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
+    
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
 
-        <form id="auth-form" th:attr="data-register=${register}" novalidate>
-            <!-- CSRF token for a non-JS form post; auth.js submits to /api/auth/** which is
-                 stateless and CSRF-exempt, so it simply ignores this field. -->
-            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-            <label th:if="${register}">Full name
-                <input name="fullName" autocomplete="name" maxlength="100" required placeholder="e.g. Amina Rahman">
-            </label>
-            <label>Email address
-                <input name="email" type="email" autocomplete="email" maxlength="100" th:required="${register}" placeholder="you@example.com">
-            </label>
-            <label th:if="${register}">Mobile number <small>(optional)</small>
-                <input name="phone" type="tel" autocomplete="tel" placeholder="01712345678">
-            </label>
-            <label th:unless="${register}">Email or mobile number
-                <input name="identifier" autocomplete="username" required placeholder="you@example.com or 01712345678">
-            </label>
-            <label>Password
-                <span class="password-wrap">
-                    <input name="password" type="password" autocomplete="current-password" minlength="8" maxlength="72" required placeholder="At least 8 characters">
-                    <button type="button" class="password-toggle" data-toggle-password>Show</button>
-                </span>
-            </label>
-            <label th:if="${register}">Confirm password
-                <input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required placeholder="Repeat the password">
-            </label>
-            <button class="button button-primary auth-submit" type="submit">
-                <span th:text="${register} ? 'Create account' : 'Sign in'">Sign in</span><b>→</b>
-            </button>
-            <p id="auth-feedback" class="auth-feedback" role="status" aria-live="polite"></p>
-            <div class="demo-box">
-                <strong>Demo accounts</strong> — tap to fill:
+    <main class="flex-grow flex items-center justify-center py-10 px-4 md:px-8">
+        <div class="w-full max-w-4xl border border-outline-variant bg-surface-container-lowest flex flex-col md:flex-row overflow-hidden">
+            
+            <!-- Left Side: Auth Form -->
+            <div class="w-full md:w-7/12 p-6 md:p-10 flex flex-col justify-between">
                 <div>
-                    <button type="button" data-demo-fill="citizen1@demo">Citizen</button>
-                    <button type="button" data-demo-fill="officer1@demo">Officer</button>
-                    <button type="button" data-demo-fill="councilor17@demo">Councilor</button>
-                    <button type="button" data-demo-fill="admin@demo">Admin</button>
+                    <!-- Badge -->
+                    <div class="mb-4">
+                        <span class="inline-block bg-primary text-white px-2.5 py-0.5 text-[11px] font-mono uppercase tracking-wider">
+                            <span th:text="${register} ? 'CITIZEN REGISTRATION // SEC. 14-B' : 'CITIZEN ACCESS PORTAL'">CITIZEN PORTAL</span>
+                        </span>
+                    </div>
+
+                    <!-- Heading -->
+                    <h1 class="text-2xl font-bold uppercase tracking-tight text-on-surface mb-1" th:text="${register} ? 'Create Citizen Identity' : 'Citizen Sign In'">
+                        Sign In
+                    </h1>
+                    <p class="text-xs text-secondary mb-6 font-mono" th:text="${register} ? 'One verified identity to lodge, track, and rate local municipal grievances.' : 'Enter your registered email address or mobile number to continue.'">
+                        Use your account to continue.
+                    </p>
+
+                    <!-- Form -->
+                    <form id="auth-form" th:attr="data-register=${register}" novalidate class="space-y-4">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                        <!-- Full Name (Register Only) -->
+                        <div th:if="${register}">
+                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
+                                Full Name <span class="text-error">*</span>
+                            </label>
+                            <input name="fullName" type="text" autocomplete="name" maxlength="100" required placeholder="e.g. Amina Rahman" class="w-full text-sm">
+                        </div>
+
+                        <!-- Email (Register Only) -->
+                        <div th:if="${register}">
+                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
+                                Email Address <span class="text-error">*</span>
+                            </label>
+                            <input name="email" type="email" autocomplete="email" maxlength="100" required placeholder="you@example.com" class="w-full text-sm">
+                        </div>
+
+                        <!-- Phone (Register Only) -->
+                        <div th:if="${register}">
+                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
+                                Mobile Number <span class="text-[10px] text-outline font-normal">(Bangladeshi Format)</span>
+                            </label>
+                            <input name="phone" type="tel" autocomplete="tel" placeholder="01712345678" class="w-full text-sm font-mono">
+                        </div>
+
+                        <!-- Identifier (Login Only) -->
+                        <div th:unless="${register}">
+                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
+                                Email or Mobile Number <span class="text-error">*</span>
+                            </label>
+                            <input name="identifier" autocomplete="username" required placeholder="e.g. citizen1@demo or 01712345678" class="w-full text-sm">
+                        </div>
+
+                        <!-- Password -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary">
+                                    Security Password <span class="text-error">*</span>
+                                </label>
+                                <span class="text-[10px] font-mono text-outline">MIN 8 CHARS</span>
+                            </div>
+                            <div class="relative">
+                                <input name="password" type="password" autocomplete="current-password" minlength="8" maxlength="72" required placeholder="••••••••" class="w-full text-sm pr-16 font-mono">
+                                <button type="button" class="absolute right-2 top-2 text-[11px] font-mono uppercase text-secondary hover:text-primary px-1.5 py-0.5" data-toggle-password>
+                                    Show
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Confirm Password (Register Only) -->
+                        <div th:if="${register}">
+                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
+                                Confirm Password <span class="text-error">*</span>
+                            </label>
+                            <input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required placeholder="••••••••" class="w-full text-sm font-mono">
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="w-full bg-primary-container hover:bg-blue-700 text-white font-mono text-xs uppercase font-bold py-2.5 px-4 flex items-center justify-center gap-2 transition-colors mt-2">
+                            <span th:text="${register} ? 'Register Identity' : 'Authenticate & Enter Portal'">Sign In</span>
+                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                        </button>
+
+                        <!-- Feedback Message -->
+                        <p id="auth-feedback" class="text-xs font-mono font-bold text-error mt-2" role="status" aria-live="polite"></p>
+
+                        <!-- Demo Accounts Quick Fill -->
+                        <div class="mt-6 pt-4 border-t border-outline-variant bg-surface-container-low p-3 font-mono text-xs">
+                            <div class="text-[10px] uppercase font-bold text-secondary mb-2 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs">key</span>
+                                <span>1-Click Demo Accounts (Pass: demo1234)</span>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5">
+                                <button type="button" data-demo-fill="citizen1@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-primary text-[11px]">Citizen 1</button>
+                                <button type="button" data-demo-fill="officer1@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-primary text-[11px]">Officer</button>
+                                <button type="button" data-demo-fill="councilor17@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-primary text-[11px]">Councilor</button>
+                                <button type="button" data-demo-fill="admin@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-primary text-[11px]">Admin</button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+                <!-- Footer Switch -->
+                <div class="mt-6 pt-4 border-t border-outline-variant text-xs font-mono">
+                    <p th:if="${register}">
+                        Already registered? <a href="/login?next=/citizen/dashboard" class="text-primary font-bold hover:underline">Sign In Here →</a>
+                    </p>
+                    <p th:unless="${register}">
+                        New to Nagorik Seba? <a href="/register?next=/citizen/dashboard" class="text-primary font-bold hover:underline">Create Citizen Account →</a>
+                    </p>
                 </div>
             </div>
-        </form>
 
-        <p class="auth-switch" th:if="${register}">Already have an account? <a href="/login?next=/citizen/complaint/new">Sign in</a></p>
-        <p class="auth-switch" th:unless="${register}">New to Nagorik Seba? <a href="/register?next=/citizen/complaint/new">Create an account</a></p>
-    </section>
-    <aside class="auth-aside" aria-hidden="true">
-        <p class="eyebrow">Your city, in view</p>
-        <blockquote>“Every report is a step toward a more responsive neighbourhood.”</blockquote>
-        <div class="aside-shape shape-one"></div><div class="aside-shape shape-two"></div><div class="aside-shape shape-three"></div>
-    </aside>
-</main>
-<script th:src="@{/js/auth.js}"></script>
+            <!-- Right Side: Statutory Telemetry & Public Directive -->
+            <div class="w-full md:w-5/12 bg-surface-container-low border-t md:border-t-0 md:border-l border-outline-variant p-6 md:p-8 flex flex-col justify-between font-mono text-xs">
+                <div>
+                    <div class="text-[10px] text-secondary uppercase font-bold mb-4 tracking-wider">
+                        SECURE CIVIC DIRECTIVE
+                    </div>
+                    <blockquote class="text-on-surface text-sm font-sans font-medium leading-relaxed mb-6 border-l-2 border-primary pl-3">
+                        “Every citizen report is logged on an immutable audit trail. Transparent timelines and statutory SLAs guarantee resolution.”
+                    </blockquote>
+
+                    <div class="space-y-3 border-t border-outline-variant pt-4 text-[11px]">
+                        <div>
+                            <span class="text-secondary uppercase">JURISDICTION:</span>
+                            <div class="font-bold text-on-surface">DHAKA METROPOLITAN AREA</div>
+                        </div>
+                        <div>
+                            <span class="text-secondary uppercase">SECURITY LEVEL:</span>
+                            <div class="font-bold text-emerald-700">AES-256-GCM ENCRYPTED</div>
+                        </div>
+                        <div>
+                            <span class="text-secondary uppercase">ARE YOU AN AUTHORITY?</span>
+                            <div class="mt-1">
+                                <a th:href="@{/login/authority}" class="inline-block bg-inverse-surface text-white px-2.5 py-1 text-[11px] uppercase hover:bg-black font-semibold">
+                                    Official Authority Sign In →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-outline-variant text-[10px] text-outline">
+                    REP OF BANGLADESH · LGRD &amp; COOPERATIVES
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · SECURE AUTHENTICATION</span>
+            <span class="text-outline">OFFICIAL GATEWAY</span>
+        </div>
+    </footer>
+
+    <!-- Auth Script -->
+    <script th:src="@{/js/auth.js}"></script>
 </body>
 </html>

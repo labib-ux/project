@@ -1,148 +1,264 @@
 <!DOCTYPE html>
 <html xmlns:th="https://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments/head :: head('Complaint Details')}">
+<head th:replace="~{fragments/head :: head('Grievance Dossier & Audit Timeline')}">
+    <title>Grievance Dossier</title>
 </head>
-<body>
-<div th:replace="~{fragments/nav :: nav}"></div>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
+    
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
 
-<div class="container py-4" id="detail" data-ref="">
-    <h2 id="title">Complaint</h2>
-    <p class="text-muted" id="meta"></p>
+    <main class="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-8" id="detail">
+        
+        <!-- Dossier Top Header -->
+        <section class="border-b border-outline-variant pb-6 mb-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2 text-xs font-mono font-bold text-secondary uppercase mb-1">
+                        <a th:href="@{/citizen/dashboard}" class="hover:underline text-primary flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">arrow_back</span>
+                            <span>Back to Dossiers</span>
+                        </a>
+                        <span class="text-outline">/</span>
+                        <span>OFFICIAL AUDIT LEDGER</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3 mt-1">
+                        <span class="font-mono text-xl md:text-2xl font-bold text-on-surface" id="refDisplay"># DOSSIER</span>
+                        <div id="statusBadgeDisplay"></div>
+                    </div>
+                    <h1 class="text-xl md:text-2xl font-bold text-on-surface mt-2" id="title">Loading Complaint...</h1>
+                    <p class="text-xs font-mono text-secondary mt-1" id="meta">Retrieving municipal ledger data...</p>
+                </div>
+                <div class="border border-outline-variant bg-surface-container-low p-3 font-mono text-xs self-start md:self-center">
+                    <div class="text-[10px] uppercase text-secondary">Statutory Redress Act</div>
+                    <div class="font-bold text-on-surface">SEC. 14-B AUDIT ACTIVE</div>
+                </div>
+            </div>
+        </section>
 
-    <h4>Status timeline</h4>
-    <ul class="list-group mb-4" id="timeline"></ul>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Column: Photographic Evidence & Citizen Actions -->
+            <div class="lg:col-span-7 space-y-8">
+                
+                <!-- Photos Section -->
+                <section class="bg-surface-container-lowest border border-outline-variant p-6">
+                    <h2 class="text-sm font-mono font-bold uppercase tracking-wider text-on-surface mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">photo_library</span>
+                        <span>Photographic Verification Evidence</span>
+                    </h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="gallery">
+                        <div class="text-xs text-secondary font-mono col-span-full py-4 text-center">
+                            No photo attachments on record.
+                        </div>
+                    </div>
+                </section>
 
-    <h4>Photos</h4>
-    <div class="row mb-4" id="gallery"></div>
-    <div class="lightbox hidden" id="lightbox" role="dialog" aria-label="Photo viewer">
-        <button class="lightbox-close" id="lightboxClose" aria-label="Close viewer">&times;</button>
-        <img id="lightboxImg" alt="complaint photo enlarged">
+                <!-- Actions Grid: Rate / Reopen / Withdraw -->
+                <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    <!-- Rate Panel -->
+                    <div class="bg-surface-container-lowest border border-outline-variant p-4 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xs font-mono font-bold uppercase text-emerald-800 flex items-center gap-1.5 mb-1">
+                                <span class="material-symbols-outlined text-emerald-600 text-base">star</span>
+                                <span>Rate Resolution</span>
+                            </h3>
+                            <p class="text-[11px] text-secondary mb-3">Close out issue with 1–5 star rating.</p>
+                            <form id="rateForm" class="space-y-2">
+                                <div>
+                                    <label for="rating" class="block text-[10px] font-mono uppercase text-secondary">Rating (1 to 5)</label>
+                                    <input type="number" id="rating" min="1" max="5" value="5" required class="w-full text-xs font-mono py-1 px-2">
+                                </div>
+                                <div>
+                                    <label for="feedback" class="block text-[10px] font-mono uppercase text-secondary">Feedback</label>
+                                    <textarea id="feedback" rows="2" placeholder="Citizen remarks..." class="w-full text-xs font-sans p-1.5"></textarea>
+                                </div>
+                                <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-mono text-xs uppercase font-semibold py-1.5 transition-colors">
+                                    Ratify Resolution
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Reopen Panel -->
+                    <div class="bg-surface-container-lowest border border-outline-variant p-4 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xs font-mono font-bold uppercase text-amber-800 flex items-center gap-1.5 mb-1">
+                                <span class="material-symbols-outlined text-amber-600 text-base">replay</span>
+                                <span>Reopen Issue</span>
+                            </h3>
+                            <p class="text-[11px] text-secondary mb-3">Re-trigger SLA if work is incomplete.</p>
+                            <form id="reopenForm" class="space-y-2">
+                                <div>
+                                    <label for="reason" class="block text-[10px] font-mono uppercase text-secondary">Reopen Justification</label>
+                                    <textarea id="reason" rows="3" required placeholder="Explain why resolution is defective..." class="w-full text-xs font-sans p-1.5"></textarea>
+                                </div>
+                                <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-mono text-xs uppercase font-semibold py-1.5 transition-colors">
+                                    Reopen Docket
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Withdraw Panel -->
+                    <div class="bg-surface-container-lowest border border-outline-variant p-4 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xs font-mono font-bold uppercase text-red-800 flex items-center gap-1.5 mb-1">
+                                <span class="material-symbols-outlined text-red-600 text-base">cancel</span>
+                                <span>Withdraw Grievance</span>
+                            </h3>
+                            <p class="text-[11px] text-secondary mb-3">Cancel while SUBMITTED or VERIFIED.</p>
+                            <form id="cancelForm" class="space-y-2">
+                                <div>
+                                    <label for="cancelReason" class="block text-[10px] font-mono uppercase text-secondary">Reason</label>
+                                    <textarea id="cancelReason" rows="3" required placeholder="Reason for cancellation..." class="w-full text-xs font-sans p-1.5"></textarea>
+                                </div>
+                                <button type="submit" class="w-full bg-surface-container-lowest hover:bg-red-50 border border-red-500 text-red-700 font-mono text-xs uppercase font-semibold py-1.5 transition-colors">
+                                    Withdraw
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                </section>
+
+            </div>
+
+            <!-- Right Column: Status Timeline Audit Ledger -->
+            <div class="lg:col-span-5">
+                <section class="bg-surface-container-lowest border border-outline-variant p-6 sticky top-20">
+                    <div class="border-b border-outline-variant pb-3 mb-4 flex justify-between items-center">
+                        <h2 class="text-sm font-mono font-bold uppercase tracking-wider text-on-surface flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">timeline</span>
+                            <span>Audit Trail Ledger</span>
+                        </h2>
+                        <span class="text-[10px] font-mono text-secondary uppercase">LIVE DISPATCH</span>
+                    </div>
+
+                    <ul class="space-y-4" id="timeline">
+                        <li class="text-xs font-mono text-secondary py-3 text-center">
+                            Synchronizing audit steps...
+                        </li>
+                    </ul>
+                </section>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Photo Lightbox Modal -->
+    <div class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 select-none" id="lightbox" role="dialog" aria-label="Photo viewer">
+        <div class="relative max-w-4xl max-h-[90vh] bg-surface-container-lowest border border-outline p-2">
+            <button class="absolute -top-3 -right-3 w-8 h-8 bg-black text-white border border-white flex items-center justify-center font-bold text-lg hover:bg-gray-800" id="lightboxClose" aria-label="Close viewer">&times;</button>
+            <img id="lightboxImg" alt="enlarged evidence photo" class="max-w-full max-h-[80vh] object-contain">
+        </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-4">
-            <h4>Rate the resolution</h4>
-            <form id="rateForm">
-                <div class="mb-2">
-                    <label for="rating" class="form-label">Rating (1–5)</label>
-                    <input type="number" class="form-control" id="rating" min="1" max="5" required>
-                </div>
-                <div class="mb-2">
-                    <label for="feedback" class="form-label">Feedback</label>
-                    <textarea class="form-control" id="feedback" rows="2"></textarea>
-                </div>
-                <button type="submit" class="btn btn-success">Submit rating</button>
-            </form>
+    <!-- Global Footer -->
+    <footer class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · CIVIC DOSSIER VIEWER</span>
+            <span class="text-outline">SECURE CITIZEN ACCESS</span>
         </div>
-        <div class="col-md-4">
-            <h4>Reopen</h4>
-            <form id="reopenForm">
-                <div class="mb-2">
-                    <label for="reason" class="form-label">Reason</label>
-                    <textarea class="form-control" id="reason" rows="2" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-warning">Reopen complaint</button>
-            </form>
-        </div>
-        <div class="col-md-4">
-            <h4>Withdraw</h4>
-            <p class="text-muted small">Only while SUBMITTED or VERIFIED. This hides the report from the public map.</p>
-            <form id="cancelForm">
-                <div class="mb-2">
-                    <label for="cancelReason" class="form-label">Reason</label>
-                    <textarea class="form-control" id="cancelReason" rows="2" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-outline-danger">Withdraw complaint</button>
-            </form>
-        </div>
-    </div>
-</div>
+    </footer>
 
-<script th:src="@{/js/app.js}"></script>
-<script th:src="@{/js/timeline.js}"></script>
-<script>
-(function () {
-    var App = window.NagorikSeba;
-    if (!App || !App.getToken()) {
-        window.location.replace('/login?next=' + encodeURIComponent(window.location.pathname));
-        return;
-    }
-    function ref() {
-        var segments = window.location.pathname.split('/').filter(Boolean);
-        if (segments.length >= 3 && segments[0] === 'citizen' && segments[1] === 'complaints') {
-            return decodeURIComponent(segments[2]);
+    <!-- Scripts -->
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/timeline.js}"></script>
+    <script>
+    (function () {
+        var App = window.NagorikSeba;
+        if (!App || !App.getToken()) {
+            window.location.replace('/login?next=' + encodeURIComponent(window.location.pathname));
+            return;
         }
-        return new URLSearchParams(window.location.search).get('ref');
-    }
-    async function submitRate(event) {
-        event.preventDefault();
-        try {
-            await App.apiJson('/api/complaints/' + encodeURIComponent(ref()) + '/rate?rating='
-                + encodeURIComponent(document.getElementById('rating').value)
-                + '&feedback=' + encodeURIComponent(document.getElementById('feedback').value),
-                {method: 'POST', headers: {'Idempotency-Key': idempotencyKey()}});
-            App.toast('Thanks for rating!', 'success');
-            loadDetail();
-        } catch (error) {
-            App.toast(error.message, 'error');
+
+        function ref() {
+            var segments = window.location.pathname.split('/').filter(Boolean);
+            if (segments.length >= 3 && segments[0] === 'citizen' && segments[1] === 'complaints') {
+                return decodeURIComponent(segments[2]);
+            }
+            return new URLSearchParams(window.location.search).get('ref');
         }
-    }
-    async function submitReopen(event) {
-        event.preventDefault();
-        try {
-            await App.apiJson('/api/complaints/' + encodeURIComponent(ref()) + '/reopen?reason='
-                + encodeURIComponent(document.getElementById('reason').value),
-                {method: 'POST', headers: {'Idempotency-Key': idempotencyKey()}});
-            App.toast('Complaint reopened.', 'success');
-            loadDetail();
-        } catch (error) {
-            App.toast(error.message, 'error');
+
+        function idempotencyKey() {
+            try {
+                return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
+            } catch (e) {
+                return String(Date.now());
+            }
         }
-    }
-    function idempotencyKey() {
-        try {
-            return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
-        } catch (e) {
-            return String(Date.now());
+
+        async function submitRate(event) {
+            event.preventDefault();
+            try {
+                await App.apiJson('/api/complaints/' + encodeURIComponent(ref()) + '/rate?rating='
+                    + encodeURIComponent(document.getElementById('rating').value)
+                    + '&feedback=' + encodeURIComponent(document.getElementById('feedback').value),
+                    {method: 'POST', headers: {'Idempotency-Key': idempotencyKey()}});
+                App.toast('Resolution ratified. Thank you for your civic participation!', 'success');
+                loadDetail();
+            } catch (error) {
+                App.toast(error.message, 'error');
+            }
         }
-    }
-    async function submitCancel(event) {
-        event.preventDefault();
-        if (!confirm('Withdraw this complaint? This cannot be undone.')) return;
-        try {
-            await App.apiJson('/api/complaints/' + encodeURIComponent(ref()) + '/cancel?reason='
-                + encodeURIComponent(document.getElementById('cancelReason').value),
-                {method: 'POST', headers: {'Idempotency-Key': idempotencyKey()}});
-            App.toast('Complaint withdrawn.', 'success');
-            loadDetail();
-        } catch (error) {
-            App.toast(error.message, 'error');
+
+        async function submitReopen(event) {
+            event.preventDefault();
+            try {
+                await App.apiJson('/api/complaints/' + encodeURIComponent(ref()) + '/reopen?reason='
+                    + encodeURIComponent(document.getElementById('reason').value),
+                    {method: 'POST', headers: {'Idempotency-Key': idempotencyKey()}});
+                App.toast('Docket reopened and SLA timer reset.', 'success');
+                loadDetail();
+            } catch (error) {
+                App.toast(error.message, 'error');
+            }
         }
-    }
-    function openLightbox(src) {
-        document.getElementById('lightboxImg').src = src;
-        document.getElementById('lightbox').classList.remove('hidden');
-    }
-    function closeLightbox() {
-        document.getElementById('lightbox').classList.add('hidden');
-        document.getElementById('lightboxImg').removeAttribute('src');
-    }
-    document.getElementById('rateForm').addEventListener('submit', submitRate);
-    document.getElementById('reopenForm').addEventListener('submit', submitReopen);
-    document.getElementById('cancelForm').addEventListener('submit', submitCancel);
-    document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
-    document.getElementById('lightbox').addEventListener('click', function (event) {
-        if (event.target.id === 'lightbox') closeLightbox();
-    });
-    document.getElementById('gallery').addEventListener('click', function (event) {
-        var img = event.target.closest('img');
-        if (img) openLightbox(img.src);
-    });
-    document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') closeLightbox();
-    });
-    loadDetail();
-})();
-</script>
+
+        async function submitCancel(event) {
+            event.preventDefault();
+            if (!confirm('Withdraw this complaint? This statutory action cannot be reversed.')) return;
+            try {
+                await App.apiJson('/api/complaints/' + encodeURIComponent(ref()) + '/cancel?reason='
+                    + encodeURIComponent(document.getElementById('cancelReason').value),
+                    {method: 'POST', headers: {'Idempotency-Key': idempotencyKey()}});
+                App.toast('Complaint officially withdrawn.', 'success');
+                loadDetail();
+            } catch (error) {
+                App.toast(error.message, 'error');
+            }
+        }
+
+        function openLightbox(src) {
+            document.getElementById('lightboxImg').src = src;
+            document.getElementById('lightbox').classList.remove('hidden');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.add('hidden');
+            document.getElementById('lightboxImg').removeAttribute('src');
+        }
+
+        document.getElementById('rateForm').addEventListener('submit', submitRate);
+        document.getElementById('reopenForm').addEventListener('submit', submitReopen);
+        document.getElementById('cancelForm').addEventListener('submit', submitCancel);
+        document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+        document.getElementById('lightbox').addEventListener('click', function (event) {
+            if (event.target.id === 'lightbox') closeLightbox();
+        });
+        document.getElementById('gallery').addEventListener('click', function (event) {
+            var img = event.target.closest('img');
+            if (img) openLightbox(img.src);
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') closeLightbox();
+        });
+
+        loadDetail();
+    })();
+    </script>
 </body>
 </html>

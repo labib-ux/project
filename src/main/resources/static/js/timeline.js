@@ -7,6 +7,12 @@ function detailRef() {
     }
     return new URLSearchParams(window.location.search).get('ref');
 }
+
+function statusBadgeHtml(status) {
+    var cls = 'badge-' + (status || 'SUBMITTED');
+    return '<span class="badge-status ' + cls + '">' + (status || 'SUBMITTED') + '</span>';
+}
+
 async function loadDetail() {
     var ref = detailRef();
     if (!ref) return;
@@ -19,19 +25,59 @@ async function loadDetail() {
     }
     if (!res.ok) return;
     var complaint = await res.json();
-    document.getElementById('title').textContent = complaint.title || 'Complaint';
-    document.getElementById('meta').textContent =
-        (complaint.referenceCode || '') + ' — ' + (complaint.status || '');
-    document.getElementById('timeline').innerHTML = (complaint.timeline || []).map(function (step) {
-        return '<li class="list-group-item"><strong>' + step.toStatus + '</strong>'
-            + ' <small class="text-muted">' + (step.actorName || 'System') + ' — '
-            + (step.createdAt || '') + '</small>'
-            + (step.note ? '<div>' + step.note + '</div>' : '') + '</li>';
-    }).join('');
-    document.getElementById('gallery').innerHTML = (complaint.attachments || []).map(function (photo) {
-        return '<div class="col-md-4 mb-2"><img src="/uploads/' + photo.storageKey
-            + '" class="img-fluid rounded" alt="complaint photo"></div>';
-    }).join('');
+    
+    var titleEl = document.getElementById('title');
+    if (titleEl) titleEl.textContent = complaint.title || 'Untitled Grievance';
+    
+    var refEl = document.getElementById('refDisplay');
+    if (refEl) refEl.textContent = '# ' + (complaint.referenceCode || ref);
+
+    var badgeEl = document.getElementById('statusBadgeDisplay');
+    if (badgeEl) badgeEl.innerHTML = statusBadgeHtml(complaint.status);
+
+    var metaEl = document.getElementById('meta');
+    if (metaEl) {
+        var wardInfo = complaint.wardNumber ? ('Ward ' + complaint.wardNumber + (complaint.areaName ? ' (' + complaint.areaName + ')' : '')) : 'Zone Unassigned';
+        var catInfo = complaint.category || 'GENERAL';
+        var dateInfo = complaint.submittedAt ? new Date(complaint.submittedAt).toLocaleString() : '';
+        metaEl.textContent = catInfo + ' · ' + wardInfo + (dateInfo ? ' · ' + dateInfo : '');
+    }
+
+    var timelineEl = document.getElementById('timeline');
+    if (timelineEl) {
+        var steps = complaint.timeline || [];
+        if (steps.length === 0) {
+            timelineEl.innerHTML = '<li class="text-xs font-mono text-secondary py-2">No timeline updates recorded yet.</li>';
+        } else {
+            timelineEl.innerHTML = steps.map(function (step, idx) {
+                var stepDate = step.createdAt ? new Date(step.createdAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '';
+                return '<li class="relative pl-6 pb-4 border-l border-outline-variant last:pb-0">'
+                    + '<div class="absolute -left-1.5 top-0 w-3 h-3 bg-primary border-2 border-white"></div>'
+                    + '<div class="flex items-center justify-between gap-2">'
+                    + '<div>' + statusBadgeHtml(step.toStatus) + '</div>'
+                    + '<span class="text-[10px] font-mono text-secondary">' + stepDate + '</span>'
+                    + '</div>'
+                    + '<div class="text-[11px] font-mono text-secondary mt-1">Logged by: <strong class="text-on-surface">' + (step.actorName || 'System Service') + '</strong></div>'
+                    + (step.note ? '<div class="mt-1.5 p-2 bg-surface-container-low border border-outline-variant text-xs font-sans text-on-surface">' + step.note + '</div>' : '')
+                    + '</li>';
+            }).join('');
+        }
+    }
+
+    var galleryEl = document.getElementById('gallery');
+    if (galleryEl) {
+        var photos = complaint.attachments || [];
+        if (photos.length === 0) {
+            galleryEl.innerHTML = '<div class="col-span-full py-4 text-center text-xs font-mono text-secondary">No photographic verification on file.</div>';
+        } else {
+            galleryEl.innerHTML = photos.map(function (photo) {
+                return '<div class="relative group cursor-pointer border border-outline-variant overflow-hidden bg-surface-container-low">'
+                    + '<img src="/uploads/' + photo.storageKey + '" class="w-full h-32 object-cover transition-transform group-hover:scale-105" alt="Evidence photo">'
+                    + (photo.workProof ? '<span class="absolute top-1 right-1 bg-emerald-700 text-white text-[9px] font-mono uppercase px-1 py-0.5">Work Proof</span>' : '')
+                    + '</div>';
+            }).join('');
+        }
+    }
 }
 
 setInterval(function () {

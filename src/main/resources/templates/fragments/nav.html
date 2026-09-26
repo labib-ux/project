@@ -1,46 +1,121 @@
 <!DOCTYPE html>
 <html xmlns:th="https://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
 <body>
-<nav th:fragment="nav" class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand" th:href="@{/}">Nagorik Seba</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/}">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/wards}">Wards &amp; Map</a>
-                </li>
-                <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link" th:href="@{/citizen/dashboard}">My Complaints</a>
-                </li>
-                <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link" th:href="@{/citizen/complaints/new}">Submit Complaint</a>
-                </li>
-                <li class="nav-item" sec:authorize="hasAnyRole('DEPT_OFFICER', 'WARD_COUNCILOR', 'ADMIN')">
-                    <a class="nav-link" th:href="@{/authority/dashboard}">Authority Dashboard</a>
-                </li>
-                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                    <a class="nav-link" th:href="@{/admin}">Admin Panel</a>
-                </li>
-            </ul>
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item" sec:authorize="!isAuthenticated()">
-                    <a class="nav-link" th:href="@{/login}">Login</a>
-                </li>
-                <li class="nav-item" sec:authorize="!isAuthenticated()">
-                    <a class="nav-link" th:href="@{/register}">Register</a>
-                </li>
-                <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link" href="#" onclick="localStorage.removeItem('nagorikSebaToken'); localStorage.removeItem('nagorikSebaUser'); window.location.assign('/'); return false;">Logout</a>
-                </li>
-            </ul>
+<div th:fragment="nav" class="sticky top-0 z-50">
+    <!-- Top App Bar -->
+    <header class="bg-inverse-surface text-surface-container-lowest border-b border-outline-variant h-14 select-none">
+        <div class="max-w-[1280px] mx-auto px-4 md:px-8 flex justify-between items-center h-full">
+            <!-- Brand & Official Badge -->
+            <div class="flex items-center gap-3">
+                <a th:href="@{/}" class="flex items-center gap-2 text-surface-container-lowest hover:opacity-95 transition-opacity">
+                    <span class="material-symbols-outlined text-primary-container text-2xl">account_balance</span>
+                    <span class="font-headline-sm text-lg font-bold tracking-wider uppercase">NAGORIK SEBA</span>
+                </a>
+                <div class="hidden lg:inline-flex items-center px-2 py-0.5 border border-outline/40 bg-inverse-surface/80 text-surface-variant text-[10px] font-mono tracking-wider uppercase">
+                    GOVT OF BANGLADESH · LGRD
+                </div>
+            </div>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center gap-6 h-full text-sm font-medium">
+                <a th:href="@{/}" class="text-surface-variant hover:text-white flex items-center h-full border-b-2 border-transparent hover:border-primary-container transition-colors px-1">
+                    Home
+                </a>
+                <a th:href="@{/wards}" class="text-surface-variant hover:text-white flex items-center h-full border-b-2 border-transparent hover:border-primary-container transition-colors px-1">
+                    Live Map &amp; Wards
+                </a>
+                
+                <!-- Citizen Links -->
+                <a th:href="@{/citizen/dashboard}" class="text-surface-variant hover:text-white flex items-center h-full border-b-2 border-transparent hover:border-primary-container transition-colors px-1" sec:authorize="isAuthenticated()">
+                    Citizen Dashboard
+                </a>
+                <a th:href="@{/citizen/complaint/new}" class="text-surface-variant hover:text-white flex items-center h-full border-b-2 border-transparent hover:border-primary-container transition-colors px-1" sec:authorize="isAuthenticated()">
+                    File Complaint
+                </a>
+
+                <!-- Authority Links -->
+                <a th:href="@{/authority/dashboard}" class="text-surface-variant hover:text-white flex items-center h-full border-b-2 border-transparent hover:border-primary-container transition-colors px-1" sec:authorize="hasAnyRole('DEPT_OFFICER', 'WARD_COUNCILOR', 'ADMIN')">
+                    Authority Hub
+                </a>
+                <a th:href="@{/admin}" class="text-surface-variant hover:text-white flex items-center h-full border-b-2 border-transparent hover:border-primary-container transition-colors px-1" sec:authorize="hasRole('ADMIN')">
+                    Admin
+                </a>
+            </nav>
+
+            <!-- Right Action Cluster -->
+            <div class="flex items-center gap-3">
+                <!-- Guest View -->
+                <div sec:authorize="!isAuthenticated()" class="flex items-center gap-3">
+                    <a th:href="@{/login}" class="text-xs uppercase font-mono text-surface-variant hover:text-white tracking-wider px-2 py-1">
+                        Citizen Sign In
+                    </a>
+                    <a th:href="@{/login/authority}" class="hidden sm:inline-block text-xs uppercase font-mono text-outline-variant hover:text-white tracking-wider px-2 py-1 border border-outline/50 hover:border-white">
+                        Authority
+                    </a>
+                    <a th:href="@{/citizen/complaint/new}" class="bg-primary-container hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 flex items-center gap-1 uppercase tracking-wider transition-colors">
+                        <span class="material-symbols-outlined text-sm">add_circle</span>
+                        <span>Report Issue</span>
+                    </a>
+                </div>
+
+                <!-- Authenticated View -->
+                <div sec:authorize="isAuthenticated()" class="flex items-center gap-3">
+                    <span class="hidden sm:inline-block text-xs font-mono text-surface-variant border-r border-outline-variant pr-3" sec:authentication="name">User</span>
+                    <a href="#" onclick="localStorage.removeItem('nagorikSebaToken'); localStorage.removeItem('nagorikSebaUser'); window.location.assign('/'); return false;" class="text-xs uppercase font-mono text-red-400 hover:text-red-300 tracking-wider px-2 py-1 border border-red-500/30 hover:border-red-400">
+                        Sign Out
+                    </a>
+                </div>
+
+                <!-- Mobile Hamburger Toggle -->
+                <button id="mobileNavToggle" type="button" class="md:hidden text-surface-variant hover:text-white p-1" aria-label="Toggle Navigation">
+                    <span class="material-symbols-outlined text-2xl">menu</span>
+                </button>
+            </div>
         </div>
-    </div>
-</nav>
+
+        <!-- Mobile Drawer Menu -->
+        <div id="mobileNavDrawer" class="hidden md:hidden bg-inverse-surface border-b border-outline-variant px-4 py-3 space-y-2 text-sm font-medium">
+            <a th:href="@{/}" class="block text-surface-variant hover:text-white py-1">Home</a>
+            <a th:href="@{/wards}" class="block text-surface-variant hover:text-white py-1">Live Map &amp; Wards</a>
+            <a th:href="@{/citizen/dashboard}" class="block text-surface-variant hover:text-white py-1" sec:authorize="isAuthenticated()">Citizen Dashboard</a>
+            <a th:href="@{/citizen/complaint/new}" class="block text-surface-variant hover:text-white py-1">File Complaint</a>
+            <a th:href="@{/authority/dashboard}" class="block text-surface-variant hover:text-white py-1" sec:authorize="hasAnyRole('DEPT_OFFICER', 'WARD_COUNCILOR', 'ADMIN')">Authority Hub</a>
+            <a th:href="@{/admin}" class="block text-surface-variant hover:text-white py-1" sec:authorize="hasRole('ADMIN')">Admin Panel</a>
+            <div class="pt-2 border-t border-outline/30 flex justify-between items-center" sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}" class="text-xs font-mono text-primary-fixed uppercase">Citizen Sign In</a>
+                <a th:href="@{/login/authority}" class="text-xs font-mono text-outline-variant uppercase">Authority Login</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sub-Banner Utility Bar -->
+    <aside class="bg-surface-container-low border-b border-outline-variant py-1 text-[11px] font-mono text-on-surface-variant px-4 md:px-8">
+        <div class="max-w-[1280px] mx-auto flex flex-col sm:flex-row justify-between items-center gap-1">
+            <div class="flex items-center gap-2">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                <span class="font-semibold text-on-surface">DISPATCH STATUS: ALL WARDS OPERATIONAL</span>
+                <span class="text-outline">|</span>
+                <span>CENTRAL JURISDICTION: DHAKA CITY CORPORATION</span>
+            </div>
+            <div class="hidden sm:flex items-center gap-3 text-secondary text-[10px]">
+                <span>COORDINATES: 23.8103° N, 90.4125° E</span>
+                <span class="text-outline">|</span>
+                <span>SLA STRICT ENGINE ACTIVE</span>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var toggle = document.getElementById('mobileNavToggle');
+        var drawer = document.getElementById('mobileNavDrawer');
+        if (toggle && drawer) {
+            toggle.addEventListener('click', function () {
+                drawer.classList.toggle('hidden');
+            });
+        }
+    });
+</script>
 </body>
 </html>

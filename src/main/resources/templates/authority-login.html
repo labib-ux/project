@@ -1,51 +1,138 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authority Sign in | Nagorik Seba</title>
-    <link rel="stylesheet" th:href="@{/css/app.css}">
+<head th:replace="~{fragments/head :: head('Authority Access Portal')}">
+    <title>Authority Sign In</title>
 </head>
-<body class="auth-page">
-<main class="auth-layout">
-    <a class="brand auth-brand" href="/"><span>ন</span> নাগরিক সেবা</a>
-    <section class="auth-panel authority-login-card">
-        <span class="authority-badge">Authority Portal</span>
-        <p class="eyebrow">Officers, councilors, admins</p>
-        <h1>Authority sign in</h1>
-        <p class="auth-intro">Use your officer, councilor, or admin account. Citizen accounts cannot access authority tools.</p>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
+    
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
 
-        <form id="authority-login-form" novalidate>
-            <label>Email or mobile number
-                <input name="identifier" autocomplete="username" required placeholder="officer1@demo">
-            </label>
-            <label>Password
-                <span class="password-wrap">
-                    <input name="password" type="password" autocomplete="current-password" required placeholder="Account password">
-                    <button type="button" class="password-toggle" data-toggle-password>Show</button>
-                </span>
-            </label>
-            <button class="button button-primary btn-authority auth-submit" type="submit">
-                <span>Sign in</span><b>→</b>
-            </button>
-            <p id="authority-feedback" class="auth-feedback" role="status" aria-live="polite"></p>
-            <div class="demo-box">
-                <strong>Demo accounts</strong> — tap to fill:
+    <main class="flex-grow flex items-center justify-center py-10 px-4 md:px-8">
+        <div class="w-full max-w-4xl border border-outline-variant bg-surface-container-lowest flex flex-col md:flex-row overflow-hidden">
+            
+            <!-- Left Side: Authority Form -->
+            <div class="w-full md:w-7/12 p-6 md:p-10 flex flex-col justify-between">
                 <div>
-                    <button type="button" data-demo-fill="officer1@demo">Officer</button>
-                    <button type="button" data-demo-fill="councilor17@demo">Councilor</button>
-                    <button type="button" data-demo-fill="admin@demo">Admin</button>
+                    <!-- Badge -->
+                    <div class="mb-4">
+                        <span class="inline-block bg-teal-800 text-white px-2.5 py-0.5 text-[11px] font-mono uppercase tracking-wider">
+                            RESTRICTED // AUTHORITY GATEWAY
+                        </span>
+                    </div>
+
+                    <!-- Heading -->
+                    <h1 class="text-2xl font-bold uppercase tracking-tight text-on-surface mb-1">
+                        Authority Sign In
+                    </h1>
+                    <p class="text-xs text-secondary mb-6 font-mono">
+                        Secured credential entry for Municipal Officers, Ward Councilors, and System Administrators.
+                    </p>
+
+                    <!-- Form -->
+                    <form id="authority-login-form" novalidate class="space-y-4">
+                        
+                        <!-- Identifier Input -->
+                        <div>
+                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
+                                Official Identifier (Email / Account PIN) <span class="text-error">*</span>
+                            </label>
+                            <input name="identifier" autocomplete="username" required placeholder="e.g. officer1@demo" class="w-full text-sm font-mono">
+                        </div>
+
+                        <!-- Password -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary">
+                                    Security Key / Password <span class="text-error">*</span>
+                                </label>
+                                <span class="text-[10px] font-mono text-outline">AUTHORITY TIER-2</span>
+                            </div>
+                            <div class="relative">
+                                <input name="password" type="password" autocomplete="current-password" required placeholder="••••••••" class="w-full text-sm pr-16 font-mono">
+                                <button type="button" class="absolute right-2 top-2 text-[11px] font-mono uppercase text-secondary hover:text-teal-700 px-1.5 py-0.5" data-toggle-password>
+                                    Show
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="w-full bg-teal-800 hover:bg-teal-900 text-white font-mono text-xs uppercase font-bold py-2.5 px-4 flex items-center justify-center gap-2 transition-colors mt-2">
+                            <span>Verify Authority Credentials</span>
+                            <span class="material-symbols-outlined text-sm">shield</span>
+                        </button>
+
+                        <!-- Feedback Message -->
+                        <p id="authority-feedback" class="text-xs font-mono font-bold text-error mt-2" role="status" aria-live="polite"></p>
+
+                        <!-- Demo Accounts Quick Fill -->
+                        <div class="mt-6 pt-4 border-t border-outline-variant bg-surface-container-low p-3 font-mono text-xs">
+                            <div class="text-[10px] uppercase font-bold text-secondary mb-2 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs">badge</span>
+                                <span>Authority Demo Credentials (Pass: demo1234)</span>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5">
+                                <button type="button" data-demo-fill="officer1@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-teal-700 text-[11px]">Dept Officer</button>
+                                <button type="button" data-demo-fill="councilor17@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-teal-700 text-[11px]">Ward Councilor</button>
+                                <button type="button" data-demo-fill="admin@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-teal-700 text-[11px]">Super Admin</button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+                <!-- Footer Switch -->
+                <div class="mt-6 pt-4 border-t border-outline-variant text-xs font-mono">
+                    <p>
+                        Are you a citizen filing a report? <a href="/login" class="text-primary font-bold hover:underline">Access Citizen Portal →</a>
+                    </p>
                 </div>
             </div>
-        </form>
-    </section>
-    <aside class="auth-aside" aria-hidden="true">
-        <p class="eyebrow">For officials</p>
-        <blockquote>“Verify reports, assign departments, and resolve issues — with every step on the record.”</blockquote>
-        <div class="aside-shape shape-one"></div><div class="aside-shape shape-two"></div>
-    </aside>
-</main>
-<script th:src="@{/js/app.js}"></script>
-<script th:src="@{/js/authority-login.js}"></script>
+
+            <!-- Right Side: Statutory Telemetry & Public Directive -->
+            <div class="w-full md:w-5/12 bg-surface-container-low border-t md:border-t-0 md:border-l border-outline-variant p-6 md:p-8 flex flex-col justify-between font-mono text-xs">
+                <div>
+                    <div class="text-[10px] text-secondary uppercase font-bold mb-4 tracking-wider">
+                        DISPATCH NODE TELEMETRY
+                    </div>
+                    <blockquote class="text-on-surface text-sm font-sans font-medium leading-relaxed mb-6 border-l-2 border-teal-700 pl-3">
+                        “Authority access enables complaint verification, department assignment, SLA overrides, and work-proof validation.”
+                    </blockquote>
+
+                    <div class="space-y-3 border-t border-outline-variant pt-4 text-[11px]">
+                        <div>
+                            <span class="text-secondary uppercase">JURISDICTION:</span>
+                            <div class="font-bold text-on-surface">DHAKA CITY CORPORATIONS (NORTH &amp; SOUTH)</div>
+                        </div>
+                        <div>
+                            <span class="text-secondary uppercase">AUDIT DISPATCH:</span>
+                            <div class="font-bold text-emerald-700">AES-256 ENCRYPTED SHA256</div>
+                        </div>
+                        <div>
+                            <span class="text-secondary uppercase">REGULATORY CODE:</span>
+                            <div class="font-bold text-on-surface">BANGLADESH MUNICIPAL ACT § 14-B</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-outline-variant text-[10px] text-outline">
+                    LOCAL GOVERNMENT DIVISION · OFFICIAL DISPATCH
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · AUTHORITY GATEWAY</span>
+            <span class="text-outline">AUTHORIZED PERSONNEL ONLY</span>
+        </div>
+    </footer>
+
+    <!-- Auth Scripts -->
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/authority-login.js}"></script>
 </body>
 </html>

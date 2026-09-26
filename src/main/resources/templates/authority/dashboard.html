@@ -1,80 +1,165 @@
 <!DOCTYPE html>
 <html xmlns:th="https://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments/head :: head('Authority Dashboard')}">
+<head th:replace="~{fragments/head :: head('Authority Operations Hub')}">
+    <title>Authority Dashboard</title>
 </head>
-<body>
-<div th:replace="~{fragments/nav :: nav}"></div>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
+    
+    <!-- Top Nav Header -->
+    <div th:replace="~{fragments/nav :: nav}"></div>
 
-<div class="container py-4">
-    <h2>Authority Dashboard</h2>
-    <p class="text-muted">Per-ward complaint counts, average resolution time and SLA-at-risk for your municipality.</p>
+    <main class="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-8">
+        
+        <!-- Page Header -->
+        <section class="border-b border-outline-variant pb-6 mb-6">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-2.5 py-0.5 bg-teal-800 text-white font-mono text-[11px] font-bold uppercase tracking-wider mb-2">
+                        <span class="material-symbols-outlined text-sm">shield</span>
+                        <span>MUNICIPAL OPERATIONS DESK // TIER-2 CONTROL</span>
+                    </div>
+                    <h1 class="text-3xl font-bold uppercase tracking-tight text-on-surface">Authority Hub &amp; SLA Monitor</h1>
+                    <p class="text-secondary text-sm mt-1">
+                        Live ward-level complaint counts, SLA-at-risk escalation radar, and operational throughput.
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a th:href="@{/authority/queue}" class="bg-primary-container hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 flex items-center gap-2 uppercase tracking-wider transition-colors">
+                        <span class="material-symbols-outlined text-base">format_list_bulleted</span>
+                        <span>Open Action Queue</span>
+                    </a>
+                </div>
+            </div>
+        </section>
 
-    <div class="mb-3">
-        <label for="municipalityId" class="form-label">Municipality ID</label>
-        <input type="number" class="form-control" id="municipalityId" placeholder="e.g. 1">
-        <button class="btn btn-primary mt-2" id="loadBtn">Load</button>
-    </div>
+        <!-- Municipality Filter Bar -->
+        <section class="bg-surface-container-low border border-outline-variant p-4 mb-6">
+            <div class="flex flex-col sm:flex-row items-center gap-3">
+                <label for="municipalityId" class="text-xs font-mono uppercase font-bold text-secondary">
+                    Jurisdiction Municipality ID:
+                </label>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <input type="number" id="municipalityId" placeholder="e.g. 1" class="w-32 text-xs font-mono py-1.5 px-3">
+                    <button id="loadBtn" class="bg-inverse-surface hover:bg-black text-white text-xs font-mono uppercase font-semibold px-4 py-1.5 transition-colors">
+                        Synchronize
+                    </button>
+                </div>
+                <span class="text-[11px] font-mono text-outline sm:ml-auto">
+                    Telemetry polled from Central Municipal Dispatch
+                </span>
+            </div>
+        </section>
 
-    <div class="row" id="statCards"></div>
+        <!-- KPI Summary Cards -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" id="statCards">
+            <div class="p-6 bg-surface-container-lowest border border-outline-variant text-center font-mono text-xs text-secondary col-span-full">
+                Enter or verify Municipality ID above to load live operational statistics.
+            </div>
+        </section>
 
-    <h4 class="mt-4">Complaints by ward and status</h4>
-    <table class="table table-striped" id="wardTable">
-        <thead><tr><th>Ward</th><th>Status</th><th>Count</th><th></th></tr></thead>
-        <tbody></tbody>
-    </table>
-</div>
+        <!-- Ward Resolution Table -->
+        <section class="bg-surface-container-lowest border border-outline-variant p-6">
+            <div class="flex justify-between items-center pb-4 mb-4 border-b border-outline-variant">
+                <h2 class="text-base font-mono font-bold uppercase tracking-tight text-on-surface flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">analytics</span>
+                    <span>Complaints by Ward &amp; Status Matrix</span>
+                </h2>
+                <span class="text-xs font-mono text-secondary uppercase">SLA RADAR</span>
+            </div>
 
-<script th:src="@{/js/app.js}"></script>
-<script>
-async function loadDashboard() {
-    const App = window.NagorikSeba;
-    if (!App || !App.getToken()) {
-        window.location.replace('/login/authority?next=/authority/dashboard');
-        return;
-    }
-    const mid = document.getElementById('municipalityId').value;
-    const url = '/api/authority/dashboard' + (mid ? '?municipalityId=' + encodeURIComponent(mid) : '');
-    let data;
-    try {
-        data = await App.apiJson(url);
-    } catch (error) {
-        App.toast(error.message, 'error');
-        return;
-    }
-    const avg = data.averageResolutionHours == null ? '—' : Number(data.averageResolutionHours).toFixed(1) + ' h';
-    document.getElementById('statCards').innerHTML =
-        '<div class="col-md-4"><div class="card"><div class="card-body">'
-        + '<h5>Role</h5><p>' + data.role + '</p></div></div></div>'
-        + '<div class="col-md-4"><div class="card"><div class="card-body">'
-        + '<h5>Avg resolution</h5><p>' + avg + '</p></div></div></div>'
-        + '<div class="col-md-4"><div class="card"><div class="card-body">'
-        + '<h5>SLA at risk</h5><p>' + data.slaAtRiskCount + '</p></div></div></div>';
-    const rows = [];
-    let max = 1;
-    (data.wardStats || []).forEach(w => {
-        Object.entries(w.counts || {}).forEach(([status, count]) => { if (count > max) max = count; });
-    });
-    (data.wardStats || []).forEach(w => {
-        Object.entries(w.counts || {}).forEach(([status, count]) => {
-            const pct = Math.round((count / max) * 100);
-            rows.push('<tr><td>' + (w.wardName || ('Ward ' + w.wardId)) + '</td><td>' + status + '</td>'
-                + '<td>' + count + '</td>'
-                + '<td style="min-width:160px"><div style="background:#0d6efd;height:10px;width:' + pct + '%"></div></td></tr>');
-        });
-    });
-    document.querySelector('#wardTable tbody').innerHTML = rows.join('') || '<tr><td colspan="4">No data</td></tr>';
-}
-document.getElementById('loadBtn').addEventListener('click', loadDashboard);
-(function prefillMunicipality() {
-    try {
-        var user = JSON.parse(localStorage.getItem('nagorikSebaUser') || 'null');
-        var mids = user && user.municipalityIds ? Array.from(user.municipalityIds) : [];
-        if (mids.length === 1) {
-            document.getElementById('municipalityId').value = mids[0];
-            loadDashboard();
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm" id="wardTable">
+                    <thead>
+                        <tr class="bg-surface-container-low border-b-2 border-inverse-surface font-mono text-xs uppercase text-secondary">
+                            <th class="py-2.5 px-3 font-semibold">Ward Boundary</th>
+                            <th class="py-2.5 px-3 font-semibold">Operational Status</th>
+                            <th class="py-2.5 px-3 font-semibold">Volume Count</th>
+                            <th class="py-2.5 px-3 font-semibold">Relative Density</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-outline-variant font-mono text-xs">
+                        <tr>
+                            <td colspan="4" class="py-6 text-center text-secondary">
+                                No telemetry data loaded yet.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+        <div class="max-w-[1280px] mx-auto flex justify-between items-center">
+            <span>NAGORIK SEBA · MUNICIPAL AUTHORITY DESK</span>
+            <span class="text-outline">RESTRICTED GOVERNMENT ACCESS</span>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script th:src="@{/js/app.js}"></script>
+    <script>
+    async function loadDashboard() {
+        var App = window.NagorikSeba;
+        if (!App || !App.getToken()) {
+            window.location.replace('/login/authority?next=/authority/dashboard');
+            return;
         }
-    } catch (e) { /* leave manual entry */ }
-})();
-</script>
+        var mid = document.getElementById('municipalityId').value;
+        var url = '/api/authority/dashboard' + (mid ? '?municipalityId=' + encodeURIComponent(mid) : '');
+        var data;
+        try {
+            data = await App.apiJson(url);
+        } catch (error) {
+            App.toast(error.message, 'error');
+            return;
+        }
+        var avg = data.averageResolutionHours == null ? '—' : Number(data.averageResolutionHours).toFixed(1) + ' hrs';
+        
+        document.getElementById('statCards').innerHTML =
+            '<div class="bg-surface-container-lowest border border-outline-variant border-t-2 border-t-primary-container p-4">'
+            + '<div class="text-[10px] font-mono uppercase text-secondary mb-1">OFFICIAL ROLE</div>'
+            + '<div class="font-mono text-2xl font-bold text-on-surface">' + (data.role || 'OFFICER') + '</div>'
+            + '<p class="text-[11px] text-secondary mt-1">Authorized Departmental Unit</p></div>'
+            + '<div class="bg-surface-container-lowest border border-outline-variant border-t-2 border-t-amber-600 p-4">'
+            + '<div class="text-[10px] font-mono uppercase text-secondary mb-1">AVG SLA TURNAROUND</div>'
+            + '<div class="font-mono text-2xl font-bold text-on-surface">' + avg + '</div>'
+            + '<p class="text-[11px] text-secondary mt-1">Rolling municipal mean</p></div>'
+            + '<div class="bg-surface-container-lowest border border-outline-variant border-t-2 border-t-red-600 p-4">'
+            + '<div class="text-[10px] font-mono uppercase text-secondary mb-1">SLA BREACH RISK</div>'
+            + '<div class="font-mono text-2xl font-bold text-red-600">' + (data.slaAtRiskCount || 0) + '</div>'
+            + '<p class="text-[11px] text-secondary mt-1">Requires immediate dispatch</p></div>';
+
+        var rows = [];
+        var max = 1;
+        (data.wardStats || []).forEach(function (w) {
+            Object.entries(w.counts || {}).forEach(function ([status, count]) { if (count > max) max = count; });
+        });
+        (data.wardStats || []).forEach(function (w) {
+            Object.entries(w.counts || {}).forEach(function ([status, count]) {
+                var pct = Math.round((count / max) * 100);
+                rows.push('<tr><td class="py-2.5 px-3 font-semibold">' + (w.wardName || ('Ward ' + w.wardId)) + '</td>'
+                    + '<td class="py-2.5 px-3"><span class="badge-status badge-' + status + '">' + status + '</span></td>'
+                    + '<td class="py-2.5 px-3 font-bold">' + count + '</td>'
+                    + '<td class="py-2.5 px-3" style="min-width:160px"><div class="h-2 bg-surface-container overflow-hidden"><div class="bg-primary h-full" style="width:' + pct + '%"></div></div></td></tr>');
+            });
+        });
+        document.querySelector('#wardTable tbody').innerHTML = rows.join('') || '<tr><td colspan="4" class="py-4 text-center text-secondary">No ward grievance data recorded.</td></tr>';
+    }
+
+    document.getElementById('loadBtn').addEventListener('click', loadDashboard);
+    (function prefillMunicipality() {
+        try {
+            var user = JSON.parse(localStorage.getItem('nagorikSebaUser') || 'null');
+            var mids = user && user.municipalityIds ? Array.from(user.municipalityIds) : [];
+            if (mids.length === 1) {
+                document.getElementById('municipalityId').value = mids[0];
+                loadDashboard();
+            }
+        } catch (e) { /* leave manual entry */ }
+    })();
+    </script>
 </body>
 </html>
