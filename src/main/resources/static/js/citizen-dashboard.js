@@ -105,7 +105,7 @@
         var empty = complaints.length === 0;
         var emptyEl = document.getElementById('emptyState');
         var listEl = document.getElementById('complaintList');
-        
+
         if (emptyEl) emptyEl.hidden = !empty;
         if (listEl) {
             listEl.innerHTML = complaints.map(row).join('');

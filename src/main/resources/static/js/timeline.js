@@ -17,7 +17,7 @@ async function loadDetail() {
     var ref = detailRef();
     if (!ref) return;
     var res = await fetch('/api/complaints/' + ref, {
-        headers: {'Authorization': 'Bearer ' + localStorage.getItem('nagorikSebaToken')}
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('nagorikSebaToken') }
     });
     if (res.status === 401) {
         window.location.replace('/login?next=' + encodeURIComponent(window.location.pathname));
@@ -25,10 +25,10 @@ async function loadDetail() {
     }
     if (!res.ok) return;
     var complaint = await res.json();
-    
+
     var titleEl = document.getElementById('title');
     if (titleEl) titleEl.textContent = complaint.title || 'Untitled Grievance';
-    
+
     var refEl = document.getElementById('refDisplay');
     if (refEl) refEl.textContent = '# ' + (complaint.referenceCode || ref);
 

@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html xmlns:th="https://www.thymeleaf.org" lang="en">
+
 <head th:replace="~{fragments/head :: head('My Complaints Dossier')}">
     <title>My Complaints</title>
 </head>
+
 <body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
-    
+
     <!-- Top Nav Header -->
     <div th:replace="~{fragments/nav :: nav}"></div>
 
     <main class="flex-grow max-w-[1280px] mx-auto w-full px-4 md:px-8 py-8">
-        
+
         <!-- Page Header -->
         <section class="border-b border-outline-variant pb-6 mb-6">
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <div class="inline-flex items-center gap-2 px-2 py-0.5 bg-surface-container border border-outline-variant text-[11px] font-mono font-semibold text-secondary mb-2">
+                    <div
+                        class="inline-flex items-center gap-2 px-2 py-0.5 bg-surface-container border border-outline-variant text-[11px] font-mono font-semibold text-secondary mb-2">
                         <span class="w-1.5 h-1.5 bg-primary"></span>
                         <span>OFFICIAL CITIZEN DOSSIER // SEC. 14-B</span>
                     </div>
@@ -24,7 +27,8 @@
                     </p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <a th:href="@{/citizen/complaint/new}" class="bg-primary-container hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 flex items-center gap-2 uppercase tracking-wider transition-colors">
+                    <a th:href="@{/citizen/complaint/new}"
+                        class="bg-primary-container hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 flex items-center gap-2 uppercase tracking-wider transition-colors">
                         <span class="material-symbols-outlined text-base">add_circle</span>
                         <span>+ Lodge New Grievance</span>
                     </a>
@@ -40,26 +44,34 @@
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <!-- Filter Tabs -->
                 <div class="flex items-center gap-1" id="filterTabs" role="tablist">
-                    <button class="px-3 py-1.5 text-xs font-mono uppercase font-semibold border transition-none" data-filter="ALL" role="tab">All</button>
-                    <button class="px-3 py-1.5 text-xs font-mono uppercase font-semibold border transition-none" data-filter="ACTIVE" role="tab">Active</button>
-                    <button class="px-3 py-1.5 text-xs font-mono uppercase font-semibold border transition-none" data-filter="RESOLVED" role="tab">Resolved</button>
+                    <button class="px-3 py-1.5 text-xs font-mono uppercase font-semibold border transition-none"
+                        data-filter="ALL" role="tab">All</button>
+                    <button class="px-3 py-1.5 text-xs font-mono uppercase font-semibold border transition-none"
+                        data-filter="ACTIVE" role="tab">Active</button>
+                    <button class="px-3 py-1.5 text-xs font-mono uppercase font-semibold border transition-none"
+                        data-filter="RESOLVED" role="tab">Resolved</button>
                 </div>
                 <!-- Search Input -->
                 <div class="relative w-full sm:w-80">
-                    <span class="material-symbols-outlined absolute left-2.5 top-2 text-outline text-base pointer-events-none">search</span>
-                    <input id="searchInput" type="text" placeholder="Filter by title, reference, category..." class="w-full text-xs font-mono py-1.5 pl-8 pr-3 border border-outline-variant bg-white focus:outline-none focus:border-primary">
+                    <span
+                        class="material-symbols-outlined absolute left-2.5 top-2 text-outline text-base pointer-events-none">search</span>
+                    <input id="searchInput" type="text" placeholder="Filter by title, reference, category..."
+                        class="w-full text-xs font-mono py-1.5 pl-8 pr-3 border border-outline-variant bg-white focus:outline-none focus:border-primary">
                 </div>
             </div>
         </section>
 
         <!-- Empty State Container -->
-        <div id="emptyState" class="bg-surface-container-lowest border border-outline-variant p-12 text-center my-6" hidden>
+        <div id="emptyState" class="bg-surface-container-lowest border border-outline-variant p-12 text-center my-6"
+            hidden>
             <span class="material-symbols-outlined text-outline text-5xl mb-3">folder_open</span>
             <h3 class="text-base font-bold text-on-surface uppercase tracking-wide">No Complaints in Current View</h3>
             <p class="text-xs text-secondary mt-1 max-w-sm mx-auto">
-                No civic grievances were found matching your current filter. Report an infrastructure issue to track its resolution.
+                No civic grievances were found matching your current filter. Report an infrastructure issue to track its
+                resolution.
             </p>
-            <a th:href="@{/citizen/complaint/new}" class="inline-flex items-center gap-1 bg-primary-container text-white text-xs font-semibold px-4 py-2 uppercase tracking-wider mt-4 hover:bg-blue-700">
+            <a th:href="@{/citizen/complaint/new}"
+                class="inline-flex items-center gap-1 bg-primary-container text-white text-xs font-semibold px-4 py-2 uppercase tracking-wider mt-4 hover:bg-blue-700">
                 <span class="material-symbols-outlined text-sm">add</span>
                 <span>Submit Grievance</span>
             </a>
@@ -71,7 +83,8 @@
     </main>
 
     <!-- Global Footer -->
-    <footer class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+    <footer
+        class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
         <div class="max-w-[1280px] mx-auto flex justify-between items-center">
             <span>NAGORIK SEBA · CITIZEN AUDIT PORTAL</span>
             <span class="text-outline">SECURE CITIZEN ACCESS</span>
@@ -82,4 +95,5 @@
     <script th:src="@{/js/app.js}"></script>
     <script th:src="@{/js/citizen-dashboard.js}"></script>
 </body>
+
 </html>

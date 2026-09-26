@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head th:replace="~{fragments/head :: head('Civic Grievance Redress & Ward SLA Audit')}">
     <title>Nagorik Seba</title>
 </head>
+
 <body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
 
     <!-- Global App Header -->
@@ -19,30 +21,40 @@
                     <!-- Left: Civic Directive & Live Tracking Inspector -->
                     <div class="lg:col-span-5 flex flex-col justify-between space-y-6">
                         <div>
-                            <div class="inline-flex items-center gap-2 px-2.5 py-1 bg-primary/10 border border-primary/20 text-primary font-mono text-xs font-semibold uppercase tracking-wider mb-4">
+                            <div
+                                class="inline-flex items-center gap-2 px-2.5 py-1 bg-primary/10 border border-primary/20 text-primary font-mono text-xs font-semibold uppercase tracking-wider mb-4">
                                 <span class="material-symbols-outlined text-sm">verified_user</span>
                                 <span>Official Public Infrastructure Audit</span>
                             </div>
-                            <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-on-surface leading-tight uppercase">
+                            <h1
+                                class="text-3xl md:text-4xl font-bold tracking-tight text-on-surface leading-tight uppercase">
                                 Report Local Issues.<br>
                                 <span class="text-primary-container">Enforce Resolution.</span>
                             </h1>
                             <p class="mt-3 text-secondary text-sm md:text-base leading-relaxed">
-                                Transparent, ward-level infrastructure tracking for City Corporations. Broken roads, waterlogged streets, dead streetlights, and sanitation grievances—audited live under strict SLAs.
+                                Transparent, ward-level infrastructure tracking for City Corporations. Broken roads,
+                                waterlogged streets, dead streetlights, and sanitation grievances—audited live under
+                                strict SLAs.
                             </p>
                         </div>
 
                         <!-- Direct Grievance Tracker Card -->
                         <div class="bg-surface-container-lowest border border-outline-variant p-5">
-                            <label for="trackInput" class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-2">
+                            <label for="trackInput"
+                                class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-2">
                                 Track Existing Grievance
                             </label>
-                            <form id="trackForm" onsubmit="event.preventDefault(); var code = document.getElementById('trackInput').value.trim(); if(code) window.location.assign('/citizen/complaints/' + encodeURIComponent(code));" class="flex gap-2">
+                            <form id="trackForm"
+                                onsubmit="event.preventDefault(); var code = document.getElementById('trackInput').value.trim(); if(code) window.location.assign('/citizen/complaints/' + encodeURIComponent(code));"
+                                class="flex gap-2">
                                 <div class="relative flex-grow">
-                                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-lg">search</span>
-                                    <input id="trackInput" type="text" placeholder="e.g. NS-2026-000142" required class="w-full pl-9 pr-3 py-2 text-sm font-mono uppercase bg-white border border-outline-variant focus:border-primary focus:outline-none">
+                                    <span
+                                        class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-lg">search</span>
+                                    <input id="trackInput" type="text" placeholder="e.g. NS-2026-000142" required
+                                        class="w-full pl-9 pr-3 py-2 text-sm font-mono uppercase bg-white border border-outline-variant focus:border-primary focus:outline-none">
                                 </div>
-                                <button type="submit" class="bg-inverse-surface hover:bg-black text-white text-xs font-mono uppercase font-semibold px-4 py-2 transition-colors flex items-center gap-1">
+                                <button type="submit"
+                                    class="bg-inverse-surface hover:bg-black text-white text-xs font-mono uppercase font-semibold px-4 py-2 transition-colors flex items-center gap-1">
                                     <span>Track</span>
                                     <span class="material-symbols-outlined text-sm">arrow_forward</span>
                                 </button>
@@ -54,11 +66,13 @@
 
                         <!-- Primary Action Buttons -->
                         <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                            <a th:href="@{/citizen/complaint/new}" class="flex-1 bg-primary-container hover:bg-blue-700 text-white font-semibold text-sm py-3 px-4 flex items-center justify-center gap-2 uppercase tracking-wider transition-colors">
+                            <a th:href="@{/citizen/complaint/new}"
+                                class="flex-1 bg-primary-container hover:bg-blue-700 text-white font-semibold text-sm py-3 px-4 flex items-center justify-center gap-2 uppercase tracking-wider transition-colors">
                                 <span class="material-symbols-outlined text-lg">add_location_alt</span>
                                 <span>Report an Issue</span>
                             </a>
-                            <a th:href="@{/wards}" class="flex-1 bg-surface-container-lowest hover:bg-surface-container border border-outline text-on-surface font-semibold text-sm py-3 px-4 flex items-center justify-center gap-2 uppercase tracking-wider transition-colors">
+                            <a th:href="@{/wards}"
+                                class="flex-1 bg-surface-container-lowest hover:bg-surface-container border border-outline text-on-surface font-semibold text-sm py-3 px-4 flex items-center justify-center gap-2 uppercase tracking-wider transition-colors">
                                 <span class="material-symbols-outlined text-lg">map</span>
                                 <span>Live Public Map</span>
                             </a>
@@ -67,9 +81,11 @@
 
                     <!-- Right: Live GIS Map with Dynamic Dhaka Pins -->
                     <div class="lg:col-span-7 flex flex-col">
-                        <div class="bg-surface-container-lowest border border-outline-variant flex-grow flex flex-col overflow-hidden">
+                        <div
+                            class="bg-surface-container-lowest border border-outline-variant flex-grow flex flex-col overflow-hidden">
                             <!-- Map Header Bar -->
-                            <div class="bg-surface-container-low px-4 py-2.5 border-b border-outline-variant flex justify-between items-center text-xs font-mono">
+                            <div
+                                class="bg-surface-container-low px-4 py-2.5 border-b border-outline-variant flex justify-between items-center text-xs font-mono">
                                 <div class="flex items-center gap-2 font-semibold text-on-surface">
                                     <span class="material-symbols-outlined text-primary text-base">radar</span>
                                     <span>CENTRAL DHAKA LIVE GIS INCIDENT MAP</span>
@@ -90,18 +106,25 @@
                             </div>
 
                             <!-- Bottom Metrics Bar -->
-                            <div class="grid grid-cols-3 border-t border-outline-variant bg-surface-container divide-x divide-outline-variant text-center">
+                            <div
+                                class="grid grid-cols-3 border-t border-outline-variant bg-surface-container divide-x divide-outline-variant text-center">
                                 <div class="py-3 px-2">
-                                    <div class="font-mono text-xl md:text-2xl font-bold text-emerald-700" id="statResolved">...</div>
-                                    <div class="text-[11px] font-mono uppercase text-secondary tracking-wider mt-0.5">Complaints Resolved</div>
+                                    <div class="font-mono text-xl md:text-2xl font-bold text-emerald-700"
+                                        id="statResolved">...</div>
+                                    <div class="text-[11px] font-mono uppercase text-secondary tracking-wider mt-0.5">
+                                        Complaints Resolved</div>
                                 </div>
                                 <div class="py-3 px-2">
-                                    <div class="font-mono text-xl md:text-2xl font-bold text-blue-700" id="statActive">...</div>
-                                    <div class="text-[11px] font-mono uppercase text-secondary tracking-wider mt-0.5">Active in Progress</div>
+                                    <div class="font-mono text-xl md:text-2xl font-bold text-blue-700" id="statActive">
+                                        ...</div>
+                                    <div class="text-[11px] font-mono uppercase text-secondary tracking-wider mt-0.5">
+                                        Active in Progress</div>
                                 </div>
                                 <div class="py-3 px-2">
-                                    <div class="font-mono text-xl md:text-2xl font-bold text-on-surface" id="statAvg">...</div>
-                                    <div class="text-[11px] font-mono uppercase text-secondary tracking-wider mt-0.5">Avg Resolution Days</div>
+                                    <div class="font-mono text-xl md:text-2xl font-bold text-on-surface" id="statAvg">
+                                        ...</div>
+                                    <div class="text-[11px] font-mono uppercase text-secondary tracking-wider mt-0.5">
+                                        Avg Resolution Days</div>
                                 </div>
                             </div>
                         </div>
@@ -113,12 +136,16 @@
 
         <!-- ================= WARD PERFORMANCE SCOREBOARD ================= -->
         <section class="py-12 px-4 md:px-8 max-w-[1280px] mx-auto" id="wards">
-            <div class="flex flex-col md:flex-row md:items-end justify-between mb-6 pb-3 border-b border-outline-variant gap-4">
+            <div
+                class="flex flex-col md:flex-row md:items-end justify-between mb-6 pb-3 border-b border-outline-variant gap-4">
                 <div>
-                    <div class="text-xs font-mono uppercase tracking-wider text-primary font-bold">Public Transparency Matrix</div>
-                    <h2 class="text-2xl font-bold text-on-surface tracking-tight uppercase mt-1">Ward Resolution Scoreboard</h2>
+                    <div class="text-xs font-mono uppercase tracking-wider text-primary font-bold">Public Transparency
+                        Matrix</div>
+                    <h2 class="text-2xl font-bold text-on-surface tracking-tight uppercase mt-1">Ward Resolution
+                        Scoreboard</h2>
                 </div>
-                <a th:href="@{/wards}" class="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline font-mono uppercase tracking-wider">
+                <a th:href="@{/wards}"
+                    class="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline font-mono uppercase tracking-wider">
                     <span>Explore All Wards on Map</span>
                     <span class="material-symbols-outlined text-base">arrow_forward</span>
                 </a>
@@ -128,7 +155,8 @@
             <div class="bg-surface-container-lowest border border-outline-variant overflow-x-auto">
                 <table class="w-full text-left border-collapse text-sm">
                     <thead>
-                        <tr class="bg-surface-container-low border-b-2 border-inverse-surface font-mono text-xs uppercase tracking-wider text-secondary">
+                        <tr
+                            class="bg-surface-container-low border-b-2 border-inverse-surface font-mono text-xs uppercase tracking-wider text-secondary">
                             <th class="py-3 px-4 font-semibold">Ward &amp; Jurisdiction</th>
                             <th class="py-3 px-4 font-semibold">Resolved</th>
                             <th class="py-3 px-4 font-semibold">Pending / In-Work</th>
@@ -139,7 +167,8 @@
                     <tbody id="landingWardBody" class="divide-y divide-outline-variant font-mono">
                         <tr>
                             <td colspan="5" class="py-6 px-4 text-center text-secondary">
-                                <span class="material-symbols-outlined animate-spin text-xl align-middle mr-2">sync</span>
+                                <span
+                                    class="material-symbols-outlined animate-spin text-xl align-middle mr-2">sync</span>
                                 Retrieving live municipal audit telemetry...
                             </td>
                         </tr>
@@ -153,9 +182,12 @@
         <section class="bg-surface-container-low border-t border-b border-outline-variant py-14 px-4 md:px-8">
             <div class="max-w-[1280px] mx-auto">
                 <div class="text-center max-w-xl mx-auto mb-12">
-                    <span class="text-xs font-mono uppercase tracking-wider text-primary font-bold">Accountability Protocol</span>
-                    <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-on-surface uppercase mt-1">The 3-Step Civic Pipeline</h2>
-                    <p class="text-sm text-secondary mt-2">Every submission is recorded on an immutable ledger with automated SLA escalation.</p>
+                    <span class="text-xs font-mono uppercase tracking-wider text-primary font-bold">Accountability
+                        Protocol</span>
+                    <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-on-surface uppercase mt-1">The 3-Step
+                        Civic Pipeline</h2>
+                    <p class="text-sm text-secondary mt-2">Every submission is recorded on an immutable ledger with
+                        automated SLA escalation.</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -167,9 +199,11 @@
                             <span>Photo &amp; Geo-Tag</span>
                         </h3>
                         <p class="text-xs text-secondary mt-2 leading-relaxed">
-                            Upload photographic evidence. Your coordinates automatically pinpoint the ward boundary and dispatch target.
+                            Upload photographic evidence. Your coordinates automatically pinpoint the ward boundary and
+                            dispatch target.
                         </p>
-                        <a th:href="@{/citizen/complaint/new}" class="inline-flex items-center gap-1 text-xs font-mono text-primary font-semibold uppercase mt-4 hover:underline">
+                        <a th:href="@{/citizen/complaint/new}"
+                            class="inline-flex items-center gap-1 text-xs font-mono text-primary font-semibold uppercase mt-4 hover:underline">
                             <span>File Issue Now</span>
                             <span class="material-symbols-outlined text-xs">chevron_right</span>
                         </a>
@@ -183,9 +217,11 @@
                             <span>Live SLA Tracking</span>
                         </h3>
                         <p class="text-xs text-secondary mt-2 leading-relaxed">
-                            Watch officers verify, route to departments (Roads, Water, Electricity), and start work before SLA deadlines expire.
+                            Watch officers verify, route to departments (Roads, Water, Electricity), and start work
+                            before SLA deadlines expire.
                         </p>
-                        <a th:href="@{/citizen/dashboard}" class="inline-flex items-center gap-1 text-xs font-mono text-primary font-semibold uppercase mt-4 hover:underline">
+                        <a th:href="@{/citizen/dashboard}"
+                            class="inline-flex items-center gap-1 text-xs font-mono text-primary font-semibold uppercase mt-4 hover:underline">
                             <span>Track Dashboard</span>
                             <span class="material-symbols-outlined text-xs">chevron_right</span>
                         </a>
@@ -199,9 +235,11 @@
                             <span>Rate or Reopen</span>
                         </h3>
                         <p class="text-xs text-secondary mt-2 leading-relaxed">
-                            Verify the work-proof photo. Rate 1-5 stars to close, or reopen immediately if the issue remains unresolved.
+                            Verify the work-proof photo. Rate 1-5 stars to close, or reopen immediately if the issue
+                            remains unresolved.
                         </p>
-                        <a th:href="@{/wards}" class="inline-flex items-center gap-1 text-xs font-mono text-primary font-semibold uppercase mt-4 hover:underline">
+                        <a th:href="@{/wards}"
+                            class="inline-flex items-center gap-1 text-xs font-mono text-primary font-semibold uppercase mt-4 hover:underline">
                             <span>Public Heatmap</span>
                             <span class="material-symbols-outlined text-xs">chevron_right</span>
                         </a>
@@ -213,11 +251,13 @@
     </main>
 
     <!-- Global Footer -->
-    <footer class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-8 px-4 md:px-8 text-xs font-mono">
+    <footer
+        class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-8 px-4 md:px-8 text-xs font-mono">
         <div class="max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
                 <span class="font-bold text-white tracking-wider uppercase">NAGORIK SEBA</span> · PUBLIC GRIEVANCE AUDIT
-                <p class="text-[11px] text-outline mt-1">Local Government Division · Ministry of LGRD &amp; Cooperatives</p>
+                <p class="text-[11px] text-outline mt-1">Local Government Division · Ministry of LGRD &amp; Cooperatives
+                </p>
             </div>
             <div class="flex items-center gap-6 text-[11px]">
                 <a th:href="@{/wards}" class="hover:text-white">Public Heatmap</a>
@@ -233,4 +273,5 @@
     <!-- Wire Landing Page Scripts -->
     <script th:src="@{/js/landing.js}"></script>
 </body>
+
 </html>

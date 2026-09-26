@@ -16,7 +16,10 @@ body {
 }
 
 /* Monospace Engine for Identifiers, Reference Codes, Metrics */
-code, pre, .font-mono, [data-mono] {
+code,
+pre,
+.font-mono,
+[data-mono] {
     font-family: 'JetBrains Mono', monospace !important;
 }
 
@@ -32,7 +35,7 @@ code, pre, .font-mono, [data-mono] {
 /* GIS Grid Canvas Pattern */
 .grid-lines {
     background-size: 24px 24px;
-    background-image: 
+    background-image:
         linear-gradient(to right, rgba(195, 198, 215, 0.25) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(195, 198, 215, 0.25) 1px, transparent 1px);
 }
@@ -97,22 +100,45 @@ code, pre, .font-mono, [data-mono] {
     border-color: #fde68a;
 }
 
-.badge-REJECTED, .badge-CANCELLED {
+.badge-REJECTED,
+.badge-CANCELLED {
     background-color: #fef2f2;
     color: #b91c1c;
     border-color: #fecaca;
 }
 
 /* Priority Badges */
-.badge-priority-LOW { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-.badge-priority-NORMAL { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-.badge-priority-HIGH { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
-.badge-priority-CRITICAL { background: #fef2f2; color: #991b1b; border: 1px solid #f87171; font-weight: 700; }
+.badge-priority-LOW {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+.badge-priority-NORMAL {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+.badge-priority-HIGH {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
+.badge-priority-CRITICAL {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #f87171;
+    font-weight: 700;
+}
 
 /* ==========================================================================
    Leaflet Map Enhancements
    ========================================================================== */
-#map, #landing-map, #map-picker-container {
+#map,
+#landing-map,
+#map-picker-container {
     border: 1px solid #c3c6d7;
     background-color: #f2f3ff;
     z-index: 10;
@@ -161,8 +187,13 @@ code, pre, .font-mono, [data-mono] {
 /* ==========================================================================
    Form Controls & Modern Inputs
    ========================================================================== */
-input[type="text"], input[type="email"], input[type="password"],
-input[type="number"], input[type="tel"], select, textarea {
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+select,
+textarea {
     border: 1px solid #c3c6d7 !important;
     background-color: #ffffff !important;
     color: #131b2e !important;
@@ -172,7 +203,9 @@ input[type="number"], input[type="tel"], select, textarea {
     transition: border-color 0.15s ease-in-out;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
     border-color: #004ac6 !important;
     outline: 1px solid #004ac6 !important;
     box-shadow: none !important;
@@ -181,7 +214,8 @@ input:focus, select:focus, textarea:focus {
 /* ==========================================================================
    Toast Notifications
    ========================================================================== */
-#app-toasts, #landing-toasts {
+#app-toasts,
+#landing-toasts {
     position: fixed;
     bottom: 24px;
     right: 24px;
@@ -192,7 +226,8 @@ input:focus, select:focus, textarea:focus {
     pointer-events: none;
 }
 
-.app-toast, .landing-toast {
+.app-toast,
+.landing-toast {
     background: #0f172a;
     color: #ffffff;
     border-left: 4px solid #2563eb;
@@ -205,11 +240,13 @@ input:focus, select:focus, textarea:focus {
     animation: toastSlideIn 0.2s ease-out;
 }
 
-.app-toast.error, .landing-toast.error {
+.app-toast.error,
+.landing-toast.error {
     border-left-color: #dc2626;
 }
 
-.app-toast.success, .landing-toast.success {
+.app-toast.success,
+.landing-toast.success {
     border-left-color: #16a34a;
 }
 
@@ -218,6 +255,7 @@ input:focus, select:focus, textarea:focus {
         transform: translateY(10px);
         opacity: 0;
     }
+
     to {
         transform: translateY(0);
         opacity: 1;

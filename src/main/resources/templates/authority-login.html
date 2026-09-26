@@ -1,22 +1,26 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head th:replace="~{fragments/head :: head('Authority Access Portal')}">
     <title>Authority Sign In</title>
 </head>
+
 <body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
-    
+
     <!-- Top Nav Header -->
     <div th:replace="~{fragments/nav :: nav}"></div>
 
     <main class="flex-grow flex items-center justify-center py-10 px-4 md:px-8">
-        <div class="w-full max-w-4xl border border-outline-variant bg-surface-container-lowest flex flex-col md:flex-row overflow-hidden">
-            
+        <div
+            class="w-full max-w-4xl border border-outline-variant bg-surface-container-lowest flex flex-col md:flex-row overflow-hidden">
+
             <!-- Left Side: Authority Form -->
             <div class="w-full md:w-7/12 p-6 md:p-10 flex flex-col justify-between">
                 <div>
                     <!-- Badge -->
                     <div class="mb-4">
-                        <span class="inline-block bg-teal-800 text-white px-2.5 py-0.5 text-[11px] font-mono uppercase tracking-wider">
+                        <span
+                            class="inline-block bg-teal-800 text-white px-2.5 py-0.5 text-[11px] font-mono uppercase tracking-wider">
                             RESTRICTED // AUTHORITY GATEWAY
                         </span>
                     </div>
@@ -31,50 +35,65 @@
 
                     <!-- Form -->
                     <form id="authority-login-form" novalidate class="space-y-4">
-                        
+
                         <!-- Identifier Input -->
                         <div>
-                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
+                            <label
+                                class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
                                 Official Identifier (Email / Account PIN) <span class="text-error">*</span>
                             </label>
-                            <input name="identifier" autocomplete="username" required placeholder="e.g. officer1@demo" class="w-full text-sm font-mono">
+                            <input name="identifier" autocomplete="username" required placeholder="e.g. officer1@demo"
+                                class="w-full text-sm font-mono">
                         </div>
 
                         <!-- Password -->
                         <div>
                             <div class="flex justify-between items-center mb-1">
-                                <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary">
+                                <label
+                                    class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary">
                                     Security Key / Password <span class="text-error">*</span>
                                 </label>
                                 <span class="text-[10px] font-mono text-outline">AUTHORITY TIER-2</span>
                             </div>
                             <div class="relative">
-                                <input name="password" type="password" autocomplete="current-password" required placeholder="••••••••" class="w-full text-sm pr-16 font-mono">
-                                <button type="button" class="absolute right-2 top-2 text-[11px] font-mono uppercase text-secondary hover:text-teal-700 px-1.5 py-0.5" data-toggle-password>
+                                <input name="password" type="password" autocomplete="current-password" required
+                                    placeholder="••••••••" class="w-full text-sm pr-16 font-mono">
+                                <button type="button"
+                                    class="absolute right-2 top-2 text-[11px] font-mono uppercase text-secondary hover:text-teal-700 px-1.5 py-0.5"
+                                    data-toggle-password>
                                     Show
                                 </button>
                             </div>
                         </div>
 
                         <!-- Submit Button -->
-                        <button type="submit" class="w-full bg-teal-800 hover:bg-teal-900 text-white font-mono text-xs uppercase font-bold py-2.5 px-4 flex items-center justify-center gap-2 transition-colors mt-2">
+                        <button type="submit"
+                            class="w-full bg-teal-800 hover:bg-teal-900 text-white font-mono text-xs uppercase font-bold py-2.5 px-4 flex items-center justify-center gap-2 transition-colors mt-2">
                             <span>Verify Authority Credentials</span>
                             <span class="material-symbols-outlined text-sm">shield</span>
                         </button>
 
                         <!-- Feedback Message -->
-                        <p id="authority-feedback" class="text-xs font-mono font-bold text-error mt-2" role="status" aria-live="polite"></p>
+                        <p id="authority-feedback" class="text-xs font-mono font-bold text-error mt-2" role="status"
+                            aria-live="polite"></p>
 
                         <!-- Demo Accounts Quick Fill -->
-                        <div class="mt-6 pt-4 border-t border-outline-variant bg-surface-container-low p-3 font-mono text-xs">
+                        <div
+                            class="mt-6 pt-4 border-t border-outline-variant bg-surface-container-low p-3 font-mono text-xs">
                             <div class="text-[10px] uppercase font-bold text-secondary mb-2 flex items-center gap-1">
                                 <span class="material-symbols-outlined text-xs">badge</span>
                                 <span>Authority Demo Credentials (Pass: demo1234)</span>
                             </div>
                             <div class="flex flex-wrap gap-1.5">
-                                <button type="button" data-demo-fill="officer1@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-teal-700 text-[11px]">Dept Officer</button>
-                                <button type="button" data-demo-fill="councilor17@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-teal-700 text-[11px]">Ward Councilor</button>
-                                <button type="button" data-demo-fill="admin@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-teal-700 text-[11px]">Super Admin</button>
+                                <button type="button" data-demo-fill="officer1@demo"
+                                    class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-teal-700 text-[11px]">Dept
+                                    Officer</button>
+                                <button type="button" data-demo-fill="councilor17@demo"
+                                    class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-teal-700 text-[11px]">Ward
+                                    Councilor</button>
+                                <button type="button" data-demo-fill="admin@demo"
+                                    class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-teal-700 text-[11px]">Super
+                                    Admin</button>
                             </div>
                         </div>
 
@@ -84,19 +103,23 @@
                 <!-- Footer Switch -->
                 <div class="mt-6 pt-4 border-t border-outline-variant text-xs font-mono">
                     <p>
-                        Are you a citizen filing a report? <a href="/login" class="text-primary font-bold hover:underline">Access Citizen Portal →</a>
+                        Are you a citizen filing a report? <a href="/login"
+                            class="text-primary font-bold hover:underline">Access Citizen Portal →</a>
                     </p>
                 </div>
             </div>
 
             <!-- Right Side: Statutory Telemetry & Public Directive -->
-            <div class="w-full md:w-5/12 bg-surface-container-low border-t md:border-t-0 md:border-l border-outline-variant p-6 md:p-8 flex flex-col justify-between font-mono text-xs">
+            <div
+                class="w-full md:w-5/12 bg-surface-container-low border-t md:border-t-0 md:border-l border-outline-variant p-6 md:p-8 flex flex-col justify-between font-mono text-xs">
                 <div>
                     <div class="text-[10px] text-secondary uppercase font-bold mb-4 tracking-wider">
                         DISPATCH NODE TELEMETRY
                     </div>
-                    <blockquote class="text-on-surface text-sm font-sans font-medium leading-relaxed mb-6 border-l-2 border-teal-700 pl-3">
-                        “Authority access enables complaint verification, department assignment, SLA overrides, and work-proof validation.”
+                    <blockquote
+                        class="text-on-surface text-sm font-sans font-medium leading-relaxed mb-6 border-l-2 border-teal-700 pl-3">
+                        “Authority access enables complaint verification, department assignment, SLA overrides, and
+                        work-proof validation.”
                     </blockquote>
 
                     <div class="space-y-3 border-t border-outline-variant pt-4 text-[11px]">
@@ -124,7 +147,8 @@
     </main>
 
     <!-- Global Footer -->
-    <footer class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+    <footer
+        class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
         <div class="max-w-[1280px] mx-auto flex justify-between items-center">
             <span>NAGORIK SEBA · AUTHORITY GATEWAY</span>
             <span class="text-outline">AUTHORIZED PERSONNEL ONLY</span>
@@ -135,4 +159,5 @@
     <script th:src="@{/js/app.js}"></script>
     <script th:src="@{/js/authority-login.js}"></script>
 </body>
+
 </html>

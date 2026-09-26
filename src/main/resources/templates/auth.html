@@ -1,31 +1,39 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head th:replace="~{fragments/head :: head(${register} ? 'Create Citizen Account' : 'Citizen Sign In')}">
     <title>Nagorik Seba</title>
 </head>
+
 <body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-sans">
-    
+
     <!-- Top Nav Header -->
     <div th:replace="~{fragments/nav :: nav}"></div>
 
     <main class="flex-grow flex items-center justify-center py-10 px-4 md:px-8">
-        <div class="w-full max-w-4xl border border-outline-variant bg-surface-container-lowest flex flex-col md:flex-row overflow-hidden">
-            
+        <div
+            class="w-full max-w-4xl border border-outline-variant bg-surface-container-lowest flex flex-col md:flex-row overflow-hidden">
+
             <!-- Left Side: Auth Form -->
             <div class="w-full md:w-7/12 p-6 md:p-10 flex flex-col justify-between">
                 <div>
                     <!-- Badge -->
                     <div class="mb-4">
-                        <span class="inline-block bg-primary text-white px-2.5 py-0.5 text-[11px] font-mono uppercase tracking-wider">
-                            <span th:text="${register} ? 'CITIZEN REGISTRATION // SEC. 14-B' : 'CITIZEN ACCESS PORTAL'">CITIZEN PORTAL</span>
+                        <span
+                            class="inline-block bg-primary text-white px-2.5 py-0.5 text-[11px] font-mono uppercase tracking-wider">
+                            <span
+                                th:text="${register} ? 'CITIZEN REGISTRATION // SEC. 14-B' : 'CITIZEN ACCESS PORTAL'">CITIZEN
+                                PORTAL</span>
                         </span>
                     </div>
 
                     <!-- Heading -->
-                    <h1 class="text-2xl font-bold uppercase tracking-tight text-on-surface mb-1" th:text="${register} ? 'Create Citizen Identity' : 'Citizen Sign In'">
+                    <h1 class="text-2xl font-bold uppercase tracking-tight text-on-surface mb-1"
+                        th:text="${register} ? 'Create Citizen Identity' : 'Citizen Sign In'">
                         Sign In
                     </h1>
-                    <p class="text-xs text-secondary mb-6 font-mono" th:text="${register} ? 'One verified identity to lodge, track, and rate local municipal grievances.' : 'Enter your registered email address or mobile number to continue.'">
+                    <p class="text-xs text-secondary mb-6 font-mono"
+                        th:text="${register} ? 'One verified identity to lodge, track, and rate local municipal grievances.' : 'Enter your registered email address or mobile number to continue.'">
                         Use your account to continue.
                     </p>
 
@@ -35,47 +43,61 @@
 
                         <!-- Full Name (Register Only) -->
                         <div th:if="${register}">
-                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
+                            <label
+                                class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
                                 Full Name <span class="text-error">*</span>
                             </label>
-                            <input name="fullName" type="text" autocomplete="name" maxlength="100" required placeholder="e.g. Amina Rahman" class="w-full text-sm">
+                            <input name="fullName" type="text" autocomplete="name" maxlength="100" required
+                                placeholder="e.g. Amina Rahman" class="w-full text-sm">
                         </div>
 
                         <!-- Email (Register Only) -->
                         <div th:if="${register}">
-                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
+                            <label
+                                class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
                                 Email Address <span class="text-error">*</span>
                             </label>
-                            <input name="email" type="email" autocomplete="email" maxlength="100" required placeholder="you@example.com" class="w-full text-sm">
+                            <input name="email" type="email" autocomplete="email" maxlength="100" required
+                                placeholder="you@example.com" class="w-full text-sm">
                         </div>
 
                         <!-- Phone (Register Only) -->
                         <div th:if="${register}">
-                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
-                                Mobile Number <span class="text-[10px] text-outline font-normal">(Bangladeshi Format)</span>
+                            <label
+                                class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
+                                Mobile Number <span class="text-[10px] text-outline font-normal">(Bangladeshi
+                                    Format)</span>
                             </label>
-                            <input name="phone" type="tel" autocomplete="tel" placeholder="01712345678" class="w-full text-sm font-mono">
+                            <input name="phone" type="tel" autocomplete="tel" placeholder="01712345678"
+                                class="w-full text-sm font-mono">
                         </div>
 
                         <!-- Identifier (Login Only) -->
                         <div th:unless="${register}">
-                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
+                            <label
+                                class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
                                 Email or Mobile Number <span class="text-error">*</span>
                             </label>
-                            <input name="identifier" autocomplete="username" required placeholder="e.g. citizen1@demo or 01712345678" class="w-full text-sm">
+                            <input name="identifier" autocomplete="username" required
+                                placeholder="e.g. citizen1@demo or 01712345678" class="w-full text-sm">
                         </div>
 
                         <!-- Password -->
                         <div>
                             <div class="flex justify-between items-center mb-1">
-                                <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary">
+                                <label
+                                    class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary">
                                     Security Password <span class="text-error">*</span>
                                 </label>
                                 <span class="text-[10px] font-mono text-outline">MIN 8 CHARS</span>
                             </div>
                             <div class="relative">
-                                <input name="password" type="password" autocomplete="current-password" minlength="8" maxlength="72" required placeholder="••••••••" class="w-full text-sm pr-16 font-mono">
-                                <button type="button" class="absolute right-2 top-2 text-[11px] font-mono uppercase text-secondary hover:text-primary px-1.5 py-0.5" data-toggle-password>
+                                <input name="password" type="password" autocomplete="current-password" minlength="8"
+                                    maxlength="72" required placeholder="••••••••"
+                                    class="w-full text-sm pr-16 font-mono">
+                                <button type="button"
+                                    class="absolute right-2 top-2 text-[11px] font-mono uppercase text-secondary hover:text-primary px-1.5 py-0.5"
+                                    data-toggle-password>
                                     Show
                                 </button>
                             </div>
@@ -83,32 +105,43 @@
 
                         <!-- Confirm Password (Register Only) -->
                         <div th:if="${register}">
-                            <label class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
+                            <label
+                                class="block text-xs font-mono font-bold uppercase tracking-wider text-secondary mb-1">
                                 Confirm Password <span class="text-error">*</span>
                             </label>
-                            <input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required placeholder="••••••••" class="w-full text-sm font-mono">
+                            <input name="confirmPassword" type="password" autocomplete="new-password" minlength="8"
+                                maxlength="72" required placeholder="••••••••" class="w-full text-sm font-mono">
                         </div>
 
                         <!-- Submit Button -->
-                        <button type="submit" class="w-full bg-primary-container hover:bg-blue-700 text-white font-mono text-xs uppercase font-bold py-2.5 px-4 flex items-center justify-center gap-2 transition-colors mt-2">
-                            <span th:text="${register} ? 'Register Identity' : 'Authenticate & Enter Portal'">Sign In</span>
+                        <button type="submit"
+                            class="w-full bg-primary-container hover:bg-blue-700 text-white font-mono text-xs uppercase font-bold py-2.5 px-4 flex items-center justify-center gap-2 transition-colors mt-2">
+                            <span th:text="${register} ? 'Register Identity' : 'Authenticate & Enter Portal'">Sign
+                                In</span>
                             <span class="material-symbols-outlined text-sm">arrow_forward</span>
                         </button>
 
                         <!-- Feedback Message -->
-                        <p id="auth-feedback" class="text-xs font-mono font-bold text-error mt-2" role="status" aria-live="polite"></p>
+                        <p id="auth-feedback" class="text-xs font-mono font-bold text-error mt-2" role="status"
+                            aria-live="polite"></p>
 
                         <!-- Demo Accounts Quick Fill -->
-                        <div class="mt-6 pt-4 border-t border-outline-variant bg-surface-container-low p-3 font-mono text-xs">
+                        <div
+                            class="mt-6 pt-4 border-t border-outline-variant bg-surface-container-low p-3 font-mono text-xs">
                             <div class="text-[10px] uppercase font-bold text-secondary mb-2 flex items-center gap-1">
                                 <span class="material-symbols-outlined text-xs">key</span>
                                 <span>1-Click Demo Accounts (Pass: demo1234)</span>
                             </div>
                             <div class="flex flex-wrap gap-1.5">
-                                <button type="button" data-demo-fill="citizen1@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-primary text-[11px]">Citizen 1</button>
-                                <button type="button" data-demo-fill="officer1@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-primary text-[11px]">Officer</button>
-                                <button type="button" data-demo-fill="councilor17@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-primary text-[11px]">Councilor</button>
-                                <button type="button" data-demo-fill="admin@demo" class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-primary text-[11px]">Admin</button>
+                                <button type="button" data-demo-fill="citizen1@demo"
+                                    class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-primary text-[11px]">Citizen
+                                    1</button>
+                                <button type="button" data-demo-fill="officer1@demo"
+                                    class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-primary text-[11px]">Officer</button>
+                                <button type="button" data-demo-fill="councilor17@demo"
+                                    class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-primary text-[11px]">Councilor</button>
+                                <button type="button" data-demo-fill="admin@demo"
+                                    class="px-2 py-1 bg-surface-container-lowest border border-outline hover:border-primary text-[11px]">Admin</button>
                             </div>
                         </div>
 
@@ -118,22 +151,27 @@
                 <!-- Footer Switch -->
                 <div class="mt-6 pt-4 border-t border-outline-variant text-xs font-mono">
                     <p th:if="${register}">
-                        Already registered? <a href="/login?next=/citizen/dashboard" class="text-primary font-bold hover:underline">Sign In Here →</a>
+                        Already registered? <a href="/login?next=/citizen/dashboard"
+                            class="text-primary font-bold hover:underline">Sign In Here →</a>
                     </p>
                     <p th:unless="${register}">
-                        New to Nagorik Seba? <a href="/register?next=/citizen/dashboard" class="text-primary font-bold hover:underline">Create Citizen Account →</a>
+                        New to Nagorik Seba? <a href="/register?next=/citizen/dashboard"
+                            class="text-primary font-bold hover:underline">Create Citizen Account →</a>
                     </p>
                 </div>
             </div>
 
             <!-- Right Side: Statutory Telemetry & Public Directive -->
-            <div class="w-full md:w-5/12 bg-surface-container-low border-t md:border-t-0 md:border-l border-outline-variant p-6 md:p-8 flex flex-col justify-between font-mono text-xs">
+            <div
+                class="w-full md:w-5/12 bg-surface-container-low border-t md:border-t-0 md:border-l border-outline-variant p-6 md:p-8 flex flex-col justify-between font-mono text-xs">
                 <div>
                     <div class="text-[10px] text-secondary uppercase font-bold mb-4 tracking-wider">
                         SECURE CIVIC DIRECTIVE
                     </div>
-                    <blockquote class="text-on-surface text-sm font-sans font-medium leading-relaxed mb-6 border-l-2 border-primary pl-3">
-                        “Every citizen report is logged on an immutable audit trail. Transparent timelines and statutory SLAs guarantee resolution.”
+                    <blockquote
+                        class="text-on-surface text-sm font-sans font-medium leading-relaxed mb-6 border-l-2 border-primary pl-3">
+                        “Every citizen report is logged on an immutable audit trail. Transparent timelines and statutory
+                        SLAs guarantee resolution.”
                     </blockquote>
 
                     <div class="space-y-3 border-t border-outline-variant pt-4 text-[11px]">
@@ -148,7 +186,8 @@
                         <div>
                             <span class="text-secondary uppercase">ARE YOU AN AUTHORITY?</span>
                             <div class="mt-1">
-                                <a th:href="@{/login/authority}" class="inline-block bg-inverse-surface text-white px-2.5 py-1 text-[11px] uppercase hover:bg-black font-semibold">
+                                <a th:href="@{/login/authority}"
+                                    class="inline-block bg-inverse-surface text-white px-2.5 py-1 text-[11px] uppercase hover:bg-black font-semibold">
                                     Official Authority Sign In →
                                 </a>
                             </div>
@@ -165,7 +204,8 @@
     </main>
 
     <!-- Global Footer -->
-    <footer class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
+    <footer
+        class="bg-inverse-surface text-surface-variant border-t border-outline-variant py-6 px-4 md:px-8 text-xs font-mono mt-auto">
         <div class="max-w-[1280px] mx-auto flex justify-between items-center">
             <span>NAGORIK SEBA · SECURE AUTHENTICATION</span>
             <span class="text-outline">OFFICIAL GATEWAY</span>
@@ -175,4 +215,5 @@
     <!-- Auth Script -->
     <script th:src="@{/js/auth.js}"></script>
 </body>
+
 </html>

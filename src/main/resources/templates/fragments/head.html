@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html xmlns:th="https://www.thymeleaf.org" lang="en">
+
 <head th:fragment="head (title)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${title} + ' | Nagorik Seba'">Nagorik Seba · Transparent Civic Infrastructure</title>
-    
+
     <!-- Google Fonts: Public Sans & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
     <!-- Material Symbols Outlined -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
@@ -66,16 +70,17 @@
             }
         };
     </script>
-    
+
     <!-- Base Application CSS -->
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-    
+
     <!-- Shared App JS -->
     <script th:src="@{/js/app.js}" defer></script>
 
-    <th:block th:replace="~{fragments/csp-nonce :: csp-nonce}"/>
+    <th:block th:replace="~{fragments/csp-nonce :: csp-nonce}" />
 </head>
+
 </html>
