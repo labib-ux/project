@@ -65,6 +65,16 @@ async function loadDashboard() {
     document.querySelector('#wardTable tbody').innerHTML = rows.join('') || '<tr><td colspan="4">No data</td></tr>';
 }
 document.getElementById('loadBtn').addEventListener('click', loadDashboard);
+(function prefillMunicipality() {
+    try {
+        var user = JSON.parse(localStorage.getItem('nagorikSebaUser') || 'null');
+        var mids = user && user.municipalityIds ? Array.from(user.municipalityIds) : [];
+        if (mids.length === 1) {
+            document.getElementById('municipalityId').value = mids[0];
+            loadDashboard();
+        }
+    } catch (e) { /* leave manual entry */ }
+})();
 </script>
 </body>
 </html>

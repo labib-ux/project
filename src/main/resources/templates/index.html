@@ -4,79 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nagorik Seba | Transparent civic reporting for Dhaka</title>
+    <meta name="description" content="Report local issues with photo and location, follow every status change, and rate the resolution.">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
 <header class="landing-header">
-    <button class="landing-hamburger" id="landingHamburger" aria-label="Menu">&#9776;</button>
+    <button class="landing-hamburger" id="landingHamburger" aria-label="Menu" aria-expanded="false">&#9776;</button>
     <a class="landing-wordmark" href="/">Nagorik Seba</a>
     <div class="landing-header-actions">
-        <a class="landing-login" href="/login">Authority Login</a>
+        <a class="landing-login" href="/login">Sign in</a>
+        <a class="landing-login" href="/login/authority">Authority</a>
         <a class="landing-report-btn" href="/citizen/complaint/new">Report an Issue</a>
     </div>
 </header>
-<nav class="landing-mobile-menu" id="landingMobileMenu">
-    <a href="/login">Authority Login</a>
+<nav class="landing-mobile-menu" id="landingMobileMenu" aria-label="Mobile">
+    <a href="/">Home</a>
+    <a href="/wards">Wards &amp; live map</a>
     <a href="/citizen/complaint/new">Report an Issue</a>
-    <a href="#wards">View all wards</a>
+    <a href="/login">Sign in</a>
+    <a href="/login/authority">Authority Login</a>
 </nav>
 
-<section class="landing-hero">
+<section class="landing-hero" aria-label="Live complaint map">
     <div class="landing-map-wrap">
-        <div id="landing-map"></div>
+        <div id="landing-map" role="application" aria-label="Live public complaint map of Dhaka"></div>
         <div class="landing-panel">
             <h1>Report the problem. Follow the fix.</h1>
             <p class="landing-sub">Transparent civic reporting for Dhaka City Corporation.</p>
             <a class="landing-btn-full" href="/citizen/complaint/new">Report an Issue</a>
             <a class="landing-panel-link" href="/wards">View all wards &rarr;</a>
-            <div class="landing-stats">
-                <div class="landing-stat"><div class="landing-stat-num">1,247</div><div class="landing-stat-label">Resolved</div></div>
-                <div class="landing-stat"><div class="landing-stat-num">312</div><div class="landing-stat-label">Active</div></div>
-                <div class="landing-stat"><div class="landing-stat-num">4.2</div><div class="landing-stat-label">Days Avg</div></div>
+            <div class="landing-stats" role="status" aria-live="polite">
+                <div class="landing-stat"><div class="landing-stat-num" id="statResolved">…</div><div class="landing-stat-label">Resolved</div></div>
+                <div class="landing-stat"><div class="landing-stat-num" id="statActive">…</div><div class="landing-stat-label">Active</div></div>
+                <div class="landing-stat"><div class="landing-stat-num" id="statAvg">…</div><div class="landing-stat-label">Days Avg</div></div>
             </div>
         </div>
     </div>
 </section>
 
-<section class="landing-section" id="wards">
+<section class="landing-section" id="wards" aria-label="Ward performance preview">
     <div class="landing-inner">
-        <h2>Ward Performance</h2>
+        <h2>Ward Performance <a class="landing-panel-link" style="font-size:14px;font-weight:600" href="/wards">Open live map &rarr;</a></h2>
         <div class="landing-table-scroll">
             <table class="landing-ward-table">
                 <thead>
-                    <tr><th>Ward Name</th><th>Resolved</th><th>Pending</th><th>Avg Rating</th><th>Avg Resolution</th></tr>
+                    <tr><th>Ward Name</th><th>Resolved</th><th>Pending</th><th>Rate</th><th>Avg Resolution</th></tr>
                 </thead>
                 <tbody id="landingWardBody">
-                    <tr><td>Ward 33 - Dhanmondi</td><td><span class="landing-num-ok">142</span></td><td><span class="landing-num-bad">12</span></td><td>4.2</td><td>3.1 days</td></tr>
-                    <tr><td>Ward 10 - Mirpur</td><td><span class="landing-num-ok">98</span></td><td><span class="landing-num-bad">24</span></td><td>3.8</td><td>5.4 days</td></tr>
-                    <tr><td>Ward 45 - Gulshan</td><td><span class="landing-num-ok">67</span></td><td><span class="landing-num-bad">8</span></td><td>4.5</td><td>2.2 days</td></tr>
-                    <tr><td>Ward 12 - Mohammadpur</td><td><span class="landing-num-ok">113</span></td><td><span class="landing-num-bad">31</span></td><td>3.9</td><td>4.8 days</td></tr>
-                    <tr><td>Ward 22 - Banani</td><td><span class="landing-num-ok">54</span></td><td><span class="landing-num-bad">5</span></td><td>4.7</td><td>1.9 days</td></tr>
-                    <tr><td>Ward 8 - Jatrabari</td><td><span class="landing-num-ok">89</span></td><td><span class="landing-num-bad">19</span></td><td>3.5</td><td>6.2 days</td></tr>
+                    <tr><td colspan="5">Loading ward performance…</td></tr>
                 </tbody>
             </table>
         </div>
+        <p id="landingFeedback" class="text-muted small" role="status" aria-live="polite"></p>
     </div>
 </section>
 
-<section class="landing-section landing-section-white" id="how-it-works">
+<section class="landing-section landing-section-white" id="how-it-works" aria-label="How it works">
     <div class="landing-inner">
         <div class="landing-steps">
             <div class="landing-step">
                 <div class="landing-step-num">01</div>
                 <h3>01 &mdash; Report</h3>
-                <p>Submit an issue with photo and location</p>
+                <p>Submit an issue with photo and location. <a href="/citizen/complaint/new">Start a report &rarr;</a></p>
             </div>
             <div class="landing-step">
                 <div class="landing-step-num">02</div>
                 <h3>02 &mdash; Track</h3>
-                <p>Follow real-time status updates</p>
+                <p>Follow real-time status updates. <a href="/citizen/dashboard">My complaints &rarr;</a></p>
             </div>
             <div class="landing-step">
                 <div class="landing-step-num">03</div>
                 <h3>03 &mdash; Rate</h3>
-                <p>Close or reopen after resolution</p>
+                <p>Close or reopen after resolution. <a href="/wards">See the public map &rarr;</a></p>
             </div>
         </div>
     </div>

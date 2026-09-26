@@ -63,6 +63,10 @@ async function loadQueue() {
         return;
     }
     const mid = document.getElementById('municipalityId').value;
+    if (!mid) {
+        App.toast('Enter a municipality ID, or sign in again so it fills automatically.', 'error');
+        return;
+    }
     const statuses = document.getElementById('statusFilter').value.trim();
     let url = '/api/authority/queue?municipalityId=' + encodeURIComponent(mid);
     if (statuses) {
@@ -142,6 +146,16 @@ document.getElementById('resolveConfirm').addEventListener('click', async functi
     loadQueue();
 });
 document.getElementById('loadBtn').addEventListener('click', loadQueue);
+(function prefillMunicipality() {
+    try {
+        var user = JSON.parse(localStorage.getItem('nagorikSebaUser') || 'null');
+        var mids = user && user.municipalityIds ? Array.from(user.municipalityIds) : [];
+        if (mids.length === 1) {
+            document.getElementById('municipalityId').value = mids[0];
+            loadQueue();
+        }
+    } catch (e) { /* leave manual entry */ }
+})();
 </script>
 </body>
 </html>
