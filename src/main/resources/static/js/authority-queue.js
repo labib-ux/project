@@ -1,14 +1,15 @@
 /* Authority department queue: list + verify/assign/start/resolve actions.
- * Externalised from authority/queue.html (page CSP blocks inline scripts AND
- * inline onclick attributes, so row buttons use data-action delegation). */
+ * External file: page CSP blocks inline scripts AND inline onclick attributes,
+ * so row buttons use data-action delegation. */
 (function () {
     'use strict';
 
     var App = window.NagorikSeba;
     var resolveTarget = null;
 
-    function esc(value) {
-        return (App ? App.esc(value) : String(value == null ? '' : value));
+    function statusBadgeHtml(status) {
+        var cls = 'badge-' + (status || 'SUBMITTED');
+        return '<span class="badge-status ' + cls + '">' + (status || 'SUBMITTED') + '</span>';
     }
 
     async function loadQueue() {
@@ -34,19 +35,25 @@
             return;
         }
         document.querySelector('#queueTable tbody').innerHTML = items.map(function (c) {
-            return '<tr><td>' + esc(c.referenceCode) + '</td><td>' + esc(c.title) + '</td><td>' + esc(c.status) + '</td>'
-                + '<td>' + esc(c.wardName || '—') + '</td>'
-                + '<td><button class="btn btn-sm btn-success" data-action="verify" data-ref="' + esc(c.referenceCode) + '">Verify</button> '
-                + '<button class="btn btn-sm btn-primary" data-action="autoAssign" data-ref="' + esc(c.referenceCode) + '">Auto-assign</button> '
-                + '<button class="btn btn-sm btn-secondary" data-action="start" data-ref="' + esc(c.referenceCode) + '">Start</button> '
-                + '<button class="btn btn-sm btn-outline-success" data-action="resolve" data-ref="' + esc(c.referenceCode) + '">Resolve</button></td></tr>';
-        }).join('') || '<tr><td colspan="5">No complaints</td></tr>';
+            var ref = c.referenceCode;
+            return '<tr>'
+                + '<td class="py-2.5 px-3 font-bold text-on-surface"><a class="text-primary hover:underline" href="/authority/complaints/' + encodeURIComponent(ref) + '">' + App.esc(ref) + '</a></td>'
+                + '<td class="py-2.5 px-3 font-sans font-medium">' + App.esc(c.title) + '</td>'
+                + '<td class="py-2.5 px-3">' + statusBadgeHtml(c.status) + '</td>'
+                + '<td class="py-2.5 px-3 text-secondary">' + App.esc(c.wardName || '—') + '</td>'
+                + '<td class="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">'
+                + '<button class="bg-emerald-700 hover:bg-emerald-800 text-white px-2 py-1 uppercase text-[11px] font-bold" data-action="verify" data-ref="' + App.esc(ref) + '">Verify</button>'
+                + '<button class="bg-primary-container hover:bg-blue-700 text-white px-2 py-1 uppercase text-[11px] font-bold" data-action="autoAssign" data-ref="' + App.esc(ref) + '">Assign</button>'
+                + '<button class="bg-inverse-surface hover:bg-black text-white px-2 py-1 uppercase text-[11px] font-bold" data-action="start" data-ref="' + App.esc(ref) + '">Start</button>'
+                + '<button class="bg-surface-container-lowest hover:bg-surface-container border border-emerald-700 text-emerald-800 px-2 py-1 uppercase text-[11px] font-bold" data-action="resolve" data-ref="' + App.esc(ref) + '">Resolve</button>'
+                + '<a class="bg-surface-container-low hover:bg-surface-container border border-outline px-2 py-1 uppercase text-[11px] font-bold inline-block" href="/authority/complaints/' + encodeURIComponent(ref) + '">Dossier →</a>'
+                + '</td></tr>';
+        }).join('') || '<tr><td colspan="5" class="py-4 text-center text-secondary">No complaints found in current queue.</td></tr>';
     }
 
     async function verifyComplaint(ref) {
         try {
-            await App.apiJson('/api/authority/complaints/' + encodeURIComponent(ref) + '/verify?note=Verified-from-queue',
-                { method: 'POST' });
+            await App.apiJson('/api/authority/complaints/' + encodeURIComponent(ref) + '/verify?note=Verified-from-queue', { method: 'POST' });
             App.toast('Verified ' + ref + '.', 'success');
         } catch (error) {
             App.toast(error.message, 'error');
@@ -57,7 +64,7 @@
     async function autoAssign(ref) {
         try {
             await App.apiJson('/api/authority/complaints/' + encodeURIComponent(ref) + '/assign/auto', { method: 'POST' });
-            App.toast('Assigned ' + ref + '.', 'success');
+            App.toast('Assigned ' + ref + ' to department.', 'success');
         } catch (error) {
             App.toast(error.message, 'error');
         }
@@ -92,9 +99,11 @@
         else if (action === 'start') startWork(ref);
         else if (action === 'resolve') openResolve(ref);
     });
+
     document.getElementById('resolveCancel').addEventListener('click', function () {
         document.getElementById('resolveModal').classList.add('hidden');
     });
+
     document.getElementById('resolveConfirm').addEventListener('click', async function () {
         var photos = document.getElementById('resolvePhotos').files;
         if (!photos || photos.length < 1) {
@@ -105,8 +114,7 @@
         body.append('note', document.getElementById('resolveNote').value);
         body.append('photos', photos[0]);
         try {
-            await App.apiJson('/api/authority/complaints/' + encodeURIComponent(resolveTarget) + '/resolve',
-                { method: 'POST', body: body });
+            await App.apiJson('/api/authority/complaints/' + encodeURIComponent(resolveTarget) + '/resolve', { method: 'POST', body: body });
             App.toast('Resolved ' + resolveTarget + '.', 'success');
             document.getElementById('resolveModal').classList.add('hidden');
         } catch (error) {
@@ -114,6 +122,7 @@
         }
         loadQueue();
     });
+
     document.getElementById('loadBtn').addEventListener('click', loadQueue);
     (function prefillMunicipality() {
         try {
