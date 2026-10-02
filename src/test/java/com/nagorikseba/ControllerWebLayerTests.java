@@ -16,7 +16,6 @@ import com.nagorikseba.complaint.service.ComplaintQueryService;
 import com.nagorikseba.complaint.submission.AnonymousComplaintSubmission;
 import com.nagorikseba.complaint.submission.StandardComplaintSubmission;
 import com.nagorikseba.controller.HomeController;
-import com.nagorikseba.controller.PublicController;
 import com.nagorikseba.identity.api.AuthController;
 import com.nagorikseba.identity.api.dto.AuthResponse;
 import com.nagorikseba.identity.api.dto.UserResponse;
@@ -83,7 +82,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         AuthorityComplaintController.class,
         MunicipalityController.class,
         WardBoundaryController.class,
-        PublicController.class,
         PublicTransparencyController.class,
         HomeController.class
 })

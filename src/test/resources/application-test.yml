@@ -1,5 +1,8 @@
 # Test profile: background schedulers stay off unless a suite opts in
 # explicitly (see SlaScannerIntegrationTests / OutboxDeliveryIntegrationTests).
+# Boot-time snapshot seeding stays off so suites observe a pristine database.
 app:
   scheduling:
     enabled: false
+  snapshot:
+    seed-on-boot: false

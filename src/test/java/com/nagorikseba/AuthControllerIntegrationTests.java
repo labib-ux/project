@@ -26,14 +26,14 @@ class AuthControllerIntegrationTests {
     void publicLandingPageIsAvailable() throws Exception {
         mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Report the problem")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Report Local Issues")));
     }
 
     @Test
     void publicComplaintFormIsAvailable() throws Exception {
         mockMvc.perform(get("/citizen/complaint/new"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Report a local issue")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Lodge Civic Grievance")));
     }
 
     @Test

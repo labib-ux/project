@@ -51,7 +51,7 @@
         var title = App.esc(complaint.title || 'Untitled Grievance');
         var desc = App.esc(complaint.description || '');
         var category = App.esc(complaint.category || 'CIVIC');
-        var date = App.esc(complaint.submittedAt ? new Date(complaint.submittedAt).toLocaleDateString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Recently');
+        var date = App.esc(complaint.submittedAt ? new Date(complaint.submittedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Recently');
         var ward = complaint.wardNumber ? ('Ward ' + complaint.wardNumber + (complaint.areaName ? ' · ' + complaint.areaName : '')) : 'Auto-Detect Jurisdiction';
 
         return '<article class="bg-surface-container-lowest border border-outline-variant hover:border-outline transition-colors">'

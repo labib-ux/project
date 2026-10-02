@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nagorikseba.shared.exception.ApiError;
 import com.nagorikseba.shared.security.JwtAuthenticationFilter;
 import com.nagorikseba.shared.security.JwtTokenProvider;
+import com.nagorikseba.shared.security.WebJwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -146,6 +147,11 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
+                // Same access token as the API, carried by cookie/query for
+                // navigations (see WebJwtAuthenticationFilter). Without this the
+                // page chain is always anonymous and /admin/** 403s for admins.
+                .addFilterBefore(new WebJwtAuthenticationFilter(jwtTokenProvider),
+                        UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

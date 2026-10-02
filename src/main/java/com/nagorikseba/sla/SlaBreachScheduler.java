@@ -1,5 +1,6 @@
 package com.nagorikseba.sla;
 
+import com.nagorikseba.shared.config.SchedulerLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,9 +22,13 @@ import org.springframework.stereotype.Service;
 public class SlaBreachScheduler {
 
     private final SlaBreachScanner scanner;
+    private final SchedulerLock schedulerLock;
 
     @Scheduled(cron = "${app.sla.scan-cron:0 0 * * * *}")
     public void scheduledScan() {
+        if (!schedulerLock.tryLock("sla-scanner-job")) {
+            return;
+        }
         try {
             int detected = scanner.scanOnce();
             if (detected > 0) {
@@ -31,6 +36,8 @@ public class SlaBreachScheduler {
             }
         } catch (Exception e) {
             log.error("SLA scanner run failed", e);
+        } finally {
+            schedulerLock.unlock("sla-scanner-job");
         }
     }
 }

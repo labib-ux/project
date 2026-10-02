@@ -37,8 +37,17 @@ public class HeatmapService {
     /** Detail mode past this many points switches to grid clustering. */
     public static final int CLUSTER_THRESHOLD = 500;
 
-    /** Grid size in degrees (~100 m): matches the mapper snap. */
-    public static final double GRID_SIZE = 0.001;
+    /**
+     * Cluster grid bounds in degrees. Detail points always snap to
+     * {@link #MIN_GRID_SIZE} (~100 m, matching the mapper); clustered cells
+     * widen with the viewport so a city-wide bbox returns dozens of cells
+     * instead of thousands.
+     */
+    public static final double MIN_GRID_SIZE = 0.001;
+    public static final double MAX_GRID_SIZE = 0.02;
+
+    /** Backwards-compatible fixed grid (the detail snap). */
+    public static final double GRID_SIZE = MIN_GRID_SIZE;
 
     private final ComplaintRepository complaintRepository;
     private final AttachmentRepository attachmentRepository;
@@ -66,13 +75,26 @@ public class HeatmapService {
         long count = countInBbox(municipalityId, minLng, minLat, maxLng, maxLat);
         Map<String, Object> body = new LinkedHashMap<>();
         if (count > CLUSTER_THRESHOLD) {
+            double grid = gridForBbox(minLng, minLat, maxLng, maxLat);
             body.put("clustered", true);
-            body.put("points", clusteredCells(municipalityId, minLng, minLat, maxLng, maxLat));
+            body.put("gridSize", grid);
+            body.put("points", clusteredCells(municipalityId, minLng, minLat, maxLng, maxLat, grid));
         } else {
             body.put("clustered", false);
             body.put("points", detailPoints(municipalityId, minLng, minLat, maxLng, maxLat));
         }
         return body;
+    }
+
+    /**
+     * Viewport-adaptive cluster grid: roughly 100 cells across the wider bbox
+     * axis, clamped to {@link #MIN_GRID_SIZE}–{@link #MAX_GRID_SIZE}. A street
+     * level bbox keeps ~100 m cells; a city-wide one widens to ~2 km so the
+     * response stays small and the frontend draws districts, not noise.
+     */
+    static double gridForBbox(double minLng, double minLat, double maxLng, double maxLat) {
+        double span = Math.max(maxLng - minLng, maxLat - minLat);
+        return Math.min(MAX_GRID_SIZE, Math.max(MIN_GRID_SIZE, span / 100.0));
     }
 
     private void validateBbox(double minLng, double minLat, double maxLng, double maxLat) {
@@ -97,7 +119,7 @@ public class HeatmapService {
     }
 
     private List<Map<String, Object>> clusteredCells(Long municipalityId, double minLng, double minLat,
-                                                     double maxLng, double maxLat) {
+                                                      double maxLng, double maxLat, double grid) {
         List<Object[]> rows = entityManager.createNativeQuery(
                 "SELECT ST_X(ST_Centroid(ST_Collect(ST_SnapToGrid(location::geometry, :grid)))) AS lng,"
                         + " ST_Y(ST_Centroid(ST_Collect(ST_SnapToGrid(location::geometry, :grid)))) AS lat,"
@@ -110,7 +132,7 @@ public class HeatmapService {
                         + " AND location && ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326)"
                         + " GROUP BY ST_SnapToGrid(location::geometry, :grid), category"
                         + " ORDER BY cnt DESC")
-                .setParameter("grid", GRID_SIZE)
+                .setParameter("grid", grid)
                 .setParameter("municipalityId", municipalityId)
                 .setParameter("minLng", minLng).setParameter("minLat", minLat)
                 .setParameter("maxLng", maxLng).setParameter("maxLat", maxLat)

@@ -19,9 +19,17 @@ import org.springframework.stereotype.Service;
 public class DataRetentionScheduler {
 
     private final DataRetentionJob job;
+    private final SchedulerLock schedulerLock;
 
     @Scheduled(cron = "${app.retention.cron:0 30 3 * * *}")
     public void scheduledPurge() {
-        job.scheduledPurge();
+        if (!schedulerLock.tryLock("retention-job")) {
+            return;
+        }
+        try {
+            job.scheduledPurge();
+        } finally {
+            schedulerLock.unlock("retention-job");
+        }
     }
 }

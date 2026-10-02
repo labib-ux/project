@@ -21,6 +21,7 @@
                 try {
                     localStorage.removeItem('nagorikSebaToken');
                     localStorage.removeItem('nagorikSebaUser');
+                    document.cookie = 'nagorikSebaToken=; Path=/; Max-Age=0; SameSite=Lax';
                 } catch (e) { /* ignore */ }
                 window.location.assign('/');
             });

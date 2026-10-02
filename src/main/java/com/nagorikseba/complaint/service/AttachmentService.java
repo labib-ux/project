@@ -149,6 +149,9 @@ public class AttachmentService {
      * the type gate in {@code detectContentType} has already run.
      */
     private byte[] stripExif(MultipartFile file, String contentType) {
+        if ("image/webp".equals(contentType)) {
+            return stripWebpMetadata(readBytes(file));
+        }
         String format = switch (contentType) {
             case "image/jpeg" -> "jpg";
             case "image/png" -> "png";
@@ -172,6 +175,63 @@ public class AttachmentService {
         } catch (IOException exception) {
             log.debug("EXIF strip failed, keeping original bytes: {}", exception.getMessage());
             return readBytes(file);
+        }
+    }
+
+    /**
+     * Drop WebP metadata chunks (EXIF/XMP) from the RIFF container.
+     *
+     * <p>WebP is {@code RIFF<size>WEBP} followed by chunks of
+     * {@code <fourcc><u32le size><payload>} padded to even length. Image data
+     * chunks (VP8, VP8L, VP8X, ANIM, ANMF, ALPH, ICCP…) pass through
+     * untouched; only EXIF and XMP chunks are removed and the RIFF size is
+     * rewritten. Anything malformed returns the original bytes — metadata
+     * handling must never fail an upload closed.
+     */
+    static byte[] stripWebpMetadata(byte[] original) {
+        if (original.length < 12
+                || original[0] != 'R' || original[1] != 'I' || original[2] != 'F' || original[3] != 'F'
+                || original[8] != 'W' || original[9] != 'E' || original[10] != 'B' || original[11] != 'P') {
+            return original;
+        }
+        try {
+            java.io.ByteArrayOutputStream kept = new java.io.ByteArrayOutputStream(original.length);
+            kept.write(original, 0, 12);
+            int offset = 12;
+            boolean stripped = false;
+            while (offset + 8 <= original.length) {
+                String fourcc = new String(original, offset, 4, java.nio.charset.StandardCharsets.US_ASCII);
+                int size = (original[offset + 4] & 0xFF)
+                        | ((original[offset + 5] & 0xFF) << 8)
+                        | ((original[offset + 6] & 0xFF) << 16)
+                        | ((original[offset + 7] & 0xFF) << 24);
+                int padded = size + (size & 1);
+                if (size < 0 || offset + 8 + padded > original.length) {
+                    return original;
+                }
+                if ("EXIF".equals(fourcc) || "XMP ".equals(fourcc)) {
+                    stripped = true;
+                } else {
+                    kept.write(original, offset, 8 + padded);
+                }
+                offset += 8 + padded;
+            }
+            if (offset != original.length) {
+                return original;
+            }
+            if (!stripped) {
+                return original;
+            }
+            byte[] rebuilt = kept.toByteArray();
+            int riffSize = rebuilt.length - 8;
+            rebuilt[4] = (byte) (riffSize & 0xFF);
+            rebuilt[5] = (byte) ((riffSize >> 8) & 0xFF);
+            rebuilt[6] = (byte) ((riffSize >> 16) & 0xFF);
+            rebuilt[7] = (byte) ((riffSize >> 24) & 0xFF);
+            return rebuilt;
+        } catch (Exception e) {
+            log.debug("WebP metadata strip failed, keeping original bytes: {}", e.getMessage());
+            return original;
         }
     }
 

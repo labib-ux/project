@@ -8,6 +8,42 @@ function detailRef() {
     return new URLSearchParams(window.location.search).get('ref');
 }
 
+/**
+ * Renders the citizen's star rating as a compact block, or hides the container
+ * when the complaint has not been rated yet. Shared by the citizen dossier and
+ * the authority detail page so the officer can see the score they earned.
+ */
+window.renderRatingBlock = function (complaint, containerId) {
+    var host = document.getElementById(containerId);
+    if (!host) return;
+    var App = window.NagorikSeba;
+    var esc = (App && App.esc) ? App.esc : function (s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    };
+    var rating = complaint.latestRating;
+    if (rating == null) {
+        host.innerHTML = '';
+        host.classList.add('hidden');
+        return;
+    }
+    host.classList.remove('hidden');
+    var stars = '';
+    for (var i = 1; i <= 5; i++) {
+        stars += '<span class="material-symbols-outlined text-base ' +
+            (i <= rating ? 'text-amber-500' : 'text-outline') + '">' +
+            (i <= rating ? 'star' : 'star_outline') + '</span>';
+    }
+    var feedback = complaint.latestRatingFeedback
+        ? '<p class="mt-1 text-xs font-sans text-secondary italic">&quot;' +
+          esc(complaint.latestRatingFeedback) + '&quot;</p>'
+        : '';
+    host.innerHTML = '<div class="flex items-center gap-1">' + stars +
+        '<span class="ml-1 text-xs font-mono font-bold text-amber-700">' + rating + '/5</span></div>' +
+        feedback;
+};
+
 function statusBadgeHtml(status) {
     var cls = 'badge-' + (status || 'SUBMITTED');
     return '<span class="badge-status ' + cls + '">' + (status || 'SUBMITTED') + '</span>';
@@ -34,6 +70,10 @@ async function loadDetail() {
 
     var badgeEl = document.getElementById('statusBadgeDisplay');
     if (badgeEl) badgeEl.innerHTML = statusBadgeHtml(complaint.status);
+
+    if (typeof window.renderRatingBlock === 'function') {
+        window.renderRatingBlock(complaint, 'ratingBlock');
+    }
 
     var metaEl = document.getElementById('meta');
     if (metaEl) {

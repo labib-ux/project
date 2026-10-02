@@ -29,7 +29,7 @@ public class ScoreboardService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> scoreboard(Long municipalityId, String period) {
-        LocalDate periodStart = parsePeriod(period);
+        LocalDate periodStart = resolvePeriod(municipalityId, period);
         return performanceRepository
                 .findByMunicipalityIdAndPeriodStartOrderByResolvedComplaintsDesc(
                         municipalityId, periodStart)
@@ -49,6 +49,32 @@ public class ScoreboardService {
                     return entry;
                 })
                 .toList();
+    }
+
+    /**
+     * Resolves the month to report on.
+     *
+     * <p>An explicit {@code period} is always honoured. Otherwise the default is
+     * the most recent <em>completed</em> calendar month — the current month is
+     * still accumulating, so scoring it early in the month reports near-zero
+     * totals and a 0% resolution rate, which is both misleading and a bad thing
+     * to put on a screen. If that month has no snapshot rows yet (a database
+     * seeded mid-month), we fall back to the newest month that does.
+     */
+    private LocalDate resolvePeriod(Long municipalityId, String period) {
+        if (period != null && !period.isBlank()) {
+            return parsePeriod(period);
+        }
+        LocalDate lastCompletedMonth = LocalDate.now(clock.withZone(ZoneOffset.UTC))
+                .minusMonths(1).withDayOfMonth(1);
+        boolean hasRowsForLastCompletedMonth = !performanceRepository
+                .findByMunicipalityIdAndPeriodStartOrderByResolvedComplaintsDesc(
+                        municipalityId, lastCompletedMonth).isEmpty();
+        if (hasRowsForLastCompletedMonth) {
+            return lastCompletedMonth;
+        }
+        return performanceRepository.findLatestPeriodStart(municipalityId)
+                .orElse(lastCompletedMonth);
     }
 
     /** First day of the requested month; defaults to the current month. */

@@ -4,11 +4,10 @@ import com.nagorikseba.complaint.domain.Complaint;
 import com.nagorikseba.complaint.domain.enums.ComplaintStatus;
 import com.nagorikseba.complaint.repo.ComplaintRepository;
 import com.nagorikseba.municipality.repository.WardRepository;
+import com.nagorikseba.shared.config.SchedulerLock;
 import com.nagorikseba.sla.SlaBreachRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,31 +26,31 @@ import java.util.List;
  * Monthly transparency snapshots (T5, §3.6, R7).
  *
  * <p>Runs on the 1st at 02:00; overlaps (two instances, slow months) serialize
- * on {@code pg_try_advisory_lock(hashtext('ward-snapshot-job'))} — the loser
- * skips instead of double-computing. Per (ward, month) upserts converge on
- * {@code uq_ward_period}, so a retry never duplicates. Only scheduled when
- * {@code app.scheduling.enabled=true}; tests call {@link #snapshotMonth} (or
- * {@link #snapshotCurrentMonth}) directly.
+ * on {@code pg_try_advisory_lock} via {@link SchedulerLock} — the loser skips
+ * instead of double-computing. Per (ward, month) upserts converge on
+ * {@code uq_ward_period}, so a retry never duplicates.
+ *
+ * <p>The bean is unconditional: the {@code @Scheduled} trigger only fires when
+ * {@code @EnableScheduling} is active (gated by {@code SchedulingConfig} on
+ * {@code app.scheduling.enabled}), so tests that never opt in see no
+ * background runs. Direct calls ({@link #snapshotMonth}) work everywhere,
+ * which is also what the boot-time seed runner uses.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "app.scheduling.enabled", havingValue = "true", matchIfMissing = false)
 public class PerformanceSnapshotJob {
 
     private final WardMonthlyPerformanceRepository performanceRepository;
     private final WardRepository wardRepository;
     private final ComplaintRepository complaintRepository;
     private final SlaBreachRepository breachRepository;
-    private final JdbcTemplate jdbcTemplate;
+    private final SchedulerLock schedulerLock;
     private final Clock clock;
 
     @Scheduled(cron = "${app.snapshot.cron:0 0 2 1 * *}")
     public void scheduledSnapshot() {
-        Boolean locked = jdbcTemplate.queryForObject(
-                "SELECT pg_try_advisory_lock(hashtext('ward-snapshot-job'))", Boolean.class);
-        if (!Boolean.TRUE.equals(locked)) {
-            log.info("Snapshot job already running elsewhere; skipping");
+        if (!schedulerLock.tryLock("ward-snapshot-job")) {
             return;
         }
         try {
@@ -59,7 +58,7 @@ public class PerformanceSnapshotJob {
             int wards = snapshotMonth(previous.atDay(1));
             log.info("Snapshot for {} computed for {} ward(s)", previous, wards);
         } finally {
-            jdbcTemplate.execute("SELECT pg_advisory_unlock(hashtext('ward-snapshot-job'))");
+            schedulerLock.unlock("ward-snapshot-job");
         }
     }
 

@@ -41,6 +41,8 @@ app:
     enabled: true
   notifications:
     sms-enabled: ${SMS_ENABLED:false}
+    email-enabled: ${EMAIL_ENABLED:false}
+    mail-from: ${APP_MAIL_FROM:nagorik-seba@example.com}
     twilio-sid: ${TWILIO_SID:}
     twilio-token: ${TWILIO_TOKEN:}
     twilio-from: ${TWILIO_FROM:}

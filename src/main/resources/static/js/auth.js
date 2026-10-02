@@ -73,6 +73,12 @@ if (form) {
             }
             localStorage.setItem('nagorikSebaToken', result.accessToken);
             localStorage.setItem('nagorikSebaUser', JSON.stringify(result.user));
+            // Mirror the token into a readable cookie so full-page navigations
+            // (e.g. /admin/* shells) authenticate via WebJwtAuthenticationFilter.
+            try {
+                document.cookie = 'nagorikSebaToken=' + encodeURIComponent(result.accessToken)
+                    + '; Path=/; SameSite=Lax';
+            } catch (e) { /* cookie unavailable; API calls still use the header */ }
             feedback.textContent = `Welcome, ${result.user.fullName}. Taking you to the complaint form…`;
             feedback.classList.add('success');
             const next = new URLSearchParams(window.location.search).get('next') || '/citizen/complaint/new';

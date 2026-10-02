@@ -45,6 +45,10 @@
             }
             localStorage.setItem('nagorikSebaToken', result.accessToken);
             localStorage.setItem('nagorikSebaUser', JSON.stringify(result.user));
+            try {
+                document.cookie = 'nagorikSebaToken=' + encodeURIComponent(result.accessToken)
+                    + '; Path=/; SameSite=Lax';
+            } catch (cookieError) { /* API calls still use the header */ }
             window.location.assign('/authority/dashboard');
         } catch (error) {
             feedback.textContent = error.message;

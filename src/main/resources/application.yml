@@ -53,6 +53,30 @@ app:
     login-per-minute-per-ip: ${RATE_LIMIT_LOGIN:5}
     register-per-hour-per-ip: ${RATE_LIMIT_REGISTER:3}
     complaint-submit-per-day-per-user: ${RATE_LIMIT_SUBMIT:10}
+  notifications:
+    # Dev default off: senders log instead of delivering.
+    sms-enabled: ${SMS_ENABLED:false}
+    email-enabled: ${EMAIL_ENABLED:false}
+    mail-from: ${APP_MAIL_FROM:nagorik-seba@example.com}
+  snapshot:
+    # Seed the current month's ward performance snapshot on boot when empty,
+    # so the public scoreboard is non-trivial before the monthly job runs.
+    # Tests set this false (see application-test.yml).
+    seed-on-boot: ${SNAPSHOT_SEED_ON_BOOT:true}
+  # Background workers are ON in dev so the SLA scanner, AUTO_CLOSE job,
+  # retention purge and the notification outbox relay actually run while you
+  # demo — that is what turns a status change into a logged SMS/email line.
+  # Prod forces this on in application-prod.yml; tests keep it off.
+  scheduling:
+    enabled: ${SCHEDULING_ENABLED:true}
+  # Tighten the outbox poll so notifications visibly land seconds after a
+  # transition instead of up to 10 seconds later.
+  outbox:
+    poll-ms: ${OUTBOX_POLL_MS:5000}
+  # Demo runs hourly-ish so a deadline can be shown breaching on demand.
+  sla:
+    default-hours: ${APP_SLA_DEFAULT_HOURS:120}
+    scan-cron: ${SLA_SCAN_CRON:0 */10 * * * *}
 
 management:
   endpoints:

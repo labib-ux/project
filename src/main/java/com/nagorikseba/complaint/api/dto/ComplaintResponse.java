@@ -32,8 +32,18 @@ public class ComplaintResponse {
     private String addressText;
     private Long wardId;
     private String wardName;
+    /** Rendered alongside {@link #wardName} so pages never print "Zone Unassigned". */
+    private Integer wardNumber;
+    private String areaName;
     private Long municipalityId;
     private String municipalityName;
+    /** Named officer once assigned; null while the queue still owns it. */
+    private String assignedOfficerName;
+    /** Citizen star rating from the latest resolution cycle (R10), null until rated. */
+    private Integer latestRating;
+    private String latestRatingFeedback;
+    /** How many resolve cycles this complaint has been through (reopen counter). */
+    private int resolutionAttempts;
     private String citizenName;
     private String citizenPhone;
     private Instant submittedAt;

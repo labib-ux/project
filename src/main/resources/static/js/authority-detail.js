@@ -54,6 +54,12 @@
             ['Complainant Identity', complaint.citizenName || 'Confidential / Citizen'],
             ['Direct Phone', complaint.citizenPhone || 'Encrypted on record'],
             ['Submission Timestamp', complaint.submittedAt ? new Date(complaint.submittedAt).toLocaleString() : '—'],
+            ['Assigned Officer', complaint.assignedOfficerName || 'Pending Allocation'],
+            ['Resolution Cycles', String(complaint.resolutionAttempts || 1)],
+            ['Citizen Rating', complaint.latestRating == null
+                ? 'Not yet rated'
+                : complaint.latestRating + ' / 5' + (complaint.latestRatingFeedback
+                    ? ' — "' + complaint.latestRatingFeedback + '"' : '')],
             ['Reopen Count', String(complaint.reopenCount || 0) + ' Cycles']
         ];
 

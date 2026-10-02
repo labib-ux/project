@@ -2,10 +2,12 @@ package com.nagorikseba.complaint.service;
 
 import com.nagorikseba.complaint.api.dto.ComplaintResponse;
 import com.nagorikseba.complaint.domain.Complaint;
+import com.nagorikseba.complaint.domain.ResolutionAttempt;
 import com.nagorikseba.complaint.domain.enums.ComplaintStatus;
 import com.nagorikseba.complaint.repo.ComplaintRepository;
 import com.nagorikseba.complaint.repo.ComplaintTransitionRepository;
 import com.nagorikseba.complaint.repo.AttachmentRepository;
+import com.nagorikseba.complaint.repo.ResolutionAttemptRepository;
 import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.municipality.entity.Municipality;
 import com.nagorikseba.shared.exception.ResourceNotFoundException;
@@ -27,6 +29,7 @@ public class ComplaintQueryService {
     private final ComplaintRepository complaintRepository;
     private final ComplaintTransitionRepository transitionRepository;
     private final AttachmentRepository attachmentRepository;
+    private final ResolutionAttemptRepository resolutionAttemptRepository;
     private final com.nagorikseba.complaint.service.ComplaintMapper mapper;
     private final PrincipalContext principalContext;
 
@@ -91,6 +94,9 @@ public class ComplaintQueryService {
                 attachmentRepository.findByComplaintIdAndDeletedAtIsNullOrderByCreatedAtAsc(complaint.getId());
         List<com.nagorikseba.complaint.domain.ComplaintTransition> transitions = 
                 transitionRepository.findByComplaintIdOrderByCreatedAtAsc(complaint.getId());
-        return mapper.toResponse(complaint, attachments, transitions);
+        ResolutionAttempt latestAttempt = resolutionAttemptRepository
+                .findFirstByComplaintIdOrderByAttemptNumberDesc(complaint.getId())
+                .orElse(null);
+        return mapper.toResponse(complaint, attachments, transitions, latestAttempt);
     }
 }

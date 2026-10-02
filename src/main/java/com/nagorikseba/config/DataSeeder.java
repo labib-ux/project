@@ -41,6 +41,8 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,10 +63,18 @@ import java.util.List;
  * {@code ComplaintMutator}, which only transition handlers extend. A seeder that
  * could flip a complaint to VERIFIED directly would be the exact hole §7.1 exists
  * to close, so this class not compiling if it tried is the invariant working.
+ *
+ * <h2>Never active in {@code prod}</h2>
+ * <p>This seeds demo accounts with publicly documented passwords ({@code admin123},
+ * {@code demo1234}), so a production boot against an empty database would otherwise
+ * create an administrator anyone could log in as. Dev, test and unprofiled local
+ * runs keep the demo data.
  */
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@Order(10)
+@Profile("!prod")
 public class DataSeeder implements CommandLineRunner {
 
     private final WardRepository wardRepository;
@@ -326,6 +336,12 @@ public class DataSeeder implements CommandLineRunner {
                     .build());
 
             if (category == Category.ROADS) {
+                // Legacy single-officer accounts, kept only so the historical
+                // credentials in the README still resolve. Deliberately INACTIVE:
+                // load-balanced routing only considers active officers, and these
+                // rows have a lower id than officer1@demo, so leaving them active
+                // made every auto-assigned ROADS complaint land on an account the
+                // demo never signs in with (which then 403s on Start Work).
                 User officer = userRepository.save(User.builder()
                         .fullName("Roads Officer " + Character.toUpperCase(suffix.charAt(0)) + suffix.substring(1))
                         .email("roads." + suffix + "@example.com")
@@ -334,7 +350,7 @@ public class DataSeeder implements CommandLineRunner {
                         .role(UserRole.DEPT_OFFICER)
                         .ward(officerWard)
                         .department(department)
-                        .active(true)
+                        .active(false)
                         .build());
                 seedMembership(officer, municipality, officerWard, department);
             }

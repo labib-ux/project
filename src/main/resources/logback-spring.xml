@@ -1,14 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Nagorik Seba logging (Phase 6, §10): single-line console records carrying
-     the MDC correlation fields (traceId, municipalityId, complaintId).
-     A logstash JSON encoder is the documented upgrade once a JSON sink exists;
-     until then this pattern keeps every field greppable without new deps. -->
+     the MDC correlation fields (traceId, municipalityId, complaintId), plus a
+     rolling file appender so production keeps history beyond the container log.
+     A logstash JSON encoder remains the documented upgrade once a JSON sink
+     exists; until then this pattern keeps every field greppable without new deps. -->
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
     <property name="CONSOLE_LOG_PATTERN"
               value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level traceId=%X{traceId:-none} municipalityId=%X{municipalityId:-none} complaintId=%X{complaintId:-none} [%thread] %logger{36} - %msg%n"/>
+    <property name="LOG_FILE" value="${LOG_FILE:-${LOG_PATH:-logs}/nagorik-seba.log}"/>
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>14</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
     </root>
 </configuration>

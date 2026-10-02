@@ -6,6 +6,7 @@ import com.nagorikseba.complaint.api.dto.TransitionResponse;
 import com.nagorikseba.complaint.domain.Complaint;
 import com.nagorikseba.complaint.domain.Attachment;
 import com.nagorikseba.complaint.domain.ComplaintTransition;
+import com.nagorikseba.complaint.domain.ResolutionAttempt;
 import com.nagorikseba.complaint.domain.enums.ComplaintStatus;
 import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.municipality.entity.Municipality;
@@ -23,6 +24,17 @@ public class ComplaintMapper {
     private final PrincipalContext principalContext;
 
     public ComplaintResponse toResponse(Complaint complaint, List<Attachment> attachments, List<ComplaintTransition> transitions) {
+        return toResponse(complaint, attachments, transitions, null);
+    }
+
+    /**
+     * Full projection. {@code latestAttempt} is the most recent resolution cycle
+     * (R10) — the caller passes null when it has none, and the rating fields then
+     * simply stay null rather than forcing every call site to query.
+     */
+    public ComplaintResponse toResponse(Complaint complaint, List<Attachment> attachments,
+                                        List<ComplaintTransition> transitions,
+                                        ResolutionAttempt latestAttempt) {
         boolean isOwner = isOwner(complaint);
         boolean isAuthority = principalContext.servesMunicipality(complaint.getMunicipality().getId());
 
@@ -39,8 +51,15 @@ public class ComplaintMapper {
                 .addressText(complaint.getAddressText())
                 .wardId(complaint.getWard() != null ? complaint.getWard().getId() : null)
                 .wardName(complaint.getWard() != null ? complaint.getWard().getAreaName() : null)
+                .wardNumber(complaint.getWard() != null ? complaint.getWard().getWardNumber() : null)
+                .areaName(complaint.getWard() != null ? complaint.getWard().getAreaName() : null)
                 .municipalityId(complaint.getMunicipality() != null ? complaint.getMunicipality().getId() : null)
                 .municipalityName(complaint.getMunicipality() != null ? complaint.getMunicipality().getName() : null)
+                .assignedOfficerName(complaint.getAssignedOfficer() != null
+                        ? complaint.getAssignedOfficer().getFullName() : null)
+                .resolutionAttempts(complaint.getReopenCount() + 1)
+                .latestRating(latestAttempt != null ? latestAttempt.getRating() : null)
+                .latestRatingFeedback(latestAttempt != null ? latestAttempt.getRatingFeedback() : null)
                 .citizenName(isOwner || isAuthority ? (complaint.getCitizen() != null ? complaint.getCitizen().getFullName() : "Anonymous") : null)
                 .citizenPhone(isOwner || isAuthority ? (complaint.getCitizen() != null ? complaint.getCitizen().getPhone() : complaint.getAnonymousContactPhone()) : null)
                 .submittedAt(complaint.getSubmittedAt())

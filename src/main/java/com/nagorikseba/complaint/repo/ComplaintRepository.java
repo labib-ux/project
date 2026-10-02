@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,6 +43,13 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     List<Complaint> findByWardIdAndStatusNotIn(Long wardId, List<ComplaintStatus> statuses);
 
     List<Complaint> findByAssignedOfficerIdAndStatusIn(Long officerId, List<ComplaintStatus> statuses);
+
+    /**
+     * AUTO_CLOSE candidates: RESOLVED before the grace cutoff. The scheduler
+     * re-checks age per row inside the lifecycle call, so clock skew between
+     * query and execution cannot close a fresh resolution early.
+     */
+    List<Complaint> findByStatusAndResolvedAtBefore(ComplaintStatus status, Instant cutoff);
 
     /**
      * Dashboard per-ward counts (§4, Phase 4): one row per (ward, status) backed

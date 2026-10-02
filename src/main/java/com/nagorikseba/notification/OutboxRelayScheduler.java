@@ -1,5 +1,6 @@
 package com.nagorikseba.notification;
 
+import com.nagorikseba.shared.config.SchedulerLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,10 +22,14 @@ import org.springframework.stereotype.Service;
 public class OutboxRelayScheduler {
 
     private final OutboxWorker worker;
+    private final SchedulerLock schedulerLock;
 
     @Scheduled(fixedDelayString = "${app.outbox.poll-ms:10000}",
             initialDelayString = "${app.outbox.poll-ms:10000}")
     public void poll() {
+        if (!schedulerLock.tryLock("outbox-relay-job")) {
+            return;
+        }
         try {
             int claimed = worker.processBatch(50);
             if (claimed > 0) {
@@ -32,6 +37,8 @@ public class OutboxRelayScheduler {
             }
         } catch (Exception e) {
             log.error("Outbox relay batch failed", e);
+        } finally {
+            schedulerLock.unlock("outbox-relay-job");
         }
     }
 }

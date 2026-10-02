@@ -1,7 +1,10 @@
 HELP.md
 target/
 uploads/
+logs/
 .env
+.DS_Store
+docs/implementation/*.txt
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

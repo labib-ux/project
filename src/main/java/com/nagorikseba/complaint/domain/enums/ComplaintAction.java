@@ -9,5 +9,6 @@ public enum ComplaintAction {
     RESOLVE,
     CLOSE,
     REOPEN,
-    CANCEL
+    CANCEL,
+    AUTO_CLOSE
 }

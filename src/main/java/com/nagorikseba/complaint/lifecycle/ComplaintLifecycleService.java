@@ -98,6 +98,27 @@ public class ComplaintLifecycleService extends ComplaintMutator {
      */
     @Transactional
     public Complaint execute(TransitionCommand command) {
+        User actor = userRepository.findById(command.actorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Actor not found with id: " + command.actorId()));
+        return doExecute(command, actor, actor.getRole().name());
+    }
+
+    /**
+     * Scheduler entry point for SYSTEM actions (AUTO_CLOSE).
+     *
+     * <p>Same funnel as {@link #execute} — row lock, replay check, source-status
+     * check, audit row, outbox event — but with no human actor: the transition
+     * records a NULL actor and the SYSTEM role. Human callers cannot reach a
+     * SYSTEM-only action through {@code execute} because their handler lookup
+     * runs against the same registry; SYSTEM-only handlers additionally guard
+     * on a null actor.
+     */
+    @Transactional
+    public Complaint executeAsSystem(TransitionCommand command) {
+        return doExecute(command, null, "SYSTEM");
+    }
+
+    private Complaint doExecute(TransitionCommand command, User actor, String actorRole) {
         // 1. Lock the row first: everything after this is serialized per complaint,
         //    which is what makes the version check below a real guard and not a race.
         Complaint complaint = complaintRepository.findAndLockById(command.complaintId())
@@ -135,8 +156,10 @@ public class ComplaintLifecycleService extends ComplaintMutator {
                     "Cannot " + command.action() + " a complaint in status " + complaint.getStatus());
         }
 
-        User actor = userRepository.findById(command.actorId())
-                .orElseThrow(() -> new ResourceNotFoundException("Actor not found with id: " + command.actorId()));
+        if (actor == null && command.action() != ComplaintAction.AUTO_CLOSE) {
+            throw new InvalidStateTransitionException(
+                    "Action " + command.action() + " requires a human actor");
+        }
 
         ComplaintStatus fromStatus = complaint.getStatus();
         Instant now = clock.instant();
@@ -155,7 +178,7 @@ public class ComplaintLifecycleService extends ComplaintMutator {
                 .toStatus(complaint.getStatus())
                 .action(command.action())
                 .actor(actor)
-                .actorRole(actor.getRole().name())
+                .actorRole(actorRole)
                 .note(command.note())
                 .metadata(handler.transitionMetadata(complaint, command))
                 .idempotencyKey(command.idempotencyKey())
@@ -163,7 +186,7 @@ public class ComplaintLifecycleService extends ComplaintMutator {
                 .build();
         transitionRepository.save(transition);
 
-        publishStatusChanged(complaint, fromStatus, command, actor.getId(), now);
+        publishStatusChanged(complaint, fromStatus, command, actor != null ? actor.getId() : null, now);
         return complaint;
     }
 
@@ -209,7 +232,11 @@ public class ComplaintLifecycleService extends ComplaintMutator {
         payload.put("action", command.action().name());
         payload.put("from", from.name());
         payload.put("to", complaint.getStatus().name());
-        payload.put("actorId", actorId);
+        if (actorId != null) {
+            payload.put("actorId", actorId);
+        } else {
+            payload.putNull("actorId");
+        }
         if (command.note() == null) {
             payload.putNull("note");
         } else {
