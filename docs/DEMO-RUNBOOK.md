@@ -156,6 +156,13 @@ complaint and auto-assign will find `officer1@demo`.**
 ### ▶ [3:45–5:00] STOP 6 — OFFICER QUEUE & WORKFLOW
 *Log out. Go to `/login/authority`. Login `officer1@demo` / `demo1234`. Go to `/authority/queue`*
 
+> **Before you touch the queue — show the bell.** Look at the top-right of the nav. There is a
+> notification badge with a count on it. Say: *"Before I open the queue — that badge is the
+> complaint I just filed. I didn't refresh. It got here on its own."*
+>
+> Click the bell. The complaint is at the top, named by its reference code. Click it and it
+> opens the complaint and clears the badge.
+
 > "Now the other side. I'm an officer posted to the **ROADS** department in Dhaka North.
 >
 > → *(Load Queue)*
@@ -222,9 +229,74 @@ complaint, press Start Work.*
 ### ▶ [6:30–7:00] STOP 10 — ADMIN / SLA MATRIX
 *Log out, login `admin@demo` / `demo1234`. Go to `/admin`, then `/admin/sla-policies`*
 
+
+> **Show the bell FIRST here too.** The admin badge also carries a count, because admins are
+> cross-tenant — every new report in every ward reaches them, not just their own desk. Say:
+> *"The admin does not pick a complaint; they are notified of all of them."*
+>
 > "Finally, the admin console. → **Statutory SLA policies** — 64 rows: every category crossed
 > with every priority level, each with a resolution deadline and **two escalation tiers**. ROADS at
 > low priority is 72 hours; critical escalates far sooner.
+
+---
+
+## NOTIFICATION FLOW — the answer if they ask "how does the officer actually find out?"
+
+One breath: *the complaint and the notification are written by the same transaction, so one
+cannot exist without the other.*
+
+```
+citizen files  ->  ComplaintLifecycleService.recordSubmission()
+                    |- writes the complaint          (same transaction)
+                    |- writes the SUBMIT audit row   (same transaction)
+                    `- writes an OUTBOX row          (same transaction)
+                                        |
+                    OutboxRelayScheduler polls every 5s
+                                        |
+                    OutboxWorker claims the row (SKIP LOCKED)
+                                        |
+                    NotificationDispatcher
+                      |- citizen     -> "your complaint was received"
+                      `- SUBMIT only -> every officer posted to that municipality
+                                        + every admin (cross-tenant)
+                                        |
+                    notifications table -> bell badge in the nav
+```
+
+**"Why an outbox table instead of just sending an email?"** A notification sent in the middle
+of the complaint transaction can half-succeed: the SMS goes out, the transaction then rolls
+back, and the citizen holds an SMS for a complaint that does not exist. Writing the row inside
+the same transaction means it is either committed or it never happened. The relay then retries
+on its own — 5 attempts with exponential backoff, then parked `FAILED`.
+
+**"What if the app crashes mid-send?"** The row is already `PENDING` in the database, so the
+next relay picks it up. Delivery is idempotent: `uq_notification_outbox_user` makes a
+redelivered row collide on the unique constraint instead of duplicating, and the collision is
+treated as success.
+
+**"Who exactly gets told?"** Officers are resolved through `user_municipality_memberships`,
+**not** the user's `department_id`, because §3.2 models transfers as membership *history* — a
+stale FK would page the wrong desk after an officer transfers. Admins are cross-tenant.
+
+**"Can I read someone else's notifications?"** No. Every query is scoped to the caller's own id
+from the JWT; there is no user id in the request to tamper with. Asking for another user's
+notification returns **404, not 403** — a 403 would confirm the id is real.
+
+**"Won't officers be spammed on every status change?"** Correct, and that is why the fan-out is
+gated on `action == SUBMIT`. Officers get one alert per new report; later transitions reach the
+assigned officer only, and the citizen.
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/notifications?limit=20&unreadOnly=false` | the caller's feed, newest first |
+| `GET` | `/api/notifications/unread-count` | badge count (one indexed COUNT) |
+| `POST` | `/api/notifications/{id}/read` | mark one read (404 if not yours) |
+| `POST` | `/api/notifications/read-all` | clear the badge |
+
+**Tests protecting this:** `NotificationFanoutIntegrationTests` — 8 tests: officer + admin both
+alerted, citizen still notified in their own words, later transitions not re-paging everyone,
+tenancy isolation, ownership (404), auth (401).
+
 
 ## PART 3 — REHEARSAL NOTES & TROUBLESHOOTING
 

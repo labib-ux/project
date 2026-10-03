@@ -114,6 +114,11 @@ public class SecurityConfig {
                         .hasAnyRole("WARD_COUNCILOR", "DEPT_OFFICER", "ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/complaints/**").hasAnyRole("CITIZEN", "ADMIN")
+                        // Personal to the caller: any signed-in role may read their own
+                        // notifications, and the controller scopes every query to the
+                        // principal's user id. No role gate — a citizen's updates and an
+                        // admin's new-report alerts come from the same table.
+                        .requestMatchers("/api/notifications/**").authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint(this::writeUnauthorized)

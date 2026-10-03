@@ -1,11 +1,13 @@
 package com.nagorikseba.identity.repo;
 
+import com.nagorikseba.enums.UserRole;
 import com.nagorikseba.identity.domain.User;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -46,4 +48,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
                or u.phone = :identifier
             """)
     Optional<User> findByIdentifier(@Param("identifier") String identifier);
+
+    /**
+     * Every active holder of {@code role}, for the authority-notification fan-out.
+     *
+     * <p>Admins are cross-tenant by design (§8.2), so this deliberately has no
+     * municipality filter — oversight sees every new report regardless of ward.
+     */
+    List<User> findByRoleAndActiveTrue(UserRole role);
 }

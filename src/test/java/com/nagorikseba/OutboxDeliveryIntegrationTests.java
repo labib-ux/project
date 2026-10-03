@@ -152,16 +152,29 @@ class OutboxDeliveryIntegrationTests {
                 "COMPLAINT_SUBMITTED", payload(fixture.complaintId(), "NS-0", "SUBMITTED", null));
 
         worker.processOne(row.getId());
+        long afterFirstDispatch = rowsForOutbox(row);
+
         // Simulate a redelivery of the same row (crash between send and SENT).
         row.setStatus(OutboxMessage.STATUS_PENDING);
         outboxRepository.saveAndFlush(row);
         worker.processOne(row.getId());
 
-        long rows = notificationRepository.findAll().stream()
+        // Compared against the first dispatch rather than a hard-coded 1: a single
+        // COMPLAINT_STATUS_CHANGED event legitimately fans out to the citizen plus
+        // every officer of the municipality and every admin. What must hold is that
+        // redelivery converges on that same set instead of doubling it.
+        assertThat(rowsForOutbox(row))
+                .as("redelivery must converge on the partial unique constraint, not duplicate")
+                .isEqualTo(afterFirstDispatch)
+                .isPositive();
+    }
+
+    /** In-app rows written while delivering one outbox row. */
+    private long rowsForOutbox(OutboxMessage row) {
+        return notificationRepository.findAll().stream()
                 .filter(notification -> notification.getOutbox() != null
                         && notification.getOutbox().getId().equals(row.getId()))
                 .count();
-        assertThat(rows).isEqualTo(1);
     }
 
     @Test

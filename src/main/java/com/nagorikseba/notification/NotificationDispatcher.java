@@ -3,6 +3,7 @@ package com.nagorikseba.notification;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nagorikseba.complaint.domain.Complaint;
+import com.nagorikseba.complaint.domain.enums.ComplaintAction;
 import com.nagorikseba.complaint.repo.ComplaintRepository;
 import com.nagorikseba.enums.NotificationChannel;
 import com.nagorikseba.identity.domain.User;
@@ -31,11 +32,21 @@ import java.util.Map;
 @Slf4j
 public class NotificationDispatcher {
 
+    /**
+     * Template for the authority-facing "new report" page.
+     *
+     * <p>Distinct from {@code COMPLAINT_SUBMITTED} because that one is written from
+     * the citizen's point of view ("your complaint has been received") — reusing it
+     * for officers would read as if the officer filed it.
+     */
+    public static final String AUTHORITY_NEW_REPORT = "AUTHORITY_NEW_REPORT";
+
     private final Map<String, ChannelSender> senders;
     private final NotificationMessageRepository notificationRepository;
     private final ComplaintRepository complaintRepository;
     private final UserRepository userRepository;
     private final NotificationTemplateService templates;
+    private final NotificationRecipientResolver recipientResolver;
     private final ObjectMapper objectMapper;
 
     public NotificationDispatcher(List<ChannelSender> senderBeans,
@@ -43,6 +54,7 @@ public class NotificationDispatcher {
                                   ComplaintRepository complaintRepository,
                                   UserRepository userRepository,
                                   NotificationTemplateService templates,
+                                  NotificationRecipientResolver recipientResolver,
                                   ObjectMapper objectMapper) {
         Map<String, ChannelSender> byChannel = new LinkedHashMap<>();
         for (ChannelSender sender : senderBeans) {
@@ -56,6 +68,7 @@ public class NotificationDispatcher {
         this.complaintRepository = complaintRepository;
         this.userRepository = userRepository;
         this.templates = templates;
+        this.recipientResolver = recipientResolver;
         this.objectMapper = objectMapper;
     }
 
@@ -104,6 +117,14 @@ public class NotificationDispatcher {
         }
         if (payload.hasNonNull("officerId")) {
             writeInApp(message, payload.path("officerId").asLong(), complaint, templateCode, payload);
+        }
+        // A fresh report has no assignee yet, so the branch above cannot fire. Fan out
+        // to the authority here, or the complaint sits unseen until someone happens to
+        // open the queue. Scoped to SUBMIT so later transitions do not re-page everyone.
+        if (ComplaintAction.SUBMIT.name().equals(payload.path("action").asText())) {
+            for (Long recipientId : recipientResolver.authorityRecipientsFor(complaint)) {
+                writeInApp(message, recipientId, complaint, AUTHORITY_NEW_REPORT, payload);
+            }
         }
     }
 

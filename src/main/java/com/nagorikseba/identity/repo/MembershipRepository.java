@@ -1,11 +1,14 @@
 package com.nagorikseba.identity.repo;
 
+import com.nagorikseba.enums.UserRole;
+import com.nagorikseba.identity.domain.User;
 import com.nagorikseba.identity.domain.UserMunicipalityMembership;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -30,4 +33,23 @@ public interface MembershipRepository extends JpaRepository<UserMunicipalityMemb
     List<Long> findCurrentMunicipalityIds(@Param("userId") Long userId);
 
     boolean existsByUserIdAndMunicipalityIdAndValidUntilIsNull(Long userId, Long municipalityId);
+
+    /**
+     * Active staff currently posted to one municipality, for any of {@code roles}.
+     *
+     * <p>This is the reverse of {@link #findByUserIdAndValidUntilIsNull(Long)}: given
+     * the municipality a complaint landed in, which officers and councillors should
+     * hear about it. {@code distinct} because a user may hold several postings in the
+     * same municipality (one per department), and {@code m.user.active} because a
+     * deactivated account must never be woken up by a new report.
+     */
+    @Query("""
+            select distinct m.user from UserMunicipalityMembership m
+            where m.municipality.id = :municipalityId
+              and m.validUntil is null
+              and m.user.active = true
+              and m.user.role in :roles
+            """)
+    List<User> findActiveStaffServingMunicipality(@Param("municipalityId") Long municipalityId,
+                                                  @Param("roles") Collection<UserRole> roles);
 }

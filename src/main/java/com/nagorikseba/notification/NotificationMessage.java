@@ -84,6 +84,22 @@ public class NotificationMessage {
     @Column(name = "read_at", columnDefinition = "timestamptz")
     private Instant readAt;
 
+    /**
+     * Marks the row read and stamps the moment.
+     *
+     * <p>Encapsulated rather than exposing a bare {@code setRead} pair so the two
+     * fields cannot drift apart — {@code isRead == true} with a null {@code readAt}
+     * would make "when was this seen?" unanswerable, and vice versa. Idempotent:
+     * a second call keeps the original timestamp rather than overwriting it with
+     * the time of the redundant request.
+     */
+    public void markRead(Instant at) {
+        if (!this.read) {
+            this.read = true;
+            this.readAt = at;
+        }
+    }
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "outbox_id")
     private OutboxMessage outbox;

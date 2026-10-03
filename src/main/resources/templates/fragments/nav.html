@@ -77,6 +77,33 @@
 
                     <!-- Authenticated View -->
                     <div sec:authorize="isAuthenticated()" class="flex items-center gap-3">
+                        <!-- Notification bell: authority alerts (new reports) and
+                             citizen status updates arrive in the same feed. -->
+                        <div class="relative">
+                            <button id="notificationBell" type="button"
+                                class="relative p-1 text-surface-variant hover:text-white transition-colors"
+                                aria-label="Notifications" aria-haspopup="true">
+                                <span class="material-symbols-outlined text-xl">notifications</span>
+                                <span id="notificationBadge"
+                                    class="hidden absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-primary-container text-white text-[10px] font-mono font-bold flex items-center justify-center">
+                                    0
+                                </span>
+                            </button>
+                            <div id="notificationPanel"
+                                class="hidden absolute right-0 mt-2 w-80 max-h-[70vh] overflow-y-auto z-50 bg-surface-container-lowest border border-outline-variant shadow-lg">
+                                <div class="flex items-center justify-between px-4 py-2 border-b border-outline-variant bg-surface-container-low">
+                                    <span class="text-[10px] font-mono uppercase tracking-wider text-on-surface">
+                                        Notifications</span>
+                                    <button id="notificationMarkAll" type="button"
+                                        class="text-[10px] font-mono uppercase tracking-wider text-primary-container hover:underline">
+                                        Mark all read</button>
+                                </div>
+                                <ul id="notificationList" class="divide-y divide-outline-variant/40">
+                                    <li class="px-4 py-6 text-center text-[11px] font-mono text-secondary">
+                                        Loading…</li>
+                                </ul>
+                            </div>
+                        </div>
                         <span
                             class="hidden sm:inline-block text-xs font-mono text-surface-variant border-r border-outline-variant pr-3"
                             sec:authentication="name">User</span>
